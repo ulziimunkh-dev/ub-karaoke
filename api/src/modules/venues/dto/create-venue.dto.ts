@@ -59,4 +59,16 @@ export class CreateVenueDto {
 
     @IsOptional()
     isBookingEnabled?: boolean;
+
+    @IsString()
+    @IsOptional()
+    bookingWindowStart?: string;
+
+    @IsString()
+    @IsOptional()
+    bookingWindowEnd?: string;
+
+    @IsNumber()
+    @IsOptional()
+    advanceBookingDays?: number;
 }

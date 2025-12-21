@@ -100,7 +100,11 @@ const VenueManagement = () => {
             description: '',
             phone: '',
             priceRange: '$$',
-            featuredImage: imgStandard
+            priceRange: '$$',
+            featuredImage: imgStandard,
+            bookingWindowStart: '',
+            bookingWindowEnd: '',
+            advanceBookingDays: 3
         });
         setIsVenueModalOpen(true);
     };
@@ -126,7 +130,10 @@ const VenueManagement = () => {
             description: venue.description || '',
             phone: venue.phone || '',
             priceRange: venue.priceRange || '$$',
-            featuredImage: venue.featuredImage || venue.image || imgStandard
+            featuredImage: venue.featuredImage || venue.image || imgStandard,
+            bookingWindowStart: venue.bookingWindowStart || '',
+            bookingWindowEnd: venue.bookingWindowEnd || '',
+            advanceBookingDays: venue.advanceBookingDays || 3
         });
         setIsVenueModalOpen(true);
     };
@@ -157,7 +164,10 @@ const VenueManagement = () => {
             amenities: [],
             images: [venueForm.featuredImage],
             featuredImage: venueForm.featuredImage,
-            address: venueForm.address || "Ulaanbaatar, Mongolia"
+            address: venueForm.address || "Ulaanbaatar, Mongolia",
+            bookingWindowStart: venueForm.bookingWindowStart || null,
+            bookingWindowEnd: venueForm.bookingWindowEnd || null,
+            advanceBookingDays: venueForm.advanceBookingDays || 3
         };
 
         if (editingVenue) {
@@ -350,6 +360,43 @@ const VenueManagement = () => {
                                     <option value="$$$">$$$</option>
                                     <option value="$$$$">$$$$</option>
                                 </select>
+                            </div>
+
+                            {/* Booking Configuration Section */}
+                            <div style={{ background: '#333', padding: '15px', borderRadius: '5px' }}>
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#ccc' }}>Booking Configuration (Optional)</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: '#888' }}>Allowed Start Time</label>
+                                        <input
+                                            type="time"
+                                            value={venueForm.bookingWindowStart || ''}
+                                            onChange={e => setVenueForm({ ...venueForm, bookingWindowStart: e.target.value })}
+                                            style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.8rem', color: '#888' }}>Allowed End Time</label>
+                                        <input
+                                            type="time"
+                                            value={venueForm.bookingWindowEnd || ''}
+                                            onChange={e => setVenueForm({ ...venueForm, bookingWindowEnd: e.target.value })}
+                                            style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', color: '#888' }}>Max Advance Booking (Days)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="Default: 3"
+                                        value={venueForm.advanceBookingDays || ''}
+                                        onChange={e => setVenueForm({ ...venueForm, advanceBookingDays: Number(e.target.value) })}
+                                        style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: '#666', margin: '5px 0 0 0' }}>Creating limit for how many days in advance customers can book.</p>
+                                </div>
                             </div>
 
                             <ImagePicker

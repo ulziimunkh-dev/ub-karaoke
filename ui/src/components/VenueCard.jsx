@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatDistance } from '../utils/geolocation';
 import { useLanguage } from '../contexts/LanguageContext';
+import { isVenueOpen } from '../utils/time';
 
 // Import local default images
 import default1 from '../assets/defaults/karaoke_standard.png';
@@ -53,12 +54,20 @@ const VenueCard = ({ venue, onBook, distance }) => {
         ? Math.max(...venue.rooms.map(r => r.capacity))
         : '?';
 
+    const isOpen = isVenueOpen(venue.openingHours);
+
     return (
-        <div className="venue-card">
+        <div className={`venue-card ${!isOpen ? 'closed' : ''}`}>
             <div className="card-image-wrapper">
-                <img src={featuredImage} alt={venue.name} className="card-image" />
+                <img src={featuredImage} alt={venue.name} className="card-image" style={!isOpen ? { filter: 'grayscale(100%)' } : {}} />
                 <div className="card-badge">{venue.district}</div>
                 {distance && <div className="distance-badge">{formatDistance(distance)} {t('away')}</div>}
+
+                {!isOpen && (
+                    <div className="closed-overlay">
+                        {t('closed')}
+                    </div>
+                )}
             </div>
             <div className="card-content">
                 <div className="card-header">
@@ -66,6 +75,24 @@ const VenueCard = ({ venue, onBook, distance }) => {
                     <div className="rating">⭐ {Number(venue.rating || 0).toFixed(1)}</div>
                 </div>
                 <p className="venue-address">{venue.address}</p>
+
+                {!isOpen && (
+                    <div style={{
+                        background: 'rgba(0, 0, 0, 0.05)',
+                        color: 'var(--text-secondary)',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        fontSize: '0.85rem',
+                        marginBottom: '10px',
+                        fontWeight: '500',
+                        border: '1px solid #ddd',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        🕒 {t('venueClosed')}
+                    </div>
+                )}
 
                 {venue.isBookingEnabled === false && (
                     <div style={{
@@ -93,10 +120,12 @@ const VenueCard = ({ venue, onBook, distance }) => {
                 </div>
 
                 <button
-                    className={`btn ${venue.isBookingEnabled === false ? 'btn-outline' : 'btn-primary'} full-width`}
+                    className={`btn ${venue.isBookingEnabled === false || !isOpen ? 'btn-outline' : 'btn-primary'} full-width`}
                     onClick={() => onBook(venue)}
+                    disabled={!isOpen && venue.isBookingEnabled !== false}
+                    style={!isOpen ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                 >
-                    {venue.isBookingEnabled === false ? t('viewDetails') : t('bookNow')}
+                    {venue.isBookingEnabled === false ? t('viewDetails') : (!isOpen ? t('closed') : t('bookNow'))}
                 </button>
             </div>
         </div>

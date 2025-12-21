@@ -65,6 +65,15 @@ export class Venue {
     @Column({ default: true })
     isBookingEnabled: boolean;
 
+    @Column({ nullable: true })
+    bookingWindowStart: string;
+
+    @Column({ nullable: true })
+    bookingWindowEnd: string;
+
+    @Column({ default: 3 })
+    advanceBookingDays: number;
+
     @CreateDateColumn()
     createdAt: Date;
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReviewSection from './ReviewSection';
 import { useLanguage } from '../contexts/LanguageContext';
 import defaultRoom from '../assets/defaults/karaoke_minimal.png';
@@ -9,16 +9,68 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [selectedRooms, setSelectedRooms] = useState([]);
 
     // Default Date: Today
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Calculate max advance booking date (Default 3 days or configured)
+    const maxDate = new Date();
+    maxDate.setDate(today.getDate() + (venue.advanceBookingDays || 3));
+    const maxDateStr = maxDate.toISOString().split('T')[0];
 
     const [bookingData, setBookingData] = useState({
-        date: today,
-        time: '20:00',
+        date: todayStr,
+        time: '',
         hours: 2,
         addOns: { birthday: false, decoration: false }
     });
 
     if (!venue) return null;
+
+    const generateTimeSlots = (start, end) => {
+        const slots = [];
+        let [startHour] = start.toString().split(':').map(Number);
+        let [endHour] = end.toString().split(':').map(Number);
+
+        // Handle overnight (e.g., 14:00 to 04:00)
+        let current = startHour;
+        const closing = endHour <= startHour ? endHour + 24 : endHour;
+
+        while (current < closing) {
+            const displayHour = current % 24;
+            const hourStr = displayHour.toString().padStart(2, '0') + ":00";
+            slots.push(hourStr);
+            current++;
+        }
+        return slots;
+    };
+
+    const getBookingTimeSlots = () => {
+        // 1. Explicit Booking Window (e.g. 16:00 - 22:00)
+        if (venue.bookingWindowStart && venue.bookingWindowEnd) {
+            return generateTimeSlots(venue.bookingWindowStart, venue.bookingWindowEnd);
+        }
+
+        // 2. Fallback to Opening Hours (e.g. 14:00 - 04:00)
+        if (venue.openingHours && typeof venue.openingHours === 'object') {
+            // Assuming daily opening hours are consistent or using Monday as simplified default
+            const dailyHours = venue.openingHours['Monday'] || "10:00-02:00";
+            const [start, end] = dailyHours.split('-');
+            if (start && end) return generateTimeSlots(start, end);
+        }
+
+        // 3. Last resort default
+        return generateTimeSlots('10:00', '02:00');
+    };
+
+    // Initialize default time
+    useEffect(() => {
+        const slots = getBookingTimeSlots();
+        if (slots.length > 0 && !bookingData.time) {
+            // Default to first available slot if not set
+            setBookingData(prev => ({ ...prev, time: slots[0] }));
+        }
+    }, [venue]);
+
 
     const toggleRoomSelection = (room) => {
         setSelectedRooms(prev => {
@@ -37,45 +89,13 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         }
     };
 
-    const generateTimeSlots = (start, end) => {
-        const slots = [];
-        let [startHour] = start.split(':').map(Number);
-        let [endHour] = end.split(':').map(Number);
-
-        // Handle overnight (e.g., 14:00 to 04:00)
-        let current = startHour;
-        const closing = endHour < startHour ? endHour + 24 : endHour;
-
-        while (current < closing) {
-            const displayHour = current % 24;
-            const hourStr = displayHour.toString().padStart(2, '0') + ":00";
-            slots.push(hourStr);
-            current++;
-        }
-        return slots;
-    };
-
     const getMaxDuration = (startTime) => {
-        if (!venue.openHours || !startTime) return 10;
-
-        let [startHour] = startTime.split(':').map(Number);
-        let [closeHour] = venue.openHours.end.split(':').map(Number);
-
-        // Handle overnight
-        if (closeHour < parseInt(venue.openHours.start.split(':')[0])) {
-            closeHour += 24;
-        }
-
-        if (startHour < parseInt(venue.openHours.start.split(':')[0])) {
-            startHour += 24;
-        }
-
-        const remaining = closeHour - startHour;
-        return Math.max(1, remaining);
+        // Simplified max duration logic for now (default 6h) or calculated from closing time
+        return 6;
     };
 
     // Calculate max allowed duration based on currently selected time
-    const maxAllowedDuration = bookingData.time ? getMaxDuration(bookingData.time) : 10;
+    const maxAllowedDuration = 6;
 
     const handleDetailsSubmit = (e) => {
         e.preventDefault();
@@ -252,6 +272,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             id="booking-date"
                                             type="date"
                                             required
+                                            min={todayStr}
+                                            max={maxDateStr}
                                             placeholder=" "
                                             value={bookingData.date}
                                             onChange={e => setBookingData({ ...bookingData, date: e.target.value })}
@@ -265,21 +287,17 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             value={bookingData.time}
                                             onChange={e => {
                                                 const newTime = e.target.value;
-                                                const max = getMaxDuration(newTime);
                                                 setBookingData({
                                                     ...bookingData,
-                                                    time: newTime,
-                                                    hours: Math.min(bookingData.hours, max)
+                                                    time: newTime
                                                 });
                                             }}
                                             className="time-select"
                                         >
                                             <option value="">{t('selectStartTime')}</option>
-                                            {venue.openHours ? generateTimeSlots(venue.openHours.start, venue.openHours.end).map(time => (
+                                            {getBookingTimeSlots().map(time => (
                                                 <option key={time} value={time}>{time}</option>
-                                            )) : (
-                                                <option value="18:00">18:00</option>
-                                            )}
+                                            ))}
                                         </select>
                                         <label htmlFor="booking-time">{t('time')}</label>
                                     </div>

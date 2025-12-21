@@ -769,3 +769,29 @@ button {
   background: rgba(0, 240, 255, 0.15);
   box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
+/* Closed Overlay */
+.closed-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+.venue-card.closed {
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.venue-card.closed:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.05);
+}

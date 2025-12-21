@@ -169,8 +169,8 @@ export async function seed() {
         const { rooms: roomsData, ...venueInfo } = venueData;
 
         const venueResult = await AppDataSource.query(
-            `INSERT INTO venues (name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, "isBookingEnabled")
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            `INSERT INTO venues (name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, "isBookingEnabled", "bookingWindowStart", "bookingWindowEnd", "advanceBookingDays")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
              RETURNING id`,
             [
                 venueInfo.name,
@@ -188,7 +188,10 @@ export async function seed() {
                 venueInfo.featuredImage,
                 venueInfo.latitude,
                 venueInfo.longitude,
-                true // isBookingEnabled
+                true, // isBookingEnabled
+                venueInfo.name === "Neon Nights Karaoke" ? "16:00" : null,
+                venueInfo.name === "Neon Nights Karaoke" ? "22:00" : null,
+                3 // advanceBookingDays default
             ]
         );
 
