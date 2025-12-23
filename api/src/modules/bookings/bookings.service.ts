@@ -5,18 +5,20 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Booking } from './entities/booking.entity';
+import { Booking, BookingStatus } from './entities/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class BookingsService {
     constructor(
         @InjectRepository(Booking)
         private bookingsRepository: Repository<Booking>,
+        private readonly auditService: AuditService,
     ) { }
 
-    async create(createBookingDto: CreateBookingDto): Promise<Booking> {
+    async create(createBookingDto: CreateBookingDto, userId?: number): Promise<Booking> {
         // Check for conflicts
         const conflicts = await this.checkTimeConflicts(
             createBookingDto.roomId,
@@ -31,9 +33,85 @@ export class BookingsService {
             );
         }
 
-        const booking = this.bookingsRepository.create(createBookingDto);
-        return this.bookingsRepository.save(booking);
+        const booking = this.bookingsRepository.create({
+            ...createBookingDto,
+            userId,
+            status: BookingStatus.PENDING, // Default to PENDING
+        });
+        const savedBooking = await this.bookingsRepository.save(booking);
+
+        if (userId) {
+            await this.auditService.log({
+                action: 'BOOKING_CREATED',
+                resource: 'Booking',
+                resourceId: savedBooking.id.toString(),
+                details: { ...createBookingDto },
+                userId,
+            });
+        }
+
+        return savedBooking;
     }
+
+    // Manual booking for Admin/Staff - Auto confirms
+    async createManual(createBookingDto: CreateBookingDto, adminId: number): Promise<Booking> {
+        const conflicts = await this.checkTimeConflicts(
+            createBookingDto.roomId,
+            createBookingDto.date,
+            createBookingDto.startTime,
+            createBookingDto.endTime,
+        );
+
+        if (conflicts.length > 0) {
+            throw new BadRequestException('Room is already booked.');
+        }
+
+        const booking = this.bookingsRepository.create({
+            ...createBookingDto,
+            status: BookingStatus.CONFIRMED,
+        });
+
+        const savedBooking = await this.bookingsRepository.save(booking);
+
+        await this.auditService.log({
+            action: 'BOOKING_MANUAL_CREATED',
+            resource: 'Booking',
+            resourceId: savedBooking.id.toString(),
+            details: { ...createBookingDto },
+            userId: adminId,
+        });
+
+        return savedBooking;
+    }
+
+    async approve(id: number, adminId: number): Promise<Booking> {
+        const booking = await this.findOne(id);
+        booking.status = BookingStatus.CONFIRMED;
+        const saved = await this.bookingsRepository.save(booking);
+
+        await this.auditService.log({
+            action: 'BOOKING_APPROVED',
+            resource: 'Booking',
+            resourceId: id.toString(),
+            userId: adminId,
+        });
+        return saved;
+    }
+
+    async reject(id: number, adminId: number): Promise<Booking> {
+        const booking = await this.findOne(id);
+        booking.status = BookingStatus.REJECTED;
+        const saved = await this.bookingsRepository.save(booking);
+
+        await this.auditService.log({
+            action: 'BOOKING_REJECTED',
+            resource: 'Booking',
+            resourceId: id.toString(),
+            userId: adminId,
+        });
+        return saved;
+    }
+
 
     async findAll(filters?: {
         userId?: number;
@@ -99,7 +177,8 @@ export class BookingsService {
             .createQueryBuilder('booking')
             .where('booking.roomId = :roomId', { roomId })
             .andWhere('booking.date = :date', { date })
-            .andWhere('booking.status != :status', { status: 'cancelled' })
+            .andWhere('booking.status != :status', { status: 'CANCELLED' }) // Check against CANCELLED enum string
+            .andWhere('booking.status != :rejected', { rejected: 'REJECTED' })
             .andWhere(
                 '(booking.startTime < :endTime AND booking.endTime > :startTime)',
                 { startTime, endTime },

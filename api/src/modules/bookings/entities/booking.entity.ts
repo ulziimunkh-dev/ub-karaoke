@@ -10,6 +10,20 @@ import {
 import { Room } from '../../rooms/entities/room.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 
+export enum BookingStatus {
+    PENDING = 'PENDING',
+    CONFIRMED = 'CONFIRMED',
+    CANCELLED = 'CANCELLED',
+    REJECTED = 'REJECTED',
+}
+
+export enum BookingPaymentStatus {
+    UNPAID = 'UNPAID',
+    PAID = 'PAID',
+    PARTIAL = 'PARTIAL',
+    REFUNDED = 'REFUNDED',
+}
+
 @Entity('bookings')
 export class Booking {
     @PrimaryGeneratedColumn()
@@ -39,8 +53,12 @@ export class Booking {
     @Column('decimal', { precision: 10, scale: 2 })
     totalPrice: number;
 
-    @Column({ default: 'pending' })
-    status: string;
+    @Column({
+        type: 'enum',
+        enum: BookingStatus,
+        default: BookingStatus.PENDING,
+    })
+    status: BookingStatus;
 
     @Column()
     customerName: string;
@@ -48,8 +66,12 @@ export class Booking {
     @Column()
     customerPhone: string;
 
-    @Column({ default: 'unpaid' })
-    paymentStatus: string;
+    @Column({
+        type: 'enum',
+        enum: BookingPaymentStatus,
+        default: BookingPaymentStatus.UNPAID,
+    })
+    paymentStatus: BookingPaymentStatus;
 
     @Column({ default: 'cash' })
     paymentMethod: string;

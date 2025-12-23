@@ -79,27 +79,43 @@ export const DataProvider = ({ children }) => {
     };
 
     // --- AUTH ---
+    const handleLoginSuccess = async (data) => {
+        setCurrentUser(data.user);
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        if (data.user.role === 'admin' || data.user.role === 'staff') {
+            try {
+                const usersData = await api.getUsers();
+                setUsers(usersData);
+            } catch (error) {
+                console.error('Failed to load users:', error);
+            }
+        }
+    };
+
     const login = async (identifier, password) => {
         try {
             const data = await api.login(identifier, password);
             setCurrentUser(data.user);
             localStorage.setItem('access_token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
-
-            // Load users if admin/staff
-            if (data.user.role === 'admin' || data.user.role === 'staff') {
-                try {
-                    const usersData = await api.getUsers();
-                    setUsers(usersData);
-                } catch (error) {
-                    console.error('Failed to load users:', error);
-                }
-            }
-
+            handleLoginSuccess(data);
             return data.user;
         } catch (error) {
             console.error('Login failed:', error);
             return null;
+        }
+    };
+
+    const loginWithOtp = async (identifier, code) => {
+        try {
+            const data = await api.loginWithOtp(identifier, code);
+            handleLoginSuccess(data);
+            return data.user;
+        } catch (error) {
+            console.error('OTP Login failed:', error);
+            throw error;
         }
     };
 
@@ -181,8 +197,46 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateBookingStatus = async (id, status) => {
-        // API call would go here
-        setBookings(prev => prev.map(b => (b.id === id ? { ...b, status } : b)));
+        try {
+            await api.updateBooking(id, { status });
+            setBookings(prev => prev.map(b => (b.id === id ? { ...b, status } : b)));
+        } catch (error) {
+            console.error('Failed to update booking status:', error);
+            throw error;
+        }
+    };
+
+    const approveBooking = async (id) => {
+        try {
+            const updated = await api.approveBooking(id);
+            setBookings(prev => prev.map(b => (b.id === id ? updated : b)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to approve booking:', error);
+            throw error;
+        }
+    };
+
+    const rejectBooking = async (id) => {
+        try {
+            const updated = await api.rejectBooking(id);
+            setBookings(prev => prev.map(b => (b.id === id ? updated : b)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to reject booking:', error);
+            throw error;
+        }
+    };
+
+    const createManualBooking = async (bookingData) => {
+        try {
+            const newBooking = await api.createManualBooking(bookingData);
+            setBookings(prev => [newBooking, ...prev]);
+            return newBooking;
+        } catch (error) {
+            console.error('Failed to create manual booking:', error);
+            throw error;
+        }
     };
 
     // --- CALCULATIONS ---
@@ -324,7 +378,16 @@ export const DataProvider = ({ children }) => {
     };
 
     // User management mock functions
-    const addUser = userData => { };
+    const addUser = async (userData) => {
+        try {
+            const newUser = await api.createUser(userData);
+            setUsers(prev => [newUser, ...prev]);
+            return newUser;
+        } catch (error) {
+            console.error('Failed to add user:', error);
+            throw error;
+        }
+    };
     const updateUser = (id, updates) => { };
     const toggleUserStatus = id => { };
     const transactions = [];
@@ -357,6 +420,11 @@ export const DataProvider = ({ children }) => {
                 login,
                 logout,
                 registerCustomer,
+                loginWithOtp,
+                verifyAccount: api.verifyAccount,
+                requestLoginOtp: api.requestLoginOtp,
+                forgotPassword: api.forgotPassword,
+                resetPassword: api.resetPassword,
                 updateProfile,
                 addUser,
                 updateUser,
@@ -364,6 +432,9 @@ export const DataProvider = ({ children }) => {
                 bookings,
                 addBooking,
                 updateBookingStatus,
+                approveBooking,
+                rejectBooking,
+                createManualBooking,
                 processRefund,
                 calculateTotal,
                 addOrder,

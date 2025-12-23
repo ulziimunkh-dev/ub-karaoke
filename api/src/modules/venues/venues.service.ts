@@ -7,6 +7,8 @@ import { Venue } from './entities/venue.entity';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 
+import { AuditService } from '../audit/audit.service';
+
 @Injectable()
 export class VenuesService {
     constructor(
@@ -14,12 +16,21 @@ export class VenuesService {
         private venuesRepository: Repository<Venue>,
         @Inject(CACHE_MANAGER)
         private cacheManager: Cache,
+        private auditService: AuditService,
     ) { }
 
     async create(createVenueDto: CreateVenueDto): Promise<Venue> {
         const venue = this.venuesRepository.create(createVenueDto);
         const saved = await this.venuesRepository.save(venue);
         await this.cacheManager.del('venues:all');
+
+        await this.auditService.log({
+            action: 'VENUE_CREATED',
+            resource: 'Venue',
+            resourceId: saved.id.toString(),
+            details: { name: saved.name }
+        });
+
         return saved;
     }
 
@@ -90,6 +101,14 @@ export class VenuesService {
         const updated = await this.venuesRepository.save(venue);
         await this.cacheManager.del(`venue:${id}`);
         await this.cacheManager.del('venues:all');
+
+        await this.auditService.log({
+            action: 'VENUE_UPDATED',
+            resource: 'Venue',
+            resourceId: id.toString(),
+            details: updateVenueDto
+        });
+
         return updated;
     }
 
@@ -98,5 +117,12 @@ export class VenuesService {
         await this.venuesRepository.remove(venue);
         await this.cacheManager.del(`venue:${id}`);
         await this.cacheManager.del('venues:all');
+
+        await this.auditService.log({
+            action: 'VENUE_DELETED',
+            resource: 'Venue',
+            resourceId: id.toString(),
+            details: { name: venue.name }
+        });
     }
 }

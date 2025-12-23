@@ -21,7 +21,7 @@ export class User {
     @Column({ unique: true })
     email: string;
 
-    @Column({ unique: true, nullable: true })
+    @Column({ unique: true })
     username: string;
 
     @Column()
@@ -30,8 +30,23 @@ export class User {
     @Column()
     name: string;
 
-    @Column({ nullable: true })
+    @Column({ unique: true })
     phone: string;
+
+    @Column({ default: false })
+    isVerified: boolean;
+
+    @Column({ type: 'varchar', nullable: true })
+    verificationCode: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    verificationCodeExpires: Date | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    resetToken: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    resetTokenExpires: Date | null;
 
     @Column({
         type: 'enum',

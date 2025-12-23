@@ -9,6 +9,8 @@ import Reports from '../components/admin/Reports';
 import Finance from '../components/admin/Finance';
 import StaffPortal from '../components/StaffPortal';
 
+import AuditLogViewer from '../components/staff/AuditLogViewer';
+
 const AdminPage = () => {
     const { currentUser, login, logout } = useData();
     const { language, toggleLanguage, t } = useLanguage();
@@ -79,6 +81,7 @@ const AdminPage = () => {
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         { id: 'venues', label: 'Venues & Rooms', icon: '🏢' },
         { id: 'users', label: 'Staff Users', icon: '👥' },
+        { id: 'audit', label: 'Audit Logs', icon: '📋' },
         { id: 'reports', label: 'Reports', icon: '📈' },
         { id: 'finance', label: 'Finance', icon: '💰' },
         { id: 'settings', label: 'Settings', icon: '⚙️' }
@@ -131,6 +134,7 @@ const AdminPage = () => {
                 {activeTab === 'dashboard' && <AdminDashboard />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'audit' && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
                 {activeTab === 'finance' && <Finance />}
                 {activeTab === 'settings' && <SystemSettings />}

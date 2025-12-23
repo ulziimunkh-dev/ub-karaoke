@@ -240,7 +240,7 @@ const dictionaries = {
         phone: "Утас",
         emailPlaceholder: "И-мэйл хаяг",
         phonePlaceholder: "Утасны дугаар",
-        loginPlaceholder: "Нэвтрэх нэр, И-мэйл, Утас",
+        loginPlaceholder: "И-мэйл/Утас",
         passwordPlaceholder: "Нууц үг",
         noAccount: "Бүртгэлгүй юу? ",
         hasAccount: "Бүртгэлтэй юу? ",

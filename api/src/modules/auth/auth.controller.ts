@@ -16,6 +16,31 @@ export class AuthController {
         return this.authService.signup(signupDto);
     }
 
+    @Post('verify')
+    async verify(@Body('code') code: string) {
+        return this.authService.verifyAccount(code);
+    }
+
+    @Post('login-otp-request')
+    async requestOtp(@Body('identifier') identifier: string) {
+        return this.authService.requestLoginOtp(identifier);
+    }
+
+    @Post('login-otp')
+    async loginOtp(@Body('identifier') identifier: string, @Body('code') code: string) {
+        return this.authService.loginWithOtp(identifier, code);
+    }
+
+    @Post('forgot-password')
+    async forgotPassword(@Body('email') email: string) {
+        return this.authService.forgotPassword(email);
+    }
+
+    @Post('reset-password')
+    async resetPassword(@Body('token') token: string, @Body('password') password: string) {
+        return this.authService.resetPassword(token, password);
+    }
+
     @Post('login')
     @ApiOperation({ summary: 'Login with email and password' })
     async login(@Body() loginDto: LoginDto) {
