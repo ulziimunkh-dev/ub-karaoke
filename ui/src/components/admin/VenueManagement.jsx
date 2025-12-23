@@ -100,7 +100,6 @@ const VenueManagement = () => {
             description: '',
             phone: '',
             priceRange: '$$',
-            priceRange: '$$',
             featuredImage: imgStandard,
             bookingWindowStart: '',
             bookingWindowEnd: '',
@@ -156,7 +155,6 @@ const VenueManagement = () => {
         const venueData = {
             name: venueForm.name,
             district: venueForm.district,
-            address: venueForm.address,
             description: venueForm.description || "Premium karaoke experience in Ulaanbaatar.",
             phone: venueForm.phone || "+976 99000000",
             priceRange: venueForm.priceRange,
