@@ -14,7 +14,7 @@ export enum PaymentMethod {
     ONLINE = 'ONLINE', // Mock online
 }
 
-@Entity()
+@Entity('payments')
 export class Payment {
     @PrimaryGeneratedColumn()
     id: number;

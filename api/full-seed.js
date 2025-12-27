@@ -19,15 +19,30 @@ async function run() {
         console.log('✅ Connected to:', client.database, 'PID:', pidRes.rows[0].pg_backend_pid);
 
         // Note: With TypeORM synchronize: true, tables are created automatically by the backend.
-        // We just need to clear existing data before seeding.
+        // We will try to truncate only the tables that exist.
         console.log('🗑️ Clearing existing data...');
-        try {
-            await client.query('TRUNCATE TABLE organizations, staff, users, venues, rooms, bookings, payments, reviews, audit_logs CASCADE');
-            console.log('✅ Data cleared');
-        } catch (err) {
-            console.warn('⚠️ Could not truncate tables. They might not exist yet. Please ensure the NestJS backend has started at least once.');
-            console.error('Error detail:', err.message);
-            // Don't exit here, maybe the tables will be created by the app soon
+        const tables = ['organizations', 'staff', 'users', 'venues', 'rooms', 'bookings', 'payments', 'reviews', 'audit_logs'];
+
+        for (const table of tables) {
+            try {
+                // Check if table exists before truncating
+                const checkRes = await client.query(`
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = $1
+                    );
+                `, [table]);
+
+                if (checkRes.rows[0].exists) {
+                    await client.query(`TRUNCATE TABLE ${table} CASCADE`);
+                    console.log(`  ✅ Cleared: ${table}`);
+                } else {
+                    console.warn(`  ⏩ Skipping: ${table} (Table does not exist yet)`);
+                }
+            } catch (err) {
+                console.error(`  ❌ Error clearing ${table}:`, err.message);
+            }
         }
 
         // 1. Organizations
