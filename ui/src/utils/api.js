@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001';
+const getApiUrl = () => {
+    // If we're on a mobile device or another machine, we need to point to the server's IP
+    // window.location.hostname will be the IP of the server when accessed from another device
+    const hostname = window.location.hostname;
+    return `http://${hostname}:3001`;
+};
+
+const API_URL = getApiUrl();
 
 const apiInstance = axios.create({
     baseURL: API_URL,

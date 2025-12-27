@@ -33,7 +33,6 @@ export class VenuesController {
     @ApiQuery({ name: 'priceRange', required: false })
     @ApiQuery({ name: 'search', required: false })
     @ApiQuery({ name: 'organizationId', required: false })
-    @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     findAll(
         @Req() req: any,

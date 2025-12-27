@@ -35,8 +35,8 @@ async function run() {
                 `, [table]);
 
                 if (checkRes.rows[0].exists) {
-                    await client.query(`TRUNCATE TABLE ${table} CASCADE`);
-                    console.log(`  ✅ Cleared: ${table}`);
+                    await client.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
+                    console.log(`  ✅ Cleared & Reset: ${table}`);
                 } else {
                     console.warn(`  ⏩ Skipping: ${table} (Table does not exist yet)`);
                 }
