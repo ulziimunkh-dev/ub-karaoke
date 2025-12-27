@@ -11,6 +11,12 @@ export const DataProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [bookings, setBookings] = useState([]);
     const [users, setUsers] = useState([]);
+    const [organizations, setOrganizations] = useState([]);
+    const [activeVenueId, _setActiveVenueId] = useState(null);
+    const setActiveVenueId = (id) => {
+        _setActiveVenueId(id);
+        if (id) localStorage.setItem('activeVenueId', id);
+    };
     const [loading, setLoading] = useState(true);
 
     // Load initial data
@@ -56,13 +62,47 @@ export const DataProvider = ({ children }) => {
                     const userData = await api.getProfile();
                     setCurrentUser(userData);
 
-                    // Load users if admin
-                    if (userData.role === 'admin' || userData.role === 'staff') {
+                    // Load organization-specific data
+                    if (userData.role === 'sysadmin') {
                         try {
+                            const orgsData = await api.getOrganizations();
+                            setOrganizations(orgsData);
                             const usersData = await api.getUsers();
                             setUsers(usersData);
+                            const bookingsData = await api.getBookings(); // Global for sysadmin
+                            setBookings(bookingsData);
                         } catch (error) {
-                            console.error('Failed to load users:', error);
+                            console.error('Failed to load sysadmin data:', error);
+                        }
+                    } else if (userData.role === 'manager' || userData.role === 'staff') {
+                        try {
+                            const staffData = await api.getStaff(); // Get staff for their org
+                            setUsers(staffData);
+
+                            const bookingsData = await api.getBookings({ organizationId: userData.organizationId });
+                            setBookings(bookingsData);
+
+                            // Set activeVenueId to the first venue of the organization
+                            const orgVenues = processedVenues.filter(v => v.organizationId === userData.organizationId);
+                            if (orgVenues.length > 0) {
+                                // Prefer previously selected if it still belongs to this org, otherwise first one
+                                const savedVenueId = localStorage.getItem('activeVenueId');
+                                if (savedVenueId && orgVenues.some(v => v.id === parseInt(savedVenueId))) {
+                                    setActiveVenueId(parseInt(savedVenueId));
+                                } else {
+                                    setActiveVenueId(orgVenues[0].id);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Failed to load manager/staff data:', error);
+                        }
+                    } else {
+                        // Regular user/customer - maybe load their own bookings?
+                        try {
+                            const myBookings = await api.getBookings(); // Backend should filter for current user
+                            setBookings(myBookings);
+                        } catch (error) {
+                            console.error('Failed to load customer bookings:', error);
                         }
                     }
                 } catch (error) {
@@ -84,12 +124,35 @@ export const DataProvider = ({ children }) => {
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
 
-        if (data.user.role === 'admin' || data.user.role === 'staff') {
+        if (data.user.role === 'sysadmin') {
             try {
-                const usersData = await api.getUsers();
+                const [orgsData, usersData] = await Promise.all([
+                    api.getOrganizations(),
+                    api.getUsers()
+                ]);
+                setOrganizations(orgsData);
                 setUsers(usersData);
             } catch (error) {
-                console.error('Failed to load users:', error);
+                console.error('Failed to load sysadmin data:', error);
+            }
+        } else if (data.user.role === 'manager' || data.user.role === 'staff') {
+            try {
+                const staffData = await api.getStaff();
+                setUsers(staffData);
+
+                // Refresh venues to ensure org-scoped if necessary (though already fetched globally in loadInitialData for now)
+                // Set activeVenueId
+                const orgVenues = venues.filter(v => v.organizationId === data.user.organizationId);
+                if (orgVenues.length > 0) {
+                    const savedVenueId = localStorage.getItem('activeVenueId');
+                    if (savedVenueId && orgVenues.some(v => v.id === parseInt(savedVenueId))) {
+                        setActiveVenueId(parseInt(savedVenueId));
+                    } else {
+                        setActiveVenueId(orgVenues[0].id);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load manager/staff data:', error);
             }
         }
     };
@@ -388,7 +451,19 @@ export const DataProvider = ({ children }) => {
             throw error;
         }
     };
-    const updateUser = (id, updates) => { 
+
+    const addStaff = async (staffData) => {
+        try {
+            const newStaff = await api.createStaff(staffData);
+            setUsers(prev => [newStaff, ...prev]);
+            return newStaff;
+        } catch (error) {
+            console.error('Failed to add staff:', error);
+            throw error;
+        }
+    };
+
+    const updateUser = (id, updates) => {
         try {
             setUsers(prev =>
                 prev.map(u => {
@@ -405,13 +480,23 @@ export const DataProvider = ({ children }) => {
             throw error;
         }
     };
-    const toggleUserStatus = id => { 
+    const toggleUserStatus = (id, role) => {
         try {
             setUsers(prev =>
                 prev.map(u => {
                     if (u.id === id) {
                         const updatedUser = { ...u, isActive: !u.isActive };
-                        api.toggleUserStatus(id, { isActive: updatedUser.isActive });
+                        if (role === 'customer') {
+                            api.toggleUserStatus(id, { isActive: updatedUser.isActive });
+                        } else {
+                            // For staff, if deactivating, use deleteStaff (deactivate endpoint)
+                            // If activating, use updateStaff
+                            if (!updatedUser.isActive) {
+                                api.deleteStaff(id);
+                            } else {
+                                api.updateStaff(id, { isActive: true });
+                            }
+                        }
                         return updatedUser;
                     }
                     return u;
@@ -422,6 +507,8 @@ export const DataProvider = ({ children }) => {
             throw error;
         }
     };
+
+    const toggleStaffStatus = (id) => toggleUserStatus(id, 'staff');
     const transactions = [];
     const settings = {
         taxRate: 0.1,
@@ -449,6 +536,10 @@ export const DataProvider = ({ children }) => {
                 updateRoomStatus,
                 users,
                 currentUser,
+                organizations,
+                setOrganizations,
+                activeVenueId,
+                setActiveVenueId,
                 login,
                 logout,
                 registerCustomer,
@@ -459,8 +550,10 @@ export const DataProvider = ({ children }) => {
                 resetPassword: api.resetPassword,
                 updateProfile,
                 addUser,
+                addStaff,
                 updateUser,
                 toggleUserStatus,
+                toggleStaffStatus,
                 bookings,
                 addBooking,
                 updateBookingStatus,
@@ -475,7 +568,8 @@ export const DataProvider = ({ children }) => {
                 settings,
                 setSettings,
                 promos,
-                verifyPromoCode
+                verifyPromoCode,
+                refreshData: loadInitialData
             }}
         >
             {children}

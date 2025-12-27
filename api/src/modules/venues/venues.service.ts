@@ -38,6 +38,7 @@ export class VenuesService {
         district?: string;
         priceRange?: string;
         search?: string;
+        organizationId?: number;
     }): Promise<Venue[]> {
         const cacheKey = `venues:all:${JSON.stringify(filters || {})}`;
         const cached = await this.cacheManager.get<Venue[]>(cacheKey);
@@ -67,6 +68,12 @@ export class VenuesService {
                 '(venue.name LIKE :search OR venue.description LIKE :search)',
                 { search: `%${filters.search}%` },
             );
+        }
+
+        if (filters?.organizationId) {
+            query.andWhere('venue.organization_id = :organizationId', {
+                organizationId: filters.organizationId,
+            });
         }
 
         const venues = await query.getMany();

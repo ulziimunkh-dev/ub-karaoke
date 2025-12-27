@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Booking } from '../../bookings/entities/booking.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 
 export enum PaymentStatus {
     PENDING = 'PENDING',
@@ -38,16 +39,26 @@ export class Payment {
     })
     method: PaymentMethod;
 
-    @Column({ nullable: true })
+    @Column({ name: 'transactionId', nullable: true })
     transactionId: string;
 
     @ManyToOne(() => Booking, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'bookingId' })
     booking: Booking;
 
-    @Column({ nullable: true })
+    @Column({ name: 'bookingId', nullable: true })
     bookingId: number;
 
-    @CreateDateColumn()
+    @ManyToOne(() => Organization)
+    @JoinColumn({ name: 'organization_id' })
+    organization: Organization;
+
+    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    organizationId: number;
+
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
+
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 }

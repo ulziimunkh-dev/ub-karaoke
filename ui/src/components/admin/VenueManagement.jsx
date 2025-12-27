@@ -51,7 +51,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom } = useData();
+    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, currentUser, organizations } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -69,7 +69,8 @@ const VenueManagement = () => {
         featuredImage: imgStandard,
         bookingWindowStart: '',
         bookingWindowEnd: '',
-        advanceBookingDays: 3
+        advanceBookingDays: 3,
+        organizationId: currentUser.role === 'manager' ? currentUser.organizationId : ''
     });
 
     // Room Modal State
@@ -131,7 +132,8 @@ const VenueManagement = () => {
             featuredImage: venue.featuredImage || venue.image || imgStandard,
             bookingWindowStart: venue.bookingWindowStart || '',
             bookingWindowEnd: venue.bookingWindowEnd || '',
-            advanceBookingDays: venue.advanceBookingDays || 3
+            advanceBookingDays: venue.advanceBookingDays || 3,
+            organizationId: venue.organizationId || ''
         });
         setIsVenueModalOpen(true);
     };
@@ -158,10 +160,11 @@ const VenueManagement = () => {
             phone: venueForm.phone || "+976 99000000",
             priceRange: venueForm.priceRange,
             openingHours: openingHoursObj,
-            amenities: [],
-            images: [venueForm.featuredImage],
+            address: venueForm.address,
+            organizationId: venueForm.organizationId || currentUser.organizationId,
+            amenities: JSON.stringify(["WiFi", "AC", "Premium sound"]),
+            images: JSON.stringify([venueForm.featuredImage]),
             featuredImage: venueForm.featuredImage,
-            address: venueForm.address || "Ulaanbaatar, Mongolia",
             bookingWindowStart: venueForm.bookingWindowStart || null,
             bookingWindowEnd: venueForm.bookingWindowEnd || null,
             advanceBookingDays: venueForm.advanceBookingDays || 3
@@ -278,6 +281,10 @@ const VenueManagement = () => {
         );
     };
 
+    const displayVenues = currentUser.role === 'sysadmin'
+        ? venues
+        : venues.filter(v => v.organizationId === currentUser.organizationId);
+
 
     return (
         <div>
@@ -289,18 +296,18 @@ const VenueManagement = () => {
                 <Button
                     onClick={openAddVenue}
                     className="h-11 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center gap-2"
-                    >
+                >
                     {t('addBranch')}
-                    </Button>
+                </Button>
             </div>
 
             <div className="grid gap-4">
-                {venues.length === 0 && (
+                {displayVenues.length === 0 && (
                     <div className="text-center text-gray-500 py-8">
                         <p>No venues found. Add a new branch to get started.</p>
                     </div>
                 )}
-                {venues.map(venue => {
+                {displayVenues.map(venue => {
                     // Safe render openHours
                     const openHoursDisplay = typeof venue.openHours === 'object'
                         ? `${venue.openHours.start} - ${venue.openHours.end}`
@@ -418,17 +425,23 @@ const VenueManagement = () => {
                         onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
                     />
 
-                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-2">
-                        <Button
-                            type="button"
-                            label="Cancel"
-                            outlined
-                            onClick={() => setIsVenueModalOpen(false)}
-                        />
-                        <Button
-                            type="submit"
-                            label={t('save')}
-                        />
+                    {currentUser.role === 'sysadmin' && (
+                        <div className="field grid grid-cols-1">
+                            <label htmlFor="organization" className="block text-sm font-semibold text-text-muted mb-2">Organization</label>
+                            <Dropdown
+                                id="organization"
+                                value={venueForm.organizationId}
+                                options={organizations.map(org => ({ label: org.name, value: org.id }))}
+                                onChange={e => setVenueForm({ ...venueForm, organizationId: e.value })}
+                                placeholder="Select Organization"
+                                className="w-full h-10 bg-white border-0 rounded-lg text-sm"
+                                required
+                            />
+                        </div>
+                    )}
+                    <div className="flex justify-end gap-3 mt-8">
+                        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setIsVenueModalOpen(false)} className="h-10 px-6" />
+                        <Button label={editingVenue ? "Update Venue" : "Create Venue"} icon="pi pi-check" type="submit" className="h-10 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold" />
                     </div>
                 </form>
             </Dialog>

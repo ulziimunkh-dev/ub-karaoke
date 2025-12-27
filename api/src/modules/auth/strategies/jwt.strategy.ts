@@ -1,11 +1,19 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService } from '../auth.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../entities/user.entity';
+import { Staff } from '../../staff/entities/staff.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private authService: AuthService) {
+    constructor(
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
+        @InjectRepository(Staff)
+        private staffRepository: Repository<Staff>,
+    ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
@@ -14,10 +22,31 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: any) {
-        const user = await this.authService.validateUser(payload.sub);
-        if (!user) {
+        const { sub, userType, organizationId, role } = payload;
+
+        let user;
+        if (userType === 'staff') {
+            user = await this.staffRepository.findOne({
+                where: { id: sub },
+                relations: ['organization']
+            });
+        } else {
+            user = await this.usersRepository.findOne({
+                where: { id: sub }
+            });
+        }
+
+        if (!user || !user.isActive) {
             throw new UnauthorizedException();
         }
-        return user;
+
+        return {
+            id: user.id,
+            email: user.email,
+            role,
+            organizationId,
+            userType,
+            organization: userType === 'staff' ? (user as Staff).organization : null
+        };
     }
 }

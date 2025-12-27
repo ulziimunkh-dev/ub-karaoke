@@ -14,6 +14,8 @@ import { UsersModule } from './modules/users/users.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { StaffModule } from './modules/staff/staff.module';
 
 @Module({
   imports: [
@@ -30,8 +32,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // TODO: Set to false in production
-        logging: true,
+        synchronize: false, // Set to false to avoid clashing with manual schema
+        logging: false,
       }),
       inject: [ConfigService],
     }),
@@ -55,6 +57,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AuditModule,
     PaymentsModule,
     NotificationsModule,
+    OrganizationsModule,
+    StaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

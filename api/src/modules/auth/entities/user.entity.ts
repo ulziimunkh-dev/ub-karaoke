@@ -8,9 +8,6 @@ import {
 
 export enum UserRole {
     CUSTOMER = 'customer',
-    USER = 'user',
-    ADMIN = 'admin',
-    STAFF = 'staff',
 }
 
 @Entity('users')
@@ -33,21 +30,6 @@ export class User {
     @Column({ unique: true })
     phone: string;
 
-    @Column({ default: false })
-    isVerified: boolean;
-
-    @Column({ type: 'varchar', nullable: true })
-    verificationCode: string | null;
-
-    @Column({ type: 'timestamp', nullable: true })
-    verificationCodeExpires: Date | null;
-
-    @Column({ type: 'varchar', nullable: true })
-    resetToken: string | null;
-
-    @Column({ type: 'timestamp', nullable: true })
-    resetTokenExpires: Date | null;
-
     @Column({
         type: 'enum',
         enum: UserRole,
@@ -55,15 +37,15 @@ export class User {
     })
     role: UserRole;
 
-    @Column({ default: 0 })
+    @Column({ name: 'loyalty_points', default: 0 })
     loyaltyPoints: number;
 
-    @Column({ default: true })
+    @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }

@@ -5,11 +5,24 @@ import AuditLogViewer from './staff/AuditLogViewer';
 import PaymentHistory from './staff/PaymentHistory';
 
 const StaffPortal = () => {
-    const { venues, bookings, updateRoomStatus, updateBookingStatus, updateVenue, addOrder, currentUser, logout } = useData();
-    const [selectedVenueId, setSelectedVenueId] = useState(venues[0]?.id);
+    const { venues, bookings, updateRoomStatus, updateBookingStatus, updateVenue, addOrder, currentUser, logout, activeVenueId, setActiveVenueId } = useData();
+
+    // Filter venues for this organization if staff
+    const orgVenues = currentUser.role === 'sysadmin' ? venues : venues.filter(v => v.organizationId === currentUser.organizationId);
+
+    const [selectedVenueId, setSelectedVenueId] = useState(activeVenueId || orgVenues[0]?.id);
     const [selectedRoom, setSelectedRoom] = useState(null); // { venueId, room }
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('pos'); // pos, bookings, sales, audit
+
+    // Update global activeVenueId when local select changes
+    const onVenueChange = (id) => {
+        setSelectedVenueId(id);
+        if (typeof setActiveVenueId === 'function') {
+            setActiveVenueId(id);
+        }
+    };
+
 
     // Action Modal State
     const [activeBooking, setActiveBooking] = useState(null);
@@ -91,10 +104,10 @@ const StaffPortal = () => {
                     <div style={{ display: 'flex', gap: '15px' }}>
                         <select
                             value={selectedVenueId}
-                            onChange={e => setSelectedVenueId(Number(e.target.value))}
+                            onChange={e => onVenueChange(Number(e.target.value))}
                             style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
                         >
-                            {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                            {orgVenues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                         </select>
                         <button onClick={logout} className="btn btn-outline" style={{ fontSize: '0.9rem' }}>Logout</button>
                     </div>

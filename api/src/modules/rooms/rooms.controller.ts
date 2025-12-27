@@ -7,11 +7,14 @@ import {
     Param,
     Delete,
     Query,
+    UseGuards,
+    Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('rooms')
 @Controller('rooms')
@@ -29,15 +32,27 @@ export class RoomsController {
     @ApiQuery({ name: 'venueId', required: false })
     @ApiQuery({ name: 'isVIP', required: false })
     @ApiQuery({ name: 'minCapacity', required: false })
+    @ApiQuery({ name: 'organizationId', required: false })
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
     findAll(
+        @Req() req: any,
         @Query('venueId') venueId?: string,
         @Query('isVIP') isVIP?: string,
         @Query('minCapacity') minCapacity?: string,
+        @Query('organizationId') organizationId?: string,
     ) {
+        let orgId = organizationId ? +organizationId : undefined;
+
+        if (req.user && (req.user.role === 'manager' || req.user.role === 'staff')) {
+            orgId = req.user.organizationId;
+        }
+
         return this.roomsService.findAll({
             venueId: venueId ? +venueId : undefined,
             isVIP: isVIP ? isVIP === 'true' : undefined,
             minCapacity: minCapacity ? +minCapacity : undefined,
+            organizationId: orgId,
         });
     }
 

@@ -24,11 +24,11 @@ export const api = {
         return response.data;
     },
     signup: async (userData) => {
-        const response = await apiInstance.post('/auth/register', userData);
+        const response = await apiInstance.post('/auth/signup', userData);
         return response.data;
     },
     getProfile: async () => {
-        const response = await apiInstance.get('/auth/profile');
+        const response = await apiInstance.get('/auth/me');
         return response.data;
     },
     updateProfile: async (data) => {
@@ -73,8 +73,9 @@ export const api = {
     },
 
     // Venues
-    getVenues: async () => {
-        const response = await apiInstance.get('/venues');
+    getVenues: async (filters = {}) => {
+        const params = new URLSearchParams(filters).toString();
+        const response = await apiInstance.get(`/venues${params ? '?' + params : ''}`);
         return response.data;
     },
     getVenue: async (id) => {
@@ -148,6 +149,42 @@ export const api = {
     },
     createPayment: async (data) => {
         const response = await apiInstance.post('/payments', data);
+        return response.data;
+    },
+
+    // Organizations
+    getOrganizations: async () => {
+        const response = await apiInstance.get('/organizations');
+        return response.data;
+    },
+    createOrganization: async (data) => {
+        const response = await apiInstance.post('/organizations', data);
+        return response.data;
+    },
+    getOrganization: async (id) => {
+        const response = await apiInstance.get(`/organizations/${id}`);
+        return response.data;
+    },
+    updateOrganization: async (id, data) => {
+        const response = await apiInstance.patch(`/organizations/${id}`, data);
+        return response.data;
+    },
+
+    // Staff
+    getStaff: async () => {
+        const response = await apiInstance.get('/staff');
+        return response.data;
+    },
+    createStaff: async (data) => {
+        const response = await apiInstance.post('/staff', data);
+        return response.data;
+    },
+    updateStaff: async (id, data) => {
+        const response = await apiInstance.patch(`/staff/${id}`, data);
+        return response.data;
+    },
+    deleteStaff: async (id) => {
+        const response = await apiInstance.delete(`/staff/${id}`);
         return response.data;
     },
 };

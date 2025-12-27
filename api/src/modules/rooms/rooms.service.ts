@@ -21,6 +21,7 @@ export class RoomsService {
         venueId?: number;
         isVIP?: boolean;
         minCapacity?: number;
+        organizationId?: number;
     }): Promise<Room[]> {
         const query = this.roomsRepository.createQueryBuilder('room');
 
@@ -35,6 +36,12 @@ export class RoomsService {
         if (filters?.minCapacity) {
             query.andWhere('room.capacity >= :minCapacity', {
                 minCapacity: filters.minCapacity,
+            });
+        }
+
+        if (filters?.organizationId) {
+            query.andWhere('room.organization_id = :organizationId', {
+                organizationId: filters.organizationId,
             });
         }
 

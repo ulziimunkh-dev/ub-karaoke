@@ -82,7 +82,7 @@ const LoginModal = ({ onClose }) => {
     };
 
     const handleUserRouting = (user) => {
-        if (user.role === 'admin' || user.role === 'staff' || user.role === 'customer') {
+        if (user.role === 'sysadmin' || user.role === 'manager' || user.role === 'staff' || user.role === 'customer') {
             onClose();
         } else {
             onClose();

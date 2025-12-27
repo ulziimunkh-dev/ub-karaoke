@@ -5,9 +5,12 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 import { Room } from '../../rooms/entities/room.entity';
 import { Review } from '../../reviews/entities/review.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
 
 @Entity('venues')
 export class Venue {
@@ -32,28 +35,25 @@ export class Venue {
     @Column({ nullable: true })
     email: string;
 
-    @Column({ nullable: true })
-    website: string;
-
-    @Column()
+    @Column({ name: 'priceRange', nullable: true })
     priceRange: string;
 
     @Column('decimal', { precision: 3, scale: 2, default: 0 })
     rating: number;
 
-    @Column({ default: 0 })
+    @Column({ name: 'totalReviews', default: 0 })
     totalReviews: number;
 
-    @Column('simple-json')
+    @Column('jsonb', { name: 'amenities' })
     amenities: string[];
 
-    @Column('simple-json')
+    @Column('jsonb', { name: 'openingHours' })
     openingHours: Record<string, string>;
 
-    @Column('simple-json')
+    @Column('jsonb', { name: 'images' })
     images: string[];
 
-    @Column({ nullable: true })
+    @Column({ name: 'featuredImage', nullable: true })
     featuredImage: string;
 
     @Column('decimal', { precision: 10, scale: 7, nullable: true })
@@ -62,23 +62,30 @@ export class Venue {
     @Column('decimal', { precision: 10, scale: 7, nullable: true })
     longitude: number;
 
-    @Column({ default: true })
+    @Column({ name: 'isBookingEnabled', default: true })
     isBookingEnabled: boolean;
 
-    @Column({ nullable: true })
+    @Column({ name: 'bookingWindowStart', nullable: true })
     bookingWindowStart: string;
 
-    @Column({ nullable: true })
+    @Column({ name: 'bookingWindowEnd', nullable: true })
     bookingWindowEnd: string;
 
-    @Column({ default: 3 })
+    @Column({ name: 'advanceBookingDays', default: 3 })
     advanceBookingDays: number;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @ManyToOne(() => Organization, org => org.venues)
+    @JoinColumn({ name: 'organization_id' })
+    organization: Organization;
+
+    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    organizationId: number;
 
     @OneToMany(() => Room, (room) => room.venue)
     rooms: Room[];

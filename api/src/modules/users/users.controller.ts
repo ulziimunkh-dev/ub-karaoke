@@ -19,9 +19,10 @@ export class UsersController {
     @Post()
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    // @Roles('admin')
     @ApiOperation({ summary: 'Create new user (admin only)' })
     async create(@Req() req: any, @Body() createUserDto: any) {
-        if (req.user.role !== 'admin') {
+        if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only admins can create users');
         }
 
@@ -38,7 +39,6 @@ export class UsersController {
             ...createUserDto,
             password: hashedPassword,
             isActive: true, // Auto-activate staff created by admin
-            isVerified: true
         } as User); // Cast input to User to guide TypeORM or cast result
 
         const savedUser = await this.usersRepository.save(newUser);
@@ -105,9 +105,9 @@ export class UsersController {
     @Patch(':id/role')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Update user role (admin only)' })
+    @ApiOperation({ summary: 'Update user role (manager or sysadmin only)' })
     async updateUserRole(@Req() req: any, @Param('id') id: string, @Body() body: { role: string }) {
-        if (req.user.role !== 'admin') {
+        if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only admins can update roles');
         }
 
@@ -135,7 +135,7 @@ export class UsersController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Toggle user active status (admin only)' })
     async toggleUserStatus(@Req() req: any, @Param('id') id: string, @Body() body: { isActive: boolean }) {
-        if (req.user.role !== 'admin') {
+        if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only admins can change user status');
         }
 

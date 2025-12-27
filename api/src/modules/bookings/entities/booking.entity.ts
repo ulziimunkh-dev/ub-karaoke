@@ -9,6 +9,9 @@ import {
 } from 'typeorm';
 import { Room } from '../../rooms/entities/room.entity';
 import { Venue } from '../../venues/entities/venue.entity';
+import { Organization } from '../../organizations/entities/organization.entity';
+import { User } from '../../auth/entities/user.entity';
+import { Staff } from '../../staff/entities/staff.entity';
 
 export enum BookingStatus {
     PENDING = 'PENDING',
@@ -29,28 +32,22 @@ export class Booking {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ nullable: true })
+    @Column({ name: 'userId', nullable: true })
     userId: number;
 
-    @Column()
+    @Column({ name: 'roomId' })
     roomId: number;
 
-    @Column()
+    @Column({ name: 'venueId' })
     venueId: number;
 
-    @Column('date')
-    date: Date;
+    @Column({ name: 'startTime', type: 'timestamp' })
+    startTime: Date;
 
-    @Column('time')
-    startTime: string;
+    @Column({ name: 'endTime', type: 'timestamp' })
+    endTime: Date;
 
-    @Column('time')
-    endTime: string;
-
-    @Column()
-    duration: number;
-
-    @Column('decimal', { precision: 10, scale: 2 })
+    @Column({ name: 'totalPrice', type: 'decimal', precision: 10, scale: 2 })
     totalPrice: number;
 
     @Column({
@@ -60,26 +57,19 @@ export class Booking {
     })
     status: BookingStatus;
 
-    @Column()
+    @Column({ name: 'customerName' })
     customerName: string;
 
-    @Column()
+    @Column({ name: 'customerPhone' })
     customerPhone: string;
 
-    @Column({
-        type: 'enum',
-        enum: BookingPaymentStatus,
-        default: BookingPaymentStatus.UNPAID,
-    })
-    paymentStatus: BookingPaymentStatus;
+    @Column({ name: 'specialRequests', type: 'text', nullable: true })
+    specialRequests: string;
 
-    @Column({ default: 'cash' })
-    paymentMethod: string;
-
-    @CreateDateColumn()
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
     @ManyToOne(() => Room, (room) => room.bookings)
@@ -89,4 +79,14 @@ export class Booking {
     @ManyToOne(() => Venue)
     @JoinColumn({ name: 'venueId' })
     venue: Venue;
+
+    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    organizationId: number;
+
+    @ManyToOne(() => User, { nullable: true })
+    @JoinColumn({ name: 'userId' })
+    user: User;
+
+    @Column({ name: 'created_by_staff_id', nullable: true })
+    createdByStaffId: number;
 }

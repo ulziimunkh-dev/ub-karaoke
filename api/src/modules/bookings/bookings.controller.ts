@@ -35,8 +35,8 @@ export class BookingsController {
     @Post('manual')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    // @Roles('admin', 'staff')
-    @ApiOperation({ summary: 'Manually create and confirm a booking (Admin/Staff)' })
+    // @Roles('manager', 'staff')
+    @ApiOperation({ summary: 'Manually create and confirm a booking (Manager/Staff)' })
     createManual(@Body() createBookingDto: CreateBookingDto, @Request() req: any) {
         return this.bookingsService.createManual(createBookingDto, req.user.userId);
     }
