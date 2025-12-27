@@ -18,10 +18,17 @@ async function run() {
         const pidRes = await client.query('SELECT pg_backend_pid()');
         console.log('✅ Connected to:', client.database, 'PID:', pidRes.rows[0].pg_backend_pid);
 
-        // Clear existing data
-        console.log('🗑️ Clearing data...');
-        await client.query('TRUNCATE TABLE organizations, staff, users, venues, rooms, bookings, payments, reviews, audit_logs CASCADE');
-        console.log('✅ Data cleared');
+        // Note: With TypeORM synchronize: true, tables are created automatically by the backend.
+        // We just need to clear existing data before seeding.
+        console.log('🗑️ Clearing existing data...');
+        try {
+            await client.query('TRUNCATE TABLE organizations, staff, users, venues, rooms, bookings, payments, reviews, audit_logs CASCADE');
+            console.log('✅ Data cleared');
+        } catch (err) {
+            console.warn('⚠️ Could not truncate tables. They might not exist yet. Please ensure the NestJS backend has started at least once.');
+            console.error('Error detail:', err.message);
+            // Don't exit here, maybe the tables will be created by the app soon
+        }
 
         // 1. Organizations
         const orgRes1 = await client.query("INSERT INTO organizations (code, name) VALUES ('UBK-GRP', 'UB Karaoke Group') RETURNING id");

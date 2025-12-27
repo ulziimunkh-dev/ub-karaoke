@@ -32,7 +32,7 @@ import { StaffModule } from './modules/staff/staff.module';
         password: configService.get('DATABASE_PASSWORD'),
         database: configService.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false, // Set to false to avoid clashing with manual schema
+        synchronize: true, // Enabled as requested by user for easier development
         logging: false,
       }),
       inject: [ConfigService],
