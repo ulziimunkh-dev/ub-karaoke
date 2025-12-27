@@ -11,6 +11,13 @@ const StaffPortal = () => {
     const orgVenues = currentUser.role === 'sysadmin' ? venues : venues.filter(v => v.organizationId === currentUser.organizationId);
 
     const [selectedVenueId, setSelectedVenueId] = useState(activeVenueId || orgVenues[0]?.id);
+
+    // Sync local state if global activeVenueId changes
+    React.useEffect(() => {
+        if (activeVenueId) {
+            setSelectedVenueId(activeVenueId);
+        }
+    }, [activeVenueId]);
     const [selectedRoom, setSelectedRoom] = useState(null); // { venueId, room }
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('pos'); // pos, bookings, sales, audit
@@ -102,13 +109,6 @@ const StaffPortal = () => {
                         <p style={{ color: '#888', margin: 0, fontSize: '0.9rem' }}>{currentUser.name}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '15px' }}>
-                        <select
-                            value={selectedVenueId}
-                            onChange={e => onVenueChange(Number(e.target.value))}
-                            style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                        >
-                            {orgVenues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                        </select>
                         <button onClick={logout} className="btn btn-outline" style={{ fontSize: '0.9rem' }}>Logout</button>
                     </div>
                 </div>

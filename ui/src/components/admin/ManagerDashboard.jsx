@@ -4,27 +4,21 @@ import { useData } from '../../contexts/DataContext';
 const ManagerDashboard = () => {
     const { bookings, venues, currentUser, activeVenueId } = useData();
 
-    // Filter data to this organization and active branch
-    const filteredBookings = bookings.filter(b => {
-        if (activeVenueId) return b.venueId === activeVenueId;
-        return b.organizationId === currentUser.organizationId;
-    });
-
-    const filteredVenues = venues.filter(v => {
-        return v.id === activeVenueId || (!activeVenueId && v.organizationId === currentUser.organizationId);
-    });
+    // Filter data to this organization (All branches combined)
+    const filteredBookings = bookings.filter(b => b.organizationId === currentUser.organizationId);
+    const filteredVenues = venues.filter(v => v.organizationId === currentUser.organizationId);
 
     // Dashboard Stats
     const totalRevenue = filteredBookings.reduce((sum, b) => b.status === 'Confirmed' || b.status === 'Paid' ? sum + b.total : sum, 0);
     const pendingBookings = filteredBookings.filter(b => b.status === 'Pending').length;
-    const activeVenueName = activeVenueId ? venues.find(v => v.id === activeVenueId)?.name : 'All My Branches';
+    const orgName = currentUser.organizationName || 'My Organization';
 
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-bold text-white m-0">Performance Insights</h2>
-                    <p className="text-gray-400 mt-2">Viewing statistics for: <span className="text-[#eb79b2] font-semibold">{activeVenueName}</span></p>
+                    <h2 className="text-3xl font-bold text-white m-0">Organization Overview</h2>
+                    <p className="text-gray-400 mt-2">Aggregated statistics for: <span className="text-[#eb79b2] font-semibold">{orgName}</span></p>
                 </div>
                 <div className="text-right">
                     <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Live Status</p>

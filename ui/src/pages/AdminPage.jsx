@@ -78,20 +78,6 @@ const AdminPage = () => {
                     </button>
                 </div>
 
-                {/* Branch Switcher for Managers */}
-                {currentUser.role === 'manager' && venues.length > 0 && (
-                    <div className="mb-6 p-3 bg-white/5 rounded-xl border border-white/5">
-                        <label className="block text-[10px] uppercase tracking-widest text-gray-500 mb-2 font-bold px-1">Active Branch</label>
-                        <Dropdown
-                            value={activeVenueId}
-                            options={venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))}
-                            onChange={(e) => setActiveVenueId(e.value)}
-                            placeholder="Select Branch"
-                            className="w-full h-10 bg-[#121212] border-white/10 rounded-lg text-sm"
-                        />
-                    </div>
-                )}
-
                 <nav className="flex-1">
                     <ul className="list-none p-0">
                         {navItems.map(item => (
@@ -132,6 +118,31 @@ const AdminPage = () => {
 
             {/* Main Content */}
             <main style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
+                {/* Header Filter Bar - visible for core management tabs */}
+                {['pos_view', 'users', 'venues', 'audit'].includes(activeTab) && (
+                    <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1a1a24] p-5 rounded-2xl border border-white/5 shadow-2xl">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="text-xl font-bold text-white m-0 uppercase tracking-tight">Management context</h1>
+                            <p className="text-xs text-gray-500 font-medium">Filtering data based on selected branch scope</p>
+                        </div>
+                        <div className="flex items-center gap-4 bg-black/20 p-2 rounded-xl border border-white/5">
+                            <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Switch venue:</span>
+                            <Dropdown
+                                value={activeVenueId}
+                                options={currentUser.role === 'sysadmin'
+                                    ? venues.map(v => ({ label: v.name, value: v.id }))
+                                    : venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
+                                }
+                                onChange={(e) => setActiveVenueId(e.value)}
+                                placeholder="Select Branch Context"
+                                className="w-64 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
+                                filter
+                                showClear={currentUser.role === 'sysadmin'}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
                 {activeTab === 'venues' && <VenueManagement />}

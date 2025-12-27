@@ -65,13 +65,13 @@ const CustomerProfile = () => {
 
             <div className="flex items-center mb-8 bg-white/5 p-6 rounded-2xl border border-white/10">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex justify-center items-center text-2xl font-bold">
-                    {currentUser.name.charAt(0)}
+                    {currentUser?.name?.charAt(0) || 'U'}
                 </div>
                 <div className="ml-6 flex-1">
-                    <h1 className="text-3xl font-bold m-0">{currentUser.name}</h1>
+                    <h1 className="text-3xl font-bold m-0">{currentUser?.name || 'User'}</h1>
                     <p className="text-gray-400 my-1">Member since 2024</p>
                     <div className="flex items-center gap-3">
-                        <span className="text-yellow-400 font-bold">⭐ {currentUser.loyaltyPoints || 0} Points</span>
+                        <span className="text-yellow-400 font-bold">⭐ {currentUser?.loyaltyPoints || 0} Points</span>
                         <span className="text-xs text-gray-600">(Gold Tier)</span>
                     </div>
                 </div>
