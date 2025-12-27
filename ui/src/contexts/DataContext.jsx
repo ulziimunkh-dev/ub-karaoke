@@ -388,8 +388,40 @@ export const DataProvider = ({ children }) => {
             throw error;
         }
     };
-    const updateUser = (id, updates) => { };
-    const toggleUserStatus = id => { };
+    const updateUser = (id, updates) => { 
+        try {
+            setUsers(prev =>
+                prev.map(u => {
+                    if (u.id === id) {
+                        const updatedUser = { ...u, ...updates };
+                        api.updateUser(id, updates);
+                        return updatedUser;
+                    }
+                    return u;
+                })
+            );
+        } catch (error) {
+            console.error('Failed to update user:', error);
+            throw error;
+        }
+    };
+    const toggleUserStatus = id => { 
+        try {
+            setUsers(prev =>
+                prev.map(u => {
+                    if (u.id === id) {
+                        const updatedUser = { ...u, isActive: !u.isActive };
+                        api.toggleUserStatus(id, { isActive: updatedUser.isActive });
+                        return updatedUser;
+                    }
+                    return u;
+                })
+            );
+        } catch (error) {
+            console.error('Failed to toggle user status:', error);
+            throw error;
+        }
+    };
     const transactions = [];
     const settings = {
         taxRate: 0.1,

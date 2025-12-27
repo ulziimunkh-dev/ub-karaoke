@@ -90,30 +90,33 @@ const AdminPage = () => {
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: '#121212', color: 'white' }}>
             {/* Sidebar */}
-            <aside style={{ width: '250px', background: '#1a1a1a', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <h2 style={{ margin: 0, color: '#ff0066' }}>UB Karaoke</h2>
+            <aside className="w-64 bg-[#1a1a24] p-5 flex flex-col border-r border-white/5">
+                <div className="flex justify-between items-center mb-8">
+                    <div className="flex items-center gap-1.5">
+                        <div className="flex items-baseline">
+                            <span className="text-2xl font-black tracking-tighter text-[#eb79b2] drop-shadow-[0_0_8px_rgba(175,175,175,0.3)]">UB</span>
+                            <span className="text-2xl font-black tracking-tighter ml-1 logo-text-animated">KARAOKE</span>
+                        </div>
+                        <div className="w-2 h-2 rounded-full logo-dot-animated"></div>
+                    </div>
                     <button
                         onClick={toggleLanguage}
-                        className="btn btn-outline btn-sm"
-                        style={{ fontSize: '0.8rem', padding: '4px 8px' }}
+                        className="h-8 px-3 text-xs font-bold rounded-full border border-[#b000ff] text-[#eb79b2] bg-transparent hover:bg-[#b000ff]/10 transition-all uppercase"
                     >
                         {language.toUpperCase()}
                     </button>
                 </div>
 
-                <nav style={{ flex: 1 }}>
-                    <ul style={{ listStyle: 'none', padding: 0 }}>
+                <nav className="flex-1">
+                    <ul className="list-none p-0">
                         {navItems.map(item => (
-                            <li key={item.id} style={{ marginBottom: '10px' }}>
+                            <li key={item.id} className="mb-2">
                                 <button
                                     onClick={() => setActiveTab(item.id)}
-                                    style={{
-                                        width: '100%', textAlign: 'left', padding: '12px', borderRadius: '8px', border: 'none',
-                                        background: activeTab === item.id ? '#333' : 'transparent',
-                                        color: activeTab === item.id ? 'white' : '#aaa',
-                                        cursor: 'pointer', display: 'flex', gap: '10px', fontSize: '1rem'
-                                    }}
+                                    className={`w-full text-left px-4 py-3 rounded-lg border-none cursor-pointer flex items-center gap-3 text-base transition-all ${activeTab === item.id
+                                            ? 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold shadow-[0_0_15px_rgba(176,0,255,0.3)]'
+                                            : 'bg-transparent text-gray-400 hover:bg-white/5 hover:text-[#b000ff]'
+                                        }`}
                                 >
                                     <span>{item.icon}</span> {item.label}
                                 </button>
@@ -122,10 +125,15 @@ const AdminPage = () => {
                     </ul>
                 </nav>
 
-                <div style={{ borderTop: '1px solid #333', paddingTop: '20px' }}>
-                    <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem' }}>Logged in as: <br /><strong>{currentUser.name}</strong></p>
-                    <button onClick={logout} className="btn btn-outline btn-sm" style={{ width: '100%' }}>Logout</button>
-                    <a href="/" style={{ display: 'block', textAlign: 'center', marginTop: '15px', color: '#888', textDecoration: 'none', fontSize: '0.85rem' }}>View Public Site</a>
+                <div className="border-t border-white/10 pt-5">
+                    <p className="m-0 mb-3 text-sm text-gray-400">Logged in as: <br /><strong className="text-white">{currentUser.name}</strong></p>
+                    <button
+                        onClick={logout}
+                        className="w-full h-10 px-4 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold text-sm mb-3"
+                    >
+                        Logout
+                    </button>
+                    <a href="/" className="block text-center text-gray-500 no-underline text-xs hover:text-[#b000ff] transition-colors">View Public Site</a>
                 </div>
             </aside>
 

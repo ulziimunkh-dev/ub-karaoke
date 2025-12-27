@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
+import { Button } from 'primereact/button';
 
 const CustomerProfile = () => {
     const { currentUser, bookings, updateBookingStatus, logout, updateProfile } = useData();
@@ -14,9 +15,11 @@ const CustomerProfile = () => {
     const [message, setMessage] = useState('');
 
     if (!currentUser) return (
-        <div style={{ padding: '50px', color: 'white', textAlign: 'center' }}>
-            <p>Please log in.</p>
-            <Link to="/" style={{ color: '#E91E63', textDecoration: 'none', marginTop: '20px', display: 'inline-block' }}>Back to Home</Link>
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+                <p className="text-white text-lg mb-4">Please log in.</p>
+                <Link to="/" className="text-[#b000ff] hover:text-[#eb79b2] transition-colors font-bold">Back to Home</Link>
+            </div>
         </div>
     );
 
@@ -46,71 +49,69 @@ const CustomerProfile = () => {
     };
 
     return (
-        <div style={{ padding: '30px', maxWidth: '1000px', margin: '0 auto', color: 'white' }}>
+        <div className="p-8 max-w-6xl mx-auto">
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                <Link to="/" style={{ color: '#aaa', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span>🏠</span> Home
+            <div className="flex justify-between items-center mb-8">
+                <Link to="/" className="text-[#b000ff] hover:text-[#eb79b2] transition-colors text-sm font-medium flex items-center gap-2">
+                    ← Home
                 </Link>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <button onClick={logout} className="btn btn-outline btn-sm">Logout</button>
-                </div>
+                <Button
+                    label="Logout"
+                    outlined
+                    onClick={logout}
+                    className="h-10 px-5"
+                />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '30px', background: '#222', padding: '20px', borderRadius: '15px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#E91E63', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2rem', fontWeight: 'bold' }}>
+            <div className="flex items-center mb-8 bg-white/5 p-6 rounded-2xl border border-white/10">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex justify-center items-center text-2xl font-bold">
                     {currentUser.name.charAt(0)}
                 </div>
-                <div style={{ marginLeft: '20px', flex: 1 }}>
-                    <h1 style={{ margin: 0 }}>{currentUser.name}</h1>
-                    <p style={{ color: '#aaa', margin: '5px 0' }}>Member since 2024</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ color: '#FFC107', fontWeight: 'bold' }}>⭐ {currentUser.loyaltyPoints || 0} Points</span>
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}> (Gold Tier)</span>
+                <div className="ml-6 flex-1">
+                    <h1 className="text-3xl font-bold m-0">{currentUser.name}</h1>
+                    <p className="text-gray-400 my-1">Member since 2024</p>
+                    <div className="flex items-center gap-3">
+                        <span className="text-yellow-400 font-bold">⭐ {currentUser.loyaltyPoints || 0} Points</span>
+                        <span className="text-xs text-gray-600">(Gold Tier)</span>
                     </div>
                 </div>
-                <button onClick={logout} className="btn btn-outline">Logout</button>
             </div>
 
             {/* Navigation Tabs */}
-            <div style={{ borderBottom: '1px solid #333', marginBottom: '30px' }}>
+            <div className="border-b border-white/10 mb-8">
                 <button
                     onClick={() => setActiveTab('bookings')}
-                    style={{
-                        background: 'none', border: 'none', color: activeTab === 'bookings' ? '#E91E63' : '#aaa',
-                        padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer',
-                        borderBottom: activeTab === 'bookings' ? '2px solid #E91E63' : 'none'
-                    }}
+                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'bookings'
+                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
+                        : 'text-gray-400 hover:text-[#b000ff]'
+                        }`}
                 >
                     My Bookings
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    style={{
-                        background: 'none', border: 'none', color: activeTab === 'history' ? '#E91E63' : '#aaa',
-                        padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer',
-                        borderBottom: activeTab === 'history' ? '2px solid #E91E63' : 'none'
-                    }}
+                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'history'
+                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
+                        : 'text-gray-400 hover:text-[#b000ff]'
+                        }`}
                 >
                     History
                 </button>
                 <button
                     onClick={() => setActiveTab('loyalty')}
-                    style={{
-                        background: 'none', border: 'none', color: activeTab === 'loyalty' ? '#E91E63' : '#aaa',
-                        padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer',
-                        borderBottom: activeTab === 'loyalty' ? '2px solid #E91E63' : 'none'
-                    }}
+                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'loyalty'
+                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
+                        : 'text-gray-400 hover:text-[#b000ff]'
+                        }`}
                 >
                     Loyalty & Rewards
                 </button>
                 <button
                     onClick={() => setActiveTab('settings')}
-                    style={{
-                        background: 'none', border: 'none', color: activeTab === 'settings' ? '#E91E63' : '#aaa',
-                        padding: '10px 20px', fontSize: '1.1rem', cursor: 'pointer',
-                        borderBottom: activeTab === 'settings' ? '2px solid #E91E63' : 'none'
-                    }}
+                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'settings'
+                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
+                        : 'text-gray-400 hover:text-[#b000ff]'
+                        }`}
                 >
                     Settings
                 </button>
@@ -118,93 +119,109 @@ const CustomerProfile = () => {
 
             {/* Content */}
             {activeTab === 'bookings' && (
-                <div style={{ display: 'grid', gap: '20px' }}>
-                    {activeBookings.length === 0 ? <p style={{ color: '#888' }}>No upcoming bookings.</p> : activeBookings.map(b => (
-                        <div key={b.id} style={{ background: '#222', padding: '20px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '5px solid #4CAF50' }}>
+                <div className="grid gap-5">
+                    {activeBookings.length === 0 ? <p className="text-gray-500">No upcoming bookings.</p> : activeBookings.map(b => (
+                        <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-green-500">
                             <div>
-                                <h3>{b.roomName}</h3>
-                                <p style={{ color: '#aaa', margin: '5px 0' }}>{b.date} at {b.time}</p>
-                                <p style={{ fontWeight: 'bold' }}>{b.total.toLocaleString()}₮</p>
-                                <span style={{ background: 'rgba(76, 175, 80, 0.2)', color: '#4CAF50', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' }}>{b.status}</span>
+                                <h3 className="text-xl font-bold m-0 mb-1">{b.roomName}</h3>
+                                <p className="text-gray-400 my-1">{b.date} at {b.time}</p>
+                                <p className="font-bold my-1">{b.total.toLocaleString()}₮</p>
+                                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
                             </div>
-                            <button className="btn btn-outline" style={{ borderColor: '#F44336', color: '#F44336' }} onClick={() => handleCancel(b.id)}>Cancel Booking</button>
+                            <Button
+                                label="Cancel Booking"
+                                severity="danger"
+                                outlined
+                                onClick={() => handleCancel(b.id)}
+                                className="text-xs"
+                                size="small"
+                            />
                         </div>
                     ))}
                 </div>
             )}
 
             {activeTab === 'history' && (
-                <div style={{ display: 'grid', gap: '20px' }}>
-                    {historyBookings.length === 0 ? <p style={{ color: '#888' }}>No booking history.</p> : historyBookings.map(b => (
-                        <div key={b.id} style={{ background: '#222', padding: '20px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '5px solid #888' }}>
+                <div className="grid gap-5">
+                    {historyBookings.length === 0 ? <p className="text-gray-500">No booking history.</p> : historyBookings.map(b => (
+                        <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-gray-500">
                             <div>
-                                <h3 style={{ color: '#aaa' }}>{b.roomName}</h3>
-                                <p style={{ color: '#666', margin: '5px 0' }}>{b.date}</p>
-                                <span style={{ background: '#333', color: '#aaa', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem' }}>{b.status}</span>
+                                <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.roomName}</h3>
+                                <p className="text-gray-600 my-1">{b.date}</p>
+                                <span className="bg-gray-700 text-gray-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
                             </div>
-                            <button className="btn btn-sm btn-outline">Write Review</button>
+                            <Button
+                                label="Write Review"
+                                outlined
+                                onClick={() => alert('Review coming soon!')}
+                                className="text-xs"
+                                size="small"
+                            />
                         </div>
                     ))}
                 </div>
             )}
 
             {activeTab === 'loyalty' && (
-                <div style={{ textAlign: 'center', padding: '40px', background: '#222', borderRadius: '10px' }}>
-                    <h2 style={{ color: '#FFC107' }}>Gold Member</h2>
-                    <p>You have earned <strong>{currentUser.loyaltyPoints} points</strong>.</p>
-                    <div style={{ width: '100%', height: '10px', background: '#333', borderRadius: '5px', margin: '20px 0', overflow: 'hidden' }}>
-                        <div style={{ width: '45%', height: '100%', background: '#FFC107' }}></div>
+                <div className="text-center p-10 bg-white/5 rounded-xl border border-white/10">
+                    <h2 className="text-3xl font-bold text-yellow-400 mb-4">Gold Member</h2>
+                    <p className="text-lg">You have earned <strong className="text-[#b000ff]">{currentUser.loyaltyPoints} points</strong>.</p>
+                    <div className="w-full h-3 bg-white/10 rounded-full my-6 overflow-hidden">
+                        <div className="w-[45%] h-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2]"></div>
                     </div>
-                    <p style={{ fontSize: '0.9rem', color: '#aaa' }}>450 points to Platinum Tier</p>
+                    <p className="text-sm text-gray-400">450 points to Platinum Tier</p>
                 </div>
             )}
 
             {activeTab === 'settings' && (
-                <div style={{ maxWidth: '500px', margin: '0 auto', background: '#222', padding: '30px', borderRadius: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h2 style={{ margin: 0 }}>Profile Settings</h2>
+                <div className="max-w-xl mx-auto bg-white/5 p-8 rounded-xl border border-white/10">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold m-0">Profile Settings</h2>
                         <button
                             onClick={() => setActiveTab('bookings')}
-                            style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: '1.5rem' }}
+                            className="bg-transparent border-none text-gray-400 hover:text-white cursor-pointer text-2xl transition-colors"
                             title="Back to Bookings"
                         >
                             ✕
                         </button>
                     </div>
-                    <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.9rem', color: '#aaa' }}>Full Name</label>
+                    <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm text-gray-400 font-medium">Full Name</label>
                             <input
                                 type="text"
                                 value={editForm.name}
                                 onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                style={{ padding: '12px', background: '#333', border: 'none', borderRadius: '6px', color: 'white' }}
+                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
                                 required
                             />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.9rem', color: '#aaa' }}>Email Address</label>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm text-gray-400 font-medium">Email Address</label>
                             <input
                                 type="email"
                                 value={editForm.email}
                                 onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                                style={{ padding: '12px', background: '#333', border: 'none', borderRadius: '6px', color: 'white' }}
+                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
                                 required
                             />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label style={{ fontSize: '0.9rem', color: '#aaa' }}>Phone Number</label>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm text-gray-400 font-medium">Phone Number</label>
                             <input
                                 type="text"
                                 value={editForm.phone}
                                 onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                style={{ padding: '12px', background: '#333', border: 'none', borderRadius: '6px', color: 'white' }}
+                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
                             />
                         </div>
-                        {message && <p style={{ color: message.includes('success') ? '#4CAF50' : '#F44336', fontSize: '0.9rem' }}>{message}</p>}
-                        <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ padding: '12px', marginTop: '10px' }}>
-                            {isSaving ? 'Saving...' : 'Update Profile'}
-                        </button>
+                        {message && <p className={`text-sm ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}>{message}</p>}
+                        <Button
+                            type="submit"
+                            label={isSaving ? 'Saving...' : 'Update Profile'}
+                            disabled={isSaving}
+                            className="h-12 px-6"
+                        />
                     </form>
                 </div>
             )}

@@ -3,7 +3,7 @@
 ## 1. Architecture Overview
 UB Karaoke is a web-based platform for karaoke venue discovery and booking management. It follows a client-server architecture:
 
-- **Frontend**: A modern, responsive Single Page Application (SPA) built with **React** and **Vite**. It uses **Vanilla CSS** for styling and **Context API** for state management.
+- **Frontend**: A modern, responsive Single Page Application (SPA) built with **React** and **Vite**. It uses **Vanilla CSS** for custom styling and **PrimeReact** for professional UI components (DataTables, Dialogs, Forms). It employs the **Context API** for state management.
 - **Backend**: A robust RESTful API built with **NestJS**, following a modular architecture.
 - **Database**: **PostgreSQL** for relational data storage, managed via **TypeORM**.
 - **Caching**: **Redis** is used for caching and performance optimization.

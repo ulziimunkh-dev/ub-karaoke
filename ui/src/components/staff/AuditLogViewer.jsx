@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import { Tag } from 'primereact/tag';
 
 const AuditLogViewer = () => {
     const [logs, setLogs] = useState([]);
@@ -21,52 +25,46 @@ const AuditLogViewer = () => {
         }
     };
 
+    const dateBodyTemplate = (rowData) => {
+        return new Date(rowData.createdAt).toLocaleString();
+    };
+
+    const actionBodyTemplate = (rowData) => {
+        return <Tag value={rowData.action} severity="success" />;
+    };
+
+    const userBodyTemplate = (rowData) => {
+        return rowData.user ? rowData.user.username : `User #${rowData.userId}`;
+    };
+
+    const resourceBodyTemplate = (rowData) => {
+        return `${rowData.resource} #${rowData.resourceId}`;
+    };
+
+    const detailsBodyTemplate = (rowData) => {
+        return (
+            <div style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem' }}>
+                {JSON.stringify(rowData.details)}
+            </div>
+        );
+    };
+
     return (
-        <div style={{ padding: '20px', color: 'white' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h2>Audit Logs</h2>
-                <button onClick={loadLogs} className="btn btn-outline" style={{ padding: '5px 15px' }}>Refresh</button>
+        <div className="card">
+            <div className="flex justify-content-between align-items-center mb-4">
+                <h2 className="m-0">Audit Logs</h2>
+                <Button label="Refresh" icon="pi pi-refresh" onClick={loadLogs} loading={loading} outlined />
             </div>
 
-            {loading ? <p>Loading...</p> : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #444' }}>
-                                <th style={{ padding: '10px' }}>Date</th>
-                                <th style={{ padding: '10px' }}>Action</th>
-                                <th style={{ padding: '10px' }}>User</th>
-                                <th style={{ padding: '10px' }}>Resource</th>
-                                <th style={{ padding: '10px' }}>Details</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {logs.map(log => (
-                                <tr key={log.id} style={{ borderBottom: '1px solid #222' }}>
-                                    <td style={{ padding: '10px', color: '#888' }}>
-                                        {new Date(log.createdAt).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#4CAF50' }}>
-                                        {log.action}
-                                    </td>
-                                    <td style={{ padding: '10px' }}>
-                                        {log.user ? log.user.username : `User #${log.userId}`}
-                                    </td>
-                                    <td style={{ padding: '10px' }}>
-                                        {log.resource} #{log.resourceId}
-                                    </td>
-                                    <td style={{ padding: '10px', fontSize: '0.85rem', color: '#aaa', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {JSON.stringify(log.details)}
-                                    </td>
-                                </tr>
-                            ))}
-                            {logs.length === 0 && (
-                                <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center' }}>No logs found</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+            <DataTable value={logs} paginator rows={10} loading={loading}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+                sortField="createdAt" sortOrder={-1} className="mt-2">
+                <Column field="createdAt" header="Date" body={dateBodyTemplate} sortable></Column>
+                <Column field="action" header="Action" body={actionBodyTemplate} sortable></Column>
+                <Column field="user.username" header="User" body={userBodyTemplate} sortable></Column>
+                <Column field="resource" header="Resource" body={resourceBodyTemplate} sortable></Column>
+                <Column field="details" header="Details" body={detailsBodyTemplate}></Column>
+            </DataTable>
         </div>
     );
 };

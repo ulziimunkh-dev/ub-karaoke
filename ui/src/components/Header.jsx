@@ -16,30 +16,32 @@ const Header = () => {
     };
 
     return (
-        <header className="app-header">
-            <div className="container header-content">
-                <Link to="/" className="logo" style={{ textDecoration: 'none' }}>
-                    <span className="logo-text glow-text">{t('appTitle')}</span>
-                    <div className="logo-dot"></div>
+        <header className="sticky top-0 z-50 bg-[#0B0B15] backdrop-blur-md border-b border-white/5 py-4 h-[80px] flex items-center shadow-lg">
+            <div className="container mx-auto px-4 flex justify-between items-center">
+                <Link to="/" className="flex items-center gap-1.5 no-underline group">
+                    <div className="flex items-baseline">
+                        <span className="text-3xl font-black tracking-tighter text-[#eb79b2] drop-shadow-[0_0_8px_rgba(175,175,175,0.3)]">UB</span>
+                        <span className="text-3xl font-black tracking-tighter ml-1 logo-text-animated">KARAOKE</span>
+                    </div>
+                    <div className="w-2.5 h-2.5 rounded-full logo-dot-animated"></div>
                 </Link>
-                <nav className="nav-actions">
-                    <button className="btn btn-outline btn-sm" onClick={toggleLanguage}>
-                        {language === 'en' ? 'MN' : 'EN'}
+                <nav className="flex items-center gap-4">
+                    <button className="h-10 px-6 text-sm font-bold rounded-full border border-[#b000ff] text-[#eb79b2] bg-transparent hover:bg-[#b000ff]/10 hover:shadow-[0_0_15px_rgba(176,0,255,0.4)] transition-all flex items-center uppercase tracking-wide" onClick={toggleLanguage}>
+                        {language === 'en' ? 'EN' : 'MN'}
                     </button>
 
                     {currentUser ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Link to="/profile" className="btn btn-text" style={{ color: 'white', textDecoration: 'none' }}>
+                        <div className="flex items-center gap-4">
+                            <Link to="/profile" className="text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
                                 Hi, {currentUser.name}
                             </Link>
-                            <button className="btn btn-sm btn-outline" onClick={handleLogout}>
+                            <button className="h-10 px-4 text-sm font-semibold rounded-full border border-[#b000ff] text-[#eb79b2] hover:bg-[#b000ff]/10 hover:shadow-[0_0_10px_rgba(176,0,255,0.3)] transition-all flex items-center" onClick={handleLogout}>
                                 {t('logout')}
                             </button>
                         </div>
                     ) : (
-                        <button className="btn btn-primary btn-sm" onClick={() => setIsLoginOpen(true)}>
-                            {t('login')}/
-                            {t('signUp')}
+                        <button className="h-10 px-8 text-sm rounded-full bg-neon-purple-pattern text-white font-bold shadow-[0_0_20px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.7)] hover:-translate-y-0.5 transition-all flex items-center border border-white/10 uppercase tracking-tighter" onClick={() => setIsLoginOpen(true)}>
+                            {t('login')}
                         </button>
                     )}
                 </nav>

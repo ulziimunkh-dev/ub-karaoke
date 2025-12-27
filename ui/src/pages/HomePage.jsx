@@ -102,11 +102,11 @@ const HomePage = () => {
     };
 
     return (
-        <div className="app">
+        <div className="min-h-screen bg-[#0B0B15] text-white selection:bg-[#b000ff] selection:text-white">
             <Header />
             <FilterBar filters={filters} onFilterChange={setFilters} />
 
-            <main className="main-content">
+            <main className="container mx-auto px-4 py-8">
                 <VenueList
                     venues={filteredVenues}
                     onBook={handleBook}

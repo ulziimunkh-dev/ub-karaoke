@@ -1,6 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useData } from '../../contexts/DataContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Dialog } from 'primereact/dialog';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { Button } from 'primereact/button';
+import { InputText } from 'primereact/inputtext';
+import { InputTextarea } from 'primereact/inputtextarea';
+import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
+import { Toast } from 'primereact/toast';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import { Tag } from 'primereact/tag';
 
 // Import local stock images for the gallery
 import imgMinimal from '../../assets/defaults/karaoke_minimal.png';
@@ -17,29 +28,19 @@ const STOCK_IMAGES = [
 
 const ImagePicker = ({ selectedImage, onSelect, label }) => {
     return (
-        <div className="image-picker" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontSize: '0.9rem', color: '#aaa' }}>{label}</label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+        <div className="mb-5">
+            <label className="block mb-2 text-sm text-text-muted font-medium">{label}</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {STOCK_IMAGES.map(img => (
                     <div
                         key={img.id}
                         onClick={() => onSelect(img.url)}
-                        style={{
-                            cursor: 'pointer',
-                            borderRadius: '8px',
-                            overflow: 'hidden',
-                            border: selectedImage === img.url ? '3px solid #E91E63' : '2px solid transparent',
-                            position: 'relative',
-                            transition: 'all 0.2s'
-                        }}
+                        className={`cursor-pointer rounded-lg overflow-hidden relative transition-all duration-200 border-2 ${selectedImage === img.url ? 'border-[#b000ff] shadow-[0_0_15px_rgba(176,0,255,0.3)]' : 'border-transparent hover:border-white/20'}`}
                     >
-                        <img src={img.url} alt={img.label} style={{ width: '100%', height: '60px', objectFit: 'cover' }} />
+                        <img src={img.url} alt={img.label} className="w-full h-16 sm:h-[60px] object-cover" />
                         {selectedImage === img.url && (
-                            <div style={{
-                                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                                background: 'rgba(233, 30, 99, 0.2)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-                            }}>
-                                <span style={{ color: 'white', fontSize: '1.2rem' }}>✓</span>
+                            <div className="absolute inset-0 bg-[#b000ff]/20 flex justify-center items-center">
+                                <span className="text-white text-xl">✓</span>
                             </div>
                         )}
                     </div>
@@ -52,12 +53,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 const VenueManagement = () => {
     const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom } = useData();
     const { t } = useLanguage();
-
-    // Safety check BEFORE derived state
-    // DEBUGGING: Temporarily allowing render even if empty to see debug info
-    // if (!venues || !Array.isArray(venues)) {
-    //    return <div style={{ color: 'white', padding: '20px' }}>Loading Venues... (Status: {venues ? 'Invalid Data' : 'Not Loaded'})</div>;
-    // }
+    const toast = useRef(null);
 
     // Venue Modal State
     const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
@@ -70,7 +66,10 @@ const VenueManagement = () => {
         description: '',
         phone: '',
         priceRange: '$$',
-        featuredImage: imgStandard
+        featuredImage: imgStandard,
+        bookingWindowStart: '',
+        bookingWindowEnd: '',
+        advanceBookingDays: 3
     });
 
     // Room Modal State
@@ -118,7 +117,7 @@ const VenueManagement = () => {
                 hoursStr = venue.openingHours[days[0]].replace('-', ' - ');
             }
         } else if (typeof venue.openHours === 'object') {
-            hoursStr = `${venue.openHours.start} - ${venue.openHours.end}`;
+            hoursStr = `${venue.openHours.start} - ${venue.openHours.end} `;
         }
 
         setVenueForm({
@@ -170,16 +169,24 @@ const VenueManagement = () => {
 
         if (editingVenue) {
             updateVenue(editingVenue.id, venueData);
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue updated successfully' });
         } else {
             addVenue(venueData);
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue added successfully' });
         }
         setIsVenueModalOpen(false);
     };
 
     const handleDeleteVenue = (venueId) => {
-        if (window.confirm(t('areYouSure'))) {
-            deleteVenue(venueId);
-        }
+        confirmDialog({
+            message: t('areYouSure'),
+            header: 'Delete Confirmation',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                deleteVenue(venueId);
+                toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Venue removed successfully' });
+            }
+        });
     };
 
     const handleToggleStatus = (venue) => {
@@ -218,8 +225,10 @@ const VenueManagement = () => {
         if (editingRoom) {
             updateRoom(selectedVenue.id, editingRoom.id, roomForm);
             setEditingRoom(null); // Reset to add mode
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room updated' });
         } else {
             addRoom(selectedVenue.id, roomForm);
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room added' });
         }
         // Reset form keeping defaults or clear?
         setRoomForm({
@@ -232,22 +241,62 @@ const VenueManagement = () => {
     };
 
     const handleDeleteRoom = (roomId) => {
-        if (window.confirm(t('areYouSure')) && selectedVenue) {
-            deleteRoom(selectedVenue.id, roomId);
-        }
+        confirmDialog({
+            message: t('areYouSure'),
+            header: 'Delete Confirmation',
+            icon: 'pi pi-exclamation-triangle',
+            accept: () => {
+                deleteRoom(selectedVenue.id, roomId);
+                toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Room removed' });
+            }
+        });
+    };
+
+    const roomRateBody = (rowData) => {
+        return (rowData.hourlyRate || rowData.pricePerHour || 0).toLocaleString() + '₮';
+    };
+
+    const roomActionsBody = (rowData) => {
+        return (
+            <div className="flex gap-2">
+                <Button
+                    icon="pi pi-pencil"
+                    rounded
+                    outlined
+                    size="small"
+                    onClick={() => handleEditRoom(rowData)}
+                />
+                <Button
+                    icon="pi pi-trash"
+                    rounded
+                    outlined
+                    severity="danger"
+                    size="small"
+                    onClick={() => handleDeleteRoom(rowData.id)}
+                />
+            </div>
+        );
     };
 
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2>{t('venueManagement')}</h2>
-                <button className="btn btn-primary" onClick={openAddVenue}>{t('addBranch')}</button>
+            <Toast ref={toast} />
+            <ConfirmDialog />
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                <h2 className="text-2xl font-bold m-0">{t('venueManagement')}</h2>
+                <Button
+                    onClick={openAddVenue}
+                    className="h-11 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center gap-2"
+                    >
+                    {t('addBranch')}
+                    </Button>
             </div>
 
-            <div style={{ display: 'grid', gap: '20px' }}>
+            <div className="grid gap-4">
                 {venues.length === 0 && (
-                    <div style={{ textAlign: 'center', color: '#aaa', padding: '40px' }}>
+                    <div className="text-center text-gray-500 py-8">
                         <p>No venues found. Add a new branch to get started.</p>
                     </div>
                 )}
@@ -258,282 +307,202 @@ const VenueManagement = () => {
                         : venue.openHours;
 
                     return (
-                        <div key={venue.id} style={{ background: '#2a2a2a', padding: '20px', borderRadius: '10px', borderLeft: venue.closed ? '5px solid red' : '5px solid #4CAF50' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <h3 style={{ margin: 0, color: venue.closed ? '#888' : 'white' }}>
-                                            {venue.name} {venue.closed && t('closed')}
+                        <div key={venue.id} className="bg-white/5 p-4 sm:p-5 rounded-xl" style={{ borderLeft: `6px solid ${venue.closed ? '#ef4444' : '#22c55e'}` }}>
+                            <div className="flex flex-col lg:flex-row justify-between gap-4">
+                                <div className="flex-1">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h3 className={`text-xl sm:text-2xl font-bold m-0 ${venue.closed ? 'text-gray-500' : 'text-white'}`}>
+                                            {venue.name}
                                         </h3>
-                                        <button className="btn btn-text" onClick={() => openEditVenue(venue)} style={{ fontSize: '1.2rem', padding: '0 5px' }}>✎</button>
+                                        {venue.closed && <Tag value={t('closed')} severity="danger" className="ml-2" />}
+                                        <Button
+                                            icon="pi pi-pencil"
+                                            onClick={() => openEditVenue(venue)}
+                                            text
+                                            className="ml-auto lg:ml-2 p-2 text-gray-400 hover:text-[#b000ff]"
+                                        />
                                     </div>
-                                    <p style={{ color: '#aaa', margin: '5px 0' }}>{venue.district} • {openHoursDisplay}</p>
-                                    <p style={{ fontSize: '0.9rem' }}>{t('rooms')}: {venue.rooms.length}</p>
+                                    <p className="text-gray-400 my-2 text-sm">{venue.district} • {openHoursDisplay}</p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                        <span className="text-xs sm:text-sm font-bold uppercase text-gray-400">{t('rooms')}: {venue.rooms.length}</span>
+                                        <div className="flex gap-1 flex-wrap">
+                                            {venue.rooms?.slice(0, 5).map(room => (
+                                                <Tag key={room.id} value={room.name} severity={room.status === 'Maintenance' ? 'warning' : 'info'} style={{ fontSize: '0.7rem' }} />
+                                            ))}
+                                            {venue.rooms?.length > 5 && <span className="text-xs text-gray-500">+{venue.rooms.length - 5}</span>}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button className="btn btn-sm btn-outline" onClick={() => handleToggleStatus(venue)}>
-                                        {venue.closed ? t('reOpen') : t('closeBranch')}
-                                    </button>
-                                    <button className="btn btn-sm btn-primary" onClick={() => handleManageRooms(venue)}>{t('manageRooms')}</button>
-                                    <button className="btn btn-sm btn-outline" style={{ borderColor: 'red', color: 'red' }} onClick={() => handleDeleteVenue(venue.id)}>X</button>
+                                <div className="flex flex-row lg:flex-col gap-2">
+                                    <Button
+                                        label={venue.closed ? t('reOpen') : t('closeBranch')}
+                                        icon={venue.closed ? "pi pi-play" : "pi pi-pause"}
+                                        severity={venue.closed ? "success" : "warning"}
+                                        outlined
+                                        onClick={() => handleToggleStatus(venue)}
+                                        className="flex-1 lg:flex-none"
+                                    />
+                                    <Button
+                                        label={t('manageRooms')}
+                                        icon="pi pi-building"
+                                        onClick={() => handleManageRooms(venue)}
+                                        className="flex-1 lg:flex-none"
+                                    />
+                                    <Button
+                                        icon="pi pi-trash"
+                                        severity="danger"
+                                        outlined
+                                        onClick={() => handleDeleteVenue(venue.id)}
+                                        className="lg:w-full"
+                                    />
                                 </div>
-                            </div>
-
-                            {/* Compact Room List Preview */}
-                            <div style={{ marginTop: '15px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
-                                {venue.rooms?.map(room => (
-                                    <span key={room.id} style={{
-                                        background: '#333', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem',
-                                        border: '1px solid #444', color: room.status === 'Maintenance' ? 'orange' : 'white'
-                                    }}>
-                                        {room.name} {room.status === 'Maintenance' && '⚠️'}
-                                    </span>
-                                ))}
                             </div>
                         </div>
                     )
                 })}
             </div>
 
-            {/* Venue Add/Edit Modal */}
-            {isVenueModalOpen && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-                }}>
-                    <div style={{ background: '#222', padding: '30px', borderRadius: '10px', width: '400px', color: 'white' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h3>{editingVenue ? 'Edit Venue' : 'Add Venue'}</h3>
-                            <button className="btn btn-text" onClick={() => setIsVenueModalOpen(false)}>X</button>
-                        </div>
-                        <form onSubmit={handleSaveVenue} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            <input
-                                placeholder="Venue Name"
-                                value={venueForm.name}
-                                onChange={e => setVenueForm({ ...venueForm, name: e.target.value })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                                required
-                            />
-                            <select
-                                value={venueForm.district}
-                                onChange={e => setVenueForm({ ...venueForm, district: e.target.value })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                            >
-                                <option value="Sukhbaatar">Sukhbaatar</option>
-                                <option value="Chingeltei">Chingeltei</option>
-                                <option value="Bayangol">Bayangol</option>
-                                <option value="Bayanzurkh">Bayanzurkh</option>
-                                <option value="Khan-Uul">Khan-Uul</option>
-                                <option value="Songinokhairkhan">Songinokhairkhan</option>
-                            </select>
-                            <input
-                                placeholder="Description"
-                                value={venueForm.description}
-                                onChange={e => setVenueForm({ ...venueForm, description: e.target.value })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                                required
-                            />
-                            <input
-                                placeholder="Phone (e.g., +976 99112233)"
-                                value={venueForm.phone}
-                                onChange={e => setVenueForm({ ...venueForm, phone: e.target.value })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                                required
-                            />
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <input
-                                    placeholder="Open Hours (e.g., 10:00 - 04:00)"
-                                    value={venueForm.openHours}
-                                    onChange={e => setVenueForm({ ...venueForm, openHours: e.target.value })}
-                                    style={{ flex: 2, padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                                    required
-                                />
-                                <select
-                                    value={venueForm.priceRange}
-                                    onChange={e => setVenueForm({ ...venueForm, priceRange: e.target.value })}
-                                    style={{ flex: 1, padding: '10px', background: '#333', border: 'none', color: 'white', borderRadius: '5px' }}
-                                >
-                                    <option value="$">$</option>
-                                    <option value="$$">$$</option>
-                                    <option value="$$$">$$$</option>
-                                    <option value="$$$$">$$$$</option>
-                                </select>
-                            </div>
-
-                            {/* Booking Configuration Section */}
-                            <div style={{ background: '#333', padding: '15px', borderRadius: '5px' }}>
-                                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: '#ccc' }}>Booking Configuration (Optional)</h4>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-                                    <div>
-                                        <label style={{ fontSize: '0.8rem', color: '#888' }}>Allowed Start Time</label>
-                                        <input
-                                            type="time"
-                                            value={venueForm.bookingWindowStart || ''}
-                                            onChange={e => setVenueForm({ ...venueForm, bookingWindowStart: e.target.value })}
-                                            style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={{ fontSize: '0.8rem', color: '#888' }}>Allowed End Time</label>
-                                        <input
-                                            type="time"
-                                            value={venueForm.bookingWindowEnd || ''}
-                                            onChange={e => setVenueForm({ ...venueForm, bookingWindowEnd: e.target.value })}
-                                            style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', color: '#888' }}>Max Advance Booking (Days)</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        placeholder="Default: 3"
-                                        value={venueForm.advanceBookingDays || ''}
-                                        onChange={e => setVenueForm({ ...venueForm, advanceBookingDays: Number(e.target.value) })}
-                                        style={{ width: '100%', padding: '8px', background: '#222', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                                    />
-                                    <p style={{ fontSize: '0.75rem', color: '#666', margin: '5px 0 0 0' }}>Creating limit for how many days in advance customers can book.</p>
-                                </div>
-                            </div>
-
-                            <ImagePicker
-                                label="Venue Featured Image"
-                                selectedImage={venueForm.featuredImage}
-                                onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
-                            />
-
-                            <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>{t('save')}</button>
-                        </form>
+            {/* Venue Add/Edit Dialog */}
+            <Dialog header={editingVenue ? 'Edit Venue' : 'Add Venue'} visible={isVenueModalOpen} className="w-full max-w-[95vw] sm:max-w-[500px]" modal onHide={() => setIsVenueModalOpen(false)}>
+                <form onSubmit={handleSaveVenue} className="flex flex-col gap-4 mt-2">
+                    <div className="flex flex-col gap-2">
+                        <label className="font-bold text-sm text-text-muted">Venue Name</label>
+                        <InputText value={venueForm.name} onChange={e => setVenueForm({ ...venueForm, name: e.target.value })} required />
                     </div>
-                </div>
-            )}
-
-            {/* Room Management Modal */}
-            {isRoomModalOpen && selectedVenue && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-                }}>
-                    <div style={{ background: '#222', padding: '30px', borderRadius: '10px', width: '700px', maxHeight: '80vh', overflowY: 'auto', color: 'white' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                            <h3>{t('manageRooms')}: {selectedVenue.name}</h3>
-                            <button className="btn btn-text" onClick={() => setIsRoomModalOpen(false)}>X</button>
+                    <div className="flex flex-col gap-2">
+                        <label className="font-bold text-sm text-text-muted">District</label>
+                        <Dropdown value={venueForm.district} options={[
+                            'Sukhbaatar', 'Chingeltei', 'Bayangol', 'Bayanzurkh', 'Khan-Uul', 'Songinokhairkhan'
+                        ]} onChange={e => setVenueForm({ ...venueForm, district: e.value })} />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="font-bold text-sm text-text-muted">Description</label>
+                        <InputTextarea value={venueForm.description} onChange={e => setVenueForm({ ...venueForm, description: e.target.value })} required rows={2} autoResize />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="font-bold text-sm text-text-muted">Phone</label>
+                        <InputText value={venueForm.phone} onChange={e => setVenueForm({ ...venueForm, phone: e.target.value })} required />
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="sm:col-span-2 flex flex-col gap-2">
+                            <label className="font-bold text-sm text-text-muted">Open Hours</label>
+                            <InputText value={venueForm.openHours} onChange={e => setVenueForm({ ...venueForm, openHours: e.target.value })} placeholder="10:00 - 04:00" required />
                         </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="font-bold text-sm text-text-muted">Price</label>
+                            <Dropdown value={venueForm.priceRange} options={['$', '$$', '$$$', '$$$$']} onChange={e => setVenueForm({ ...venueForm, priceRange: e.value })} />
+                        </div>
+                    </div>
 
-                        {/* Existing Rooms List */}
-                        <table style={{ width: '100%', marginBottom: '30px', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid #444', textAlign: 'left' }}>
-                                    <th style={{ padding: '10px' }}>{t('roomName')}</th>
-                                    <th style={{ padding: '10px' }}>Type</th>
-                                    <th style={{ padding: '10px' }}>{t('capacity')}</th>
-                                    <th style={{ padding: '10px' }}>{t('total')}</th>
-                                    <th style={{ padding: '10px' }}>{t('actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {selectedVenue.rooms.map(room => (
-                                    <tr key={room.id} style={{ borderBottom: '1px solid #333' }}>
-                                        <td style={{ padding: '10px' }}>{room.name}</td>
-                                        <td style={{ padding: '10px' }}>{room.type}</td>
-                                        <td style={{ padding: '10px' }}>{room.capacity}</td>
-                                        <td style={{ padding: '10px' }}>{room.hourlyRate?.toLocaleString()}₮</td>
-                                        <td style={{ padding: '10px', display: 'flex', gap: '5px' }}>
-                                            <button
-                                                className="btn btn-sm btn-outline"
-                                                onClick={() => handleEditRoom(room)}
-                                                style={{ fontSize: '0.8rem' }}
-                                            >
-                                                ✎
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-outline"
-                                                style={{ color: 'red', borderColor: 'red' }}
-                                                onClick={() => handleDeleteRoom(room.id)}
-                                            >
-                                                {t('delete')}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="bg-white/5 p-3 rounded-lg">
+                        <h4 className="m-0 mb-3 text-xs font-bold uppercase text-gray-400">Booking Setup</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs text-text-muted">Allowed Start Time</label>
+                                <InputText type="time" value={venueForm.bookingWindowStart || ''} onChange={e => setVenueForm({ ...venueForm, bookingWindowStart: e.target.value })} className="p-inputtext-sm" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs text-text-muted">Allowed End Time</label>
+                                <InputText type="time" value={venueForm.bookingWindowEnd || ''} onChange={e => setVenueForm({ ...venueForm, bookingWindowEnd: e.target.value })} className="p-inputtext-sm" />
+                            </div>
+                            <div className="sm:col-span-2 flex flex-col gap-1">
+                                <label className="text-xs text-text-muted">Max Advance Booking (Days)</label>
+                                <InputNumber value={venueForm.advanceBookingDays} onValueChange={e => setVenueForm({ ...venueForm, advanceBookingDays: e.value })} min={1} max={30} showButtons className="p-inputtext-sm" />
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Add/Edit Room Form */}
-                        <h4 style={{ marginBottom: '15px' }}>{editingRoom ? 'Edit Room' : t('addRoom')}</h4>
-                        <form onSubmit={handleSaveRoom} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            <input
-                                placeholder={t('roomName')}
-                                value={roomForm.name}
-                                onChange={e => setRoomForm({ ...roomForm, name: e.target.value })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                required
-                            />
-                            <select
-                                value={roomForm.type}
-                                onChange={e => {
-                                    const newType = e.target.value;
-                                    let newImg = imgStandard;
-                                    if (newType === 'VIP') newImg = imgVIP;
-                                    else if (newType === 'Party') newImg = imgParty;
-                                    else if (newType === 'Small') newImg = imgMinimal;
+                    <ImagePicker
+                        label="Venue Featured Image"
+                        selectedImage={venueForm.featuredImage}
+                        onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
+                    />
 
-                                    setRoomForm({ ...roomForm, type: newType, images: [newImg] });
-                                }}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                            >
-                                <option value="Standard">Standard</option>
-                                <option value="VIP">VIP</option>
-                                <option value="Party">Party</option>
-                                <option value="Small">Small</option>
-                                <option value="Themed">Themed</option>
-                            </select>
-                            <input
-                                type="number"
-                                placeholder={t('capacity')}
-                                value={roomForm.capacity}
-                                onChange={e => setRoomForm({ ...roomForm, capacity: Number(e.target.value) })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                required
-                            />
-                            <input
-                                type="number"
-                                placeholder={t('pricePerHour')}
-                                value={roomForm.hourlyRate}
-                                onChange={e => setRoomForm({ ...roomForm, hourlyRate: Number(e.target.value) })}
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                required
-                            />
-                            <div style={{ gridColumn: 'span 2' }}>
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-2">
+                        <Button
+                            type="button"
+                            label="Cancel"
+                            outlined
+                            onClick={() => setIsVenueModalOpen(false)}
+                        />
+                        <Button
+                            type="submit"
+                            label={t('save')}
+                        />
+                    </div>
+                </form>
+            </Dialog>
+
+            {/* Room Management Dialog */}
+            <Dialog header={`${t('manageRooms')}: ${selectedVenue?.name}`} visible={isRoomModalOpen} className="w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-[800px]" modal onHide={() => setIsRoomModalOpen(false)}>
+                <div className="flex flex-col gap-4">
+                    <div className="overflow-x-auto">
+                        <DataTable value={selectedVenue?.rooms} className="mt-2">
+                            <Column field="name" header={t('roomName')}></Column>
+                            <Column field="type" header="Type"></Column>
+                            <Column field="capacity" header={t('capacity')}></Column>
+                            <Column header={t('total')} body={roomRateBody}></Column>
+                            <Column header={t('actions')} body={roomActionsBody}></Column>
+                        </DataTable>
+                    </div>
+
+                    {/* Add/Edit Room Form */}
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 shadow-lg">
+                        <h4 className="text-lg font-bold m-0 mb-4">{editingRoom ? 'Edit Room' : t('addRoom')}</h4>
+                        <form onSubmit={handleSaveRoom} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="font-bold text-sm text-text-muted">{t('roomName')}</label>
+                                <InputText value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} required />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="font-bold text-sm text-text-muted">Type</label>
+                                <Dropdown value={roomForm.type} options={['Standard', 'VIP', 'Party', 'Small', 'Themed']}
+                                    onChange={e => {
+                                        const newType = e.value;
+                                        let newImg = imgStandard;
+                                        if (newType === 'VIP') newImg = imgVIP;
+                                        else if (newType === 'Party') newImg = imgParty;
+                                        else if (newType === 'Small') newImg = imgMinimal;
+                                        setRoomForm({ ...roomForm, type: newType, images: [newImg] });
+                                    }} />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="font-bold text-sm text-text-muted">{t('capacity')}</label>
+                                <InputNumber value={roomForm.capacity} onValueChange={e => setRoomForm({ ...roomForm, capacity: e.value })} min={1} required showButtons />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="font-bold text-sm text-text-muted">{t('pricePerHour')}</label>
+                                <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" required />
+                            </div>
+                            <div className="sm:col-span-2">
                                 <ImagePicker
                                     label="Room Image"
                                     selectedImage={roomForm.images[0]}
                                     onSelect={(url) => setRoomForm({ ...roomForm, images: [url] })}
                                 />
                             </div>
-                            <div style={{ gridColumn: 'span 2', display: 'flex', gap: '10px' }}>
-                                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                                    {editingRoom ? t('save') : t('addRoom')}
-                                </button>
+                            <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-2">
                                 {editingRoom && (
-                                    <button
+                                    <Button
                                         type="button"
-                                        className="btn btn-outline"
+                                        label="Cancel"
+                                        outlined
                                         onClick={() => {
                                             setEditingRoom(null);
-                                            setRoomForm({ name: '', type: 'Standard', capacity: 6, hourlyRate: 40000 });
+                                            setRoomForm({ name: '', type: 'Standard', capacity: 6, hourlyRate: 40000, images: [imgStandard] });
                                         }}
-                                        style={{ width: '100px' }}
-                                    >
-                                        Cancel
-                                    </button>
+                                    />
                                 )}
+                                <Button
+                                    type="submit"
+                                    label={editingRoom ? t('save') : t('addRoom')}
+                                />
                             </div>
                         </form>
                     </div>
                 </div>
-            )}
+            </Dialog>
+
         </div>
     );
 };

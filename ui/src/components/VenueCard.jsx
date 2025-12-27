@@ -57,73 +57,77 @@ const VenueCard = ({ venue, onBook, distance }) => {
     const isOpen = isVenueOpen(venue.openingHours);
 
     return (
-        <div className={`venue-card ${!isOpen ? 'closed' : ''}`}>
-            <div className="card-image-wrapper">
-                <img src={featuredImage} alt={venue.name} className="card-image" style={!isOpen ? { filter: 'grayscale(100%)' } : {}} />
-                <div className="card-badge">{venue.district}</div>
-                {distance && <div className="distance-badge">{formatDistance(distance)} {t('away')}</div>}
+        <div className={`group bg-[#151521] rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] relative flex flex-col h-full ${!isOpen ? 'opacity-80 grayscale-[0.8]' : ''}`}>
 
+            {/* Image Section */}
+            <div className="relative h-56 overflow-hidden">
+                <img src={featuredImage} alt={venue.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 bg-[#a000ff] px-3 py-1 rounded text-xs font-bold text-white shadow-md">
+                    {distance ? `${formatDistance(distance)} ${t('away')}` : '2.4km'}
+                </div>
+
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded text-xs font-medium text-white/90">
+                    {venue.district}
+                </div>
+
+                {/* Closed Overlay */}
                 {!isOpen && (
-                    <div className="closed-overlay">
-                        {t('closed')}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] z-10">
+                        <div className="bg-black/80 text-white px-4 py-1.5 rounded-full font-bold border border-white/20 text-sm">
+                            ({t('closed')})
+                        </div>
                     </div>
                 )}
             </div>
-            <div className="card-content">
-                <div className="card-header">
-                    <h3 className="venue-name">{venue.name}</h3>
-                    <div className="rating">⭐ {Number(venue.rating || 0).toFixed(1)}</div>
-                </div>
-                <p className="venue-address">{venue.address}</p>
 
+            {/* Content Section */}
+            <div className="p-5 flex flex-col flex-grow relative">
+                {/* Name & Rating */}
+                <div className="flex justify-between items-start mb-0.5">
+                    <h3 className="text-xl font-bold text-white tracking-tight">
+                        {venue.name}
+                    </h3>
+                    <div className="flex items-center gap-1 bg-[#b000ff]/10 px-2 py-0.5 rounded border border-[#b000ff]/20">
+                        <span className="text-[#eb79b2] text-xs">★</span>
+                        <span className="font-bold text-[#eb79b2] text-xs">{Number(venue.rating || 0).toFixed(1)}</span>
+                    </div>
+                </div>
+
+                {/* Subtext info */}
+                <p className="text-gray-500 text-sm mb-4">{venue.address || venue.district}</p>
+
+                {/* Info Chips (Status) */}
                 {!isOpen && (
-                    <div style={{
-                        background: 'rgba(0, 0, 0, 0.05)',
-                        color: 'var(--text-secondary)',
-                        padding: '8px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        marginBottom: '10px',
-                        fontWeight: '500',
-                        border: '1px solid #ddd',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                    }}>
+                    <div className="mb-4 bg-red-500/10 text-red-400 p-2 rounded-lg text-xs font-medium border border-red-500/20 flex items-center gap-2">
                         🕒 {t('venueClosed')}
                     </div>
                 )}
 
-                {venue.isBookingEnabled === false && (
-                    <div style={{
-                        background: 'rgba(233, 30, 99, 0.1)',
-                        color: 'var(--color-accent)',
-                        padding: '8px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        marginBottom: '10px',
-                        fontWeight: '600',
-                        border: '1px solid var(--color-accent)'
-                    }}>
-                        ⚠️ {t('onlineBookingDisabled')}
+                {/* Price & Capacity Row */}
+                <div className="mt-auto flex justify-between items-end mb-5">
+                    <div className="flex flex-col">
+                        <span className="text-gray-500 text-xs uppercase font-bold tracking-wider">{t('capacity')}</span>
+                        <span className="text-white font-medium text-sm">Up to {maxCapacity}</span>
                     </div>
-                )}
-
-                <div className="venue-details">
-                    <div className="venue-price">
-                        <span className="label text-muted">{t('from')} </span>
-                        {priceDisplay} {t('perHour')}
-                    </div>
-                    <div className="venue-capacity text-muted">
-                        Max {maxCapacity} {t('capacity')}
+                    <div className="text-right">
+                        <div className="text-gray-500 text-xs font-bold uppercase tracking-wider">{t('from')}</div>
+                        <div className="text-highlight text-xl leading-none">
+                            {minPrice ? minPrice.toLocaleString() : venue.priceRange}₮
+                            <span className="text-[10px] ml-0.5 font-bold opacity-80 text-gray-500">{t('perHourShort')}</span>
+                        </div>
                     </div>
                 </div>
 
+                {/* Action Button */}
                 <button
-                    className={`btn ${venue.isBookingEnabled === false || !isOpen ? 'btn-outline' : 'btn-primary'} full-width`}
-                    onClick={() => onBook(venue)}
+                    className={`w-full py-4 rounded-full font-bold text-sm transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
+                        ? 'bg-transparent border border-white/10 text-gray-500 cursor-not-allowed'
+                        : 'bg-neon-purple-pattern text-white shadow-[0_0_20px_rgba(176,0,255,0.3)] hover:shadow-[0_0_30px_rgba(176,0,255,0.5)]'
+                        }`}
+                    onClick={() => (isOpen || venue.isBookingEnabled === false) && onBook(venue)}
                     disabled={!isOpen && venue.isBookingEnabled !== false}
-                    style={!isOpen ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
                 >
                     {venue.isBookingEnabled === false ? t('viewDetails') : (!isOpen ? t('closed') : t('bookNow'))}
                 </button>

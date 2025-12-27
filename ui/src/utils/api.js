@@ -43,7 +43,14 @@ export const api = {
         const response = await apiInstance.post('/users', userData);
         return response.data;
     },
-
+    updateUser: async (id, data) => {
+        const response = await apiInstance.patch(`/users/${id}`, data);
+        return response.data;
+    },
+    toggleUserStatus: async (id, data) => {
+        const response = await apiInstance.patch(`/users/${id}/status`, data);
+        return response.data;
+    },
     verifyAccount: async (code) => {
         const response = await apiInstance.post('/auth/verify', { code });
         return response.data;
