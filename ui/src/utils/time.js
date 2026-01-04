@@ -37,7 +37,7 @@ export const isVenueOpen = (openingHours) => {
     const prevDay = getPreviousDayName(currentDay);
 
     // Check today's schedule
-    const todayRange = hoursMap[currentDay];
+    const todayRange = hoursMap[currentDay] || hoursMap['Daily'];
     if (todayRange) {
         const [startStr, endStr] = todayRange.split('-');
         const start = parseTime(startStr);
@@ -60,7 +60,7 @@ export const isVenueOpen = (openingHours) => {
     }
 
     // Check previous day's schedule (if it spills over to today)
-    const prevRange = hoursMap[prevDay];
+    const prevRange = hoursMap[prevDay] || hoursMap['Daily'];
     if (prevRange) {
         const [startStr, endStr] = prevRange.split('-');
         const start = parseTime(startStr);

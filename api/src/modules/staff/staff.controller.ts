@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -22,9 +22,11 @@ export class StaffController {
 
     @Get()
     @ApiOperation({ summary: 'Get all staff (filtered by organization)' })
-    async findAll(@Req() req: any) {
-        // Sysadmin sees all, others see only their org
-        const orgId = req.user.role === 'sysadmin' ? undefined : req.user.organizationId;
+    async findAll(@Req() req: any, @Query('organizationId') organizationId?: string) {
+        // Sysadmin sees all (can filter), others see only their org
+        const orgId = req.user.role === 'sysadmin'
+            ? (organizationId ? Number(organizationId) : undefined)
+            : (req.user.organizationId ? Number(req.user.organizationId) : undefined);
         return this.staffService.findAll(orgId);
     }
 

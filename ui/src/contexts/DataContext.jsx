@@ -11,7 +11,10 @@ export const DataProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [bookings, setBookings] = useState([]);
     const [users, setUsers] = useState([]);
+    const [staffs, setStaffs] = useState([]);
     const [organizations, setOrganizations] = useState([]);
+    const [roomTypes, setRoomTypes] = useState([]);
+    const [roomFeatures, setRoomFeatures] = useState([]);
     const [activeVenueId, _setActiveVenueId] = useState(null);
     const setActiveVenueId = (id) => {
         _setActiveVenueId(id);
@@ -20,7 +23,19 @@ export const DataProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     // Load initial data
+    // Load initial data
     useEffect(() => {
+        // [NEW] Magic Link Setup Logic
+        const params = new URLSearchParams(window.location.search);
+        const setupOrg = params.get('setup_org');
+        if (setupOrg) {
+            localStorage.setItem('device_org_code', setupOrg);
+            // Clean URL without refresh
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+            alert(`Device successfully configured for Organization: ${setupOrg}`);
+        }
+
         loadInitialData();
     }, []);
 
@@ -65,21 +80,28 @@ export const DataProvider = ({ children }) => {
                     // Load organization-specific data
                     if (userData.role === 'sysadmin') {
                         try {
-                            const orgsData = await api.getOrganizations();
+                            const [orgsData, usersData, staffData, bookingsData] = await Promise.all([
+                                api.getOrganizations(),
+                                api.getUsers(),
+                                api.getStaff(),
+                                api.getBookings()
+                            ]);
+                            console.log('[DataContext] Sysadmin staffs:', staffData);
                             setOrganizations(orgsData);
-                            const usersData = await api.getUsers();
                             setUsers(usersData);
-                            const bookingsData = await api.getBookings(); // Global for sysadmin
+                            setStaffs(staffData);
                             setBookings(bookingsData);
                         } catch (error) {
                             console.error('Failed to load sysadmin data:', error);
                         }
                     } else if (userData.role === 'manager' || userData.role === 'staff') {
                         try {
-                            const staffData = await api.getStaff(); // Get staff for their org
-                            setUsers(staffData);
-
-                            const bookingsData = await api.getBookings({ organizationId: userData.organizationId });
+                            const [staffData, bookingsData] = await Promise.all([
+                                api.getStaff(),
+                                api.getBookings({ organizationId: userData.organizationId })
+                            ]);
+                            console.log('[DataContext] Manager staffs:', staffData);
+                            setStaffs(staffData);
                             setBookings(bookingsData);
 
                             // Set activeVenueId to the first venue of the organization
@@ -91,6 +113,20 @@ export const DataProvider = ({ children }) => {
                                     setActiveVenueId(parseInt(savedVenueId));
                                 } else {
                                     setActiveVenueId(orgVenues[0].id);
+                                }
+                            }
+
+                            // Load Room Configurations
+                            if (userData.role === 'manager' || userData.role === 'sysadmin') {
+                                try {
+                                    const [types, features] = await Promise.all([
+                                        api.get('/room-settings/types'),
+                                        api.get('/room-settings/features')
+                                    ]);
+                                    setRoomTypes(types);
+                                    setRoomFeatures(features);
+                                } catch (e) {
+                                    console.error('Failed to load room config:', e);
                                 }
                             }
                         } catch (error) {
@@ -126,19 +162,22 @@ export const DataProvider = ({ children }) => {
 
         if (data.user.role === 'sysadmin') {
             try {
-                const [orgsData, usersData] = await Promise.all([
+                const [orgsData, usersData, staffData] = await Promise.all([
                     api.getOrganizations(),
-                    api.getUsers()
+                    api.getUsers(),
+                    api.getStaff()
                 ]);
+                console.log('[DataContext] Sysadmin login staffs:', staffData);
                 setOrganizations(orgsData);
                 setUsers(usersData);
+                setStaffs(staffData);
             } catch (error) {
                 console.error('Failed to load sysadmin data:', error);
             }
         } else if (data.user.role === 'manager' || data.user.role === 'staff') {
             try {
                 const staffData = await api.getStaff();
-                setUsers(staffData);
+                setStaffs(staffData);
 
                 // Refresh venues to ensure org-scoped if necessary (though already fetched globally in loadInitialData for now)
                 // Set activeVenueId
@@ -157,9 +196,9 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const login = async (identifier, password) => {
+    const login = async (identifier, password, orgCode) => {
         try {
-            const data = await api.login(identifier, password);
+            const data = await api.login(identifier, password, orgCode);
             setCurrentUser(data.user);
             localStorage.setItem('access_token', data.access_token);
             localStorage.setItem('user', JSON.stringify(data.user));
@@ -455,9 +494,10 @@ export const DataProvider = ({ children }) => {
     const addStaff = async (staffData) => {
         try {
             const newStaff = await api.createStaff(staffData);
-            setUsers(prev => [newStaff, ...prev]);
+            setStaffs(prev => [newStaff, ...prev]);
             return newStaff;
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Failed to add staff:', error);
             throw error;
         }
@@ -508,7 +548,31 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const toggleStaffStatus = (id) => toggleUserStatus(id, 'staff');
+    const toggleStaffStatus = async (id) => {
+        try {
+            const staff = staffs.find(s => s.id === id);
+            if (!staff) return;
+
+            const newStatus = !staff.isActive;
+            await api.updateStaff(id, { isActive: newStatus });
+
+            setStaffs(prev => prev.map(s => s.id === id ? { ...s, isActive: newStatus } : s));
+        } catch (error) {
+            console.error('Failed to toggle staff status:', error);
+            throw error;
+        }
+    };
+
+    const updateStaff = async (id, updates) => {
+        try {
+            const updated = await api.updateStaff(id, updates);
+            setStaffs(prev => prev.map(s => s.id === id ? updated : s));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update staff:', error);
+            throw error;
+        }
+    };
     const transactions = [];
     const settings = {
         taxRate: 0.1,
@@ -518,6 +582,37 @@ export const DataProvider = ({ children }) => {
     };
     const setSettings = () => { };
     const promos = [];
+
+    // --- ROOM CONFIG HELPERS ---
+    const addRoomType = async (data) => {
+        const res = await api.post('/room-settings/types', data);
+        setRoomTypes(prev => [...prev, res]);
+        return res;
+    };
+    const updateRoomType = async (id, data) => {
+        const res = await api.put(`/room-settings/types/${id}`, data);
+        setRoomTypes(prev => prev.map(t => t.id === id ? res : t));
+        return res;
+    };
+    const deleteRoomType = async (id) => {
+        await api.delete(`/room-settings/types/${id}`);
+        setRoomTypes(prev => prev.filter(t => t.id !== id));
+    };
+
+    const addRoomFeature = async (data) => {
+        const res = await api.post('/room-settings/features', data);
+        setRoomFeatures(prev => [...prev, res]);
+        return res;
+    };
+    const updateRoomFeature = async (id, data) => {
+        const res = await api.put(`/room-settings/features/${id}`, data);
+        setRoomFeatures(prev => prev.map(f => f.id === id ? res : f));
+        return res;
+    };
+    const deleteRoomFeature = async (id) => {
+        await api.delete(`/room-settings/features/${id}`);
+        setRoomFeatures(prev => prev.filter(f => f.id !== id));
+    };
 
     if (loading) {
         return <div>Loading...</div>;
@@ -550,9 +645,11 @@ export const DataProvider = ({ children }) => {
                 resetPassword: api.resetPassword,
                 updateProfile,
                 addUser,
-                addStaff,
                 updateUser,
                 toggleUserStatus,
+                staffs,
+                addStaff,
+                updateStaff,
                 toggleStaffStatus,
                 bookings,
                 addBooking,
@@ -569,7 +666,15 @@ export const DataProvider = ({ children }) => {
                 setSettings,
                 promos,
                 verifyPromoCode,
-                refreshData: loadInitialData
+                refreshData: loadInitialData,
+                roomTypes,
+                roomFeatures,
+                addRoomType,
+                updateRoomType,
+                deleteRoomType,
+                addRoomFeature,
+                updateRoomFeature,
+                deleteRoomFeature,
             }}
         >
             {children}

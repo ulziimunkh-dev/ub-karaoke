@@ -13,7 +13,9 @@ CREATE TABLE organizations (
     email VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE staff (
@@ -28,7 +30,9 @@ CREATE TABLE staff (
     is_active BOOLEAN DEFAULT true,
     is_verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE users (
@@ -42,7 +46,9 @@ CREATE TABLE users (
     loyalty_points INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE venues (
@@ -68,7 +74,9 @@ CREATE TABLE venues (
     "bookingWindowEnd" TIME,
     "advanceBookingDays" INTEGER DEFAULT 7,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE rooms (
@@ -88,7 +96,9 @@ CREATE TABLE rooms (
     "partySupport" JSONB,
     "view360Url" TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE bookings (
@@ -97,7 +107,6 @@ CREATE TABLE bookings (
     "venueId" INTEGER REFERENCES venues(id),
     "roomId" INTEGER REFERENCES rooms(id),
     "userId" INTEGER REFERENCES users(id),
-    "createdByStaffId" INTEGER REFERENCES staff(id),
     "startTime" TIMESTAMP NOT NULL,
     "endTime" TIMESTAMP NOT NULL,
     "totalPrice" DECIMAL(10,2),
@@ -106,7 +115,9 @@ CREATE TABLE bookings (
     "customerPhone" VARCHAR(20),
     "specialRequests" TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE payments (
@@ -118,7 +129,9 @@ CREATE TABLE payments (
     status VARCHAR(50),
     "transactionId" VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE reviews (
@@ -131,7 +144,9 @@ CREATE TABLE reviews (
     comment TEXT,
     verified BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by INTEGER,
+    updated_by INTEGER
 );
 
 CREATE TABLE audit_logs (

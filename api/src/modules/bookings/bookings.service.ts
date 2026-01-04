@@ -36,6 +36,7 @@ export class BookingsService {
         const booking = this.bookingsRepository.create({
             ...createBookingDto,
             userId,
+            createdBy: userId, // For external bookings, user is the creator
             status: BookingStatus.PENDING, // Default to PENDING
         });
         const savedBooking = await this.bookingsRepository.save(booking);
@@ -69,6 +70,7 @@ export class BookingsService {
         const booking = this.bookingsRepository.create({
             ...createBookingDto,
             status: BookingStatus.CONFIRMED,
+            createdBy: adminId,
         });
 
         const savedBooking = await this.bookingsRepository.save(booking);
@@ -87,6 +89,7 @@ export class BookingsService {
     async approve(id: number, adminId: number): Promise<Booking> {
         const booking = await this.findOne(id);
         booking.status = BookingStatus.CONFIRMED;
+        booking.updatedBy = adminId;
         const saved = await this.bookingsRepository.save(booking);
 
         await this.auditService.log({
@@ -101,6 +104,7 @@ export class BookingsService {
     async reject(id: number, adminId: number): Promise<Booking> {
         const booking = await this.findOne(id);
         booking.status = BookingStatus.REJECTED;
+        booking.updatedBy = adminId;
         const saved = await this.bookingsRepository.save(booking);
 
         await this.auditService.log({
@@ -139,7 +143,7 @@ export class BookingsService {
             query.andWhere('booking.status = :status', { status: filters.status });
         }
 
-        return query.orderBy('booking.date', 'DESC').getMany();
+        return query.orderBy('booking.created_at', 'DESC').getMany();
     }
 
     async findOne(id: number): Promise<Booking> {
@@ -155,9 +159,12 @@ export class BookingsService {
         return booking;
     }
 
-    async update(id: number, updateBookingDto: UpdateBookingDto): Promise<Booking> {
+    async update(id: number, updateBookingDto: Partial<UpdateBookingDto>, updatedBy?: number): Promise<Booking> {
         const booking = await this.findOne(id);
         Object.assign(booking, updateBookingDto);
+        if (updatedBy) {
+            booking.updatedBy = updatedBy;
+        }
         return this.bookingsRepository.save(booking);
     }
 

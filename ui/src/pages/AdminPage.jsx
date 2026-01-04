@@ -6,11 +6,13 @@ import AdminDashboard from '../components/admin/AdminDashboard';
 import ManagerDashboard from '../components/admin/ManagerDashboard';
 import VenueManagement from '../components/admin/VenueManagement';
 import UserManagement from '../components/admin/UserManagement';
+import StaffManagement from '../components/admin/StaffManagement';
 import SystemSettings from '../components/admin/SystemSettings';
 import Reports from '../components/admin/Reports';
 import Finance from '../components/admin/Finance';
 import StaffPortal from '../components/StaffPortal';
 import StaffLoginPage from './StaffLoginPage';
+import AdminLoginPage from './AdminLoginPage';
 
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
@@ -25,7 +27,7 @@ const AdminPage = () => {
     console.log('AdminPage render - currentUser:', currentUser);
 
     if (!currentUser) {
-        return <StaffLoginPage />;
+        return <AdminLoginPage />;
     }
 
     // Security check: Only staff, managers, and sysadmins can access this page
@@ -48,8 +50,9 @@ const AdminPage = () => {
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
         ...(currentUser.role === 'sysadmin' ? [{ id: 'organizations', label: 'Organizations', icon: '🏛️' }] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? 'Venues & Rooms' : 'Branches & Rooms', icon: '🏢' },
-        { id: 'pos_view', label: 'Point of Sale', icon: '🖥️' },
-        { id: 'users', label: 'Staff Users', icon: '👥' },
+        ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: 'Point of Sale', icon: '🖥️' }] : []),
+        { id: 'users', label: 'Users', icon: '👥' },
+        { id: 'staffs', label: 'Staffs', icon: '👥' },
         { id: 'audit', label: 'Audit Logs', icon: '📋' },
         { id: 'reports', label: 'Reports', icon: '📈' },
         { id: 'finance', label: 'Finance', icon: '💰' },
@@ -119,7 +122,7 @@ const AdminPage = () => {
             {/* Main Content */}
             <main style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
                 {/* Header Filter Bar - visible for core management tabs */}
-                {['pos_view', 'users', 'venues', 'audit'].includes(activeTab) && (
+                {['pos_view', 'venues'].includes(activeTab) && (
                     <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1a1a24] p-5 rounded-2xl border border-white/5 shadow-2xl">
                         <div className="flex flex-col gap-1">
                             <h1 className="text-xl font-bold text-white m-0 uppercase tracking-tight">Management context</h1>
@@ -147,7 +150,8 @@ const AdminPage = () => {
                 {activeTab === 'organizations' && <OrganizationManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
-                {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'users' && currentUser.role === 'sysadmin' && <UserManagement />}
+                {activeTab === 'staffs' && <StaffManagement />}
                 {activeTab === 'audit' && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
                 {activeTab === 'finance' && <Finance />}

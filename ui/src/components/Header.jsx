@@ -32,7 +32,7 @@ const Header = () => {
 
                     {currentUser ? (
                         <div className="flex items-center gap-4">
-                            <Link to="/profile" className="text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
+                            <Link to="/user/profile" className="text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
                                 Hi, {currentUser.name}
                             </Link>
                             <button className="h-10 px-4 text-sm font-semibold rounded-full border border-[#b000ff] text-[#eb79b2] hover:bg-[#b000ff]/10 hover:shadow-[0_0_10px_rgba(176,0,255,0.3)] transition-all flex items-center" onClick={handleLogout}>

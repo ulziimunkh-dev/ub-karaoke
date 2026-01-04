@@ -12,6 +12,8 @@ import { InputNumber } from 'primereact/inputnumber';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Tag } from 'primereact/tag';
+import { MultiSelect } from 'primereact/multiselect';
+import RoomConfiguration from './RoomConfiguration';
 
 // Import local stock images for the gallery
 import imgMinimal from '../../assets/defaults/karaoke_minimal.png';
@@ -51,7 +53,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, currentUser, organizations } = useData();
+    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, currentUser, organizations, roomTypes, roomFeatures } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -76,15 +78,17 @@ const VenueManagement = () => {
     // Room Modal State
     const [selectedVenueId, setSelectedVenueId] = useState(null);
     const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
 
     // Room Form State
     const [editingRoom, setEditingRoom] = useState(null); // If null, adding new.
     const [roomForm, setRoomForm] = useState({
         name: '',
-        type: 'Standard',
+        roomTypeId: null, // Use ID now
         capacity: 6,
         hourlyRate: 40000,
-        images: [imgStandard]
+        images: [imgStandard],
+        featureIds: [] // New features selection
     });
 
     const selectedVenue = venues?.find(v => v.id === selectedVenueId); // Safe access
@@ -214,10 +218,11 @@ const VenueManagement = () => {
         setEditingRoom(room);
         setRoomForm({
             name: room.name,
-            type: room.type,
+            roomTypeId: room.roomTypeId || (roomTypes.find(t => t.name === room.type)?.id), // Try to match by ID or name fallback
             capacity: room.capacity,
             hourlyRate: room.hourlyRate || room.pricePerHour, // Handle both for safety during transition
-            images: (room.images && room.images.length > 0) ? room.images : [imgStandard]
+            images: (room.images && room.images.length > 0) ? room.images : [imgStandard],
+            featureIds: room.roomFeatures?.map(f => f.id) || []
         });
     };
 
@@ -236,10 +241,11 @@ const VenueManagement = () => {
         // Reset form keeping defaults or clear?
         setRoomForm({
             name: '',
-            type: 'Standard',
+            roomTypeId: null,
             capacity: 6,
             hourlyRate: 40000,
-            images: [imgStandard]
+            images: [imgStandard],
+            featureIds: []
         });
     };
 
@@ -293,12 +299,23 @@ const VenueManagement = () => {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <h2 className="text-2xl font-bold m-0">{t('venueManagement')}</h2>
-                <Button
-                    onClick={openAddVenue}
-                    className="h-11 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center gap-2"
-                >
-                    {t('addBranch')}
-                </Button>
+                <div className="flex gap-2">
+                    {['sysadmin', 'admin'].includes(currentUser.role) && (
+                        <Button
+                            label="Room Settings"
+                            icon="pi pi-cog"
+                            outlined
+                            onClick={() => setIsConfigModalOpen(true)}
+                            className="h-11"
+                        />
+                    )}
+                    <Button
+                        onClick={openAddVenue}
+                        className="h-11 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center gap-2"
+                    >
+                        {t('addBranch')}
+                    </Button>
+                </div>
             </div>
 
             <div className="grid gap-4">
@@ -326,7 +343,8 @@ const VenueManagement = () => {
                                             icon="pi pi-pencil"
                                             onClick={() => openEditVenue(venue)}
                                             text
-                                            className="ml-auto lg:ml-2 p-2 text-gray-400 hover:text-[#b000ff]"
+                                            rounded
+                                            className="ml-auto lg:ml-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
                                         />
                                     </div>
                                     <p className="text-gray-400 my-2 text-sm">{venue.district} • {openHoursDisplay}</p>
@@ -340,28 +358,32 @@ const VenueManagement = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-row lg:flex-col gap-2">
-                                    <Button
-                                        label={venue.closed ? t('reOpen') : t('closeBranch')}
-                                        icon={venue.closed ? "pi pi-play" : "pi pi-pause"}
-                                        severity={venue.closed ? "success" : "warning"}
-                                        outlined
-                                        onClick={() => handleToggleStatus(venue)}
-                                        className="flex-1 lg:flex-none"
-                                    />
+                                <div className="flex flex-col lg:flex-row gap-2 items-center">
                                     <Button
                                         label={t('manageRooms')}
                                         icon="pi pi-building"
                                         onClick={() => handleManageRooms(venue)}
-                                        className="flex-1 lg:flex-none"
+                                        className="w-full lg:w-auto bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold hover:shadow-[0_0_15px_rgba(176,0,255,0.5)] transition-all duration-300"
                                     />
-                                    <Button
-                                        icon="pi pi-trash"
-                                        severity="danger"
-                                        outlined
-                                        onClick={() => handleDeleteVenue(venue.id)}
-                                        className="lg:w-full"
-                                    />
+                                    <div className="flex gap-2 w-full lg:w-auto">
+                                        <Button
+                                            label={venue.closed ? t('reOpen') : t('closeBranch')}
+                                            icon={venue.closed ? "pi pi-play" : "pi pi-pause"}
+                                            severity={venue.closed ? "success" : "warning"}
+                                            outlined
+                                            onClick={() => handleToggleStatus(venue)}
+                                            className="flex-1 lg:flex-none"
+                                        />
+                                        <Button
+                                            icon="pi pi-trash"
+                                            severity="danger"
+                                            outlined
+                                            onClick={() => handleDeleteVenue(venue.id)}
+                                            className=""
+                                            tooltip={t('delete')}
+                                            tooltipOptions={{ position: 'top' }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -469,15 +491,35 @@ const VenueManagement = () => {
                             </div>
                             <div className="flex flex-col gap-2">
                                 <label className="font-bold text-sm text-text-muted">Type</label>
-                                <Dropdown value={roomForm.type} options={['Standard', 'VIP', 'Party', 'Small', 'Themed']}
+                                <Dropdown
+                                    value={roomForm.roomTypeId}
+                                    options={roomTypes}
+                                    optionLabel="name"
+                                    optionValue="id"
+                                    placeholder="Select Type"
                                     onChange={e => {
-                                        const newType = e.value;
+                                        // Auto-select image based on type name as a hint
+                                        const type = roomTypes.find(t => t.id === e.value);
                                         let newImg = imgStandard;
-                                        if (newType === 'VIP') newImg = imgVIP;
-                                        else if (newType === 'Party') newImg = imgParty;
-                                        else if (newType === 'Small') newImg = imgMinimal;
-                                        setRoomForm({ ...roomForm, type: newType, images: [newImg] });
-                                    }} />
+                                        if (type?.name?.includes('VIP')) newImg = imgVIP;
+                                        else if (type?.name?.includes('Party')) newImg = imgParty;
+                                        else if (type?.name?.includes('Small') || type?.name?.includes('Minimal')) newImg = imgMinimal;
+
+                                        setRoomForm({ ...roomForm, roomTypeId: e.value, images: [newImg] });
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="font-bold text-sm text-text-muted">Features</label>
+                                <MultiSelect
+                                    value={roomForm.featureIds}
+                                    options={roomFeatures}
+                                    optionLabel="name"
+                                    optionValue="id"
+                                    display="chip"
+                                    placeholder="Select Features"
+                                    onChange={(e) => setRoomForm({ ...roomForm, featureIds: e.value })}
+                                />
                             </div>
                             <div className="flex flex-col gap-2">
                                 <label className="font-bold text-sm text-text-muted">{t('capacity')}</label>
@@ -502,7 +544,8 @@ const VenueManagement = () => {
                                         outlined
                                         onClick={() => {
                                             setEditingRoom(null);
-                                            setRoomForm({ name: '', type: 'Standard', capacity: 6, hourlyRate: 40000, images: [imgStandard] });
+                                            setEditingRoom(null);
+                                            setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], featureIds: [] });
                                         }}
                                     />
                                 )}
@@ -516,7 +559,13 @@ const VenueManagement = () => {
                 </div>
             </Dialog>
 
-        </div>
+
+
+            <Dialog header="Room Types & Features Configuration" visible={isConfigModalOpen} className="w-full max-w-[95vw] lg:max-w-[1000px]" modal onHide={() => setIsConfigModalOpen(false)}>
+                <RoomConfiguration />
+            </Dialog>
+
+        </div >
     );
 };
 

@@ -26,6 +26,7 @@ export class OrganizationsService {
         const organization = this.organizationsRepository.create({
             ...createOrganizationDto,
             code: createOrganizationDto.code.toUpperCase(),
+            createdBy: createdByStaffId,
         });
 
         const saved = await this.organizationsRepository.save(organization);
@@ -60,10 +61,13 @@ export class OrganizationsService {
         return organization;
     }
 
-    async update(id: number, updateDto: Partial<CreateOrganizationDto>) {
+    async update(id: number, updateDto: Partial<CreateOrganizationDto>, updatedByStaffId?: number) {
         const organization = await this.findOne(id);
 
         Object.assign(organization, updateDto);
+        if (updatedByStaffId) {
+            organization.updatedBy = updatedByStaffId;
+        }
         const updated = await this.organizationsRepository.save(organization);
 
         // Audit log

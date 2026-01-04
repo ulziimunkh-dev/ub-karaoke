@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
+import AdminLoginPage from './pages/AdminLoginPage';
 import StaffLoginPage from './pages/StaffLoginPage';
 import CustomerProfile from './pages/CustomerProfile';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -21,9 +22,10 @@ export default function App() {
         <Router>
           <Routes>
             <Route path="/" element={<HomePage filters={filters} setFilters={setFilters} />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/dashboard" element={<AdminPage />} />
+            <Route path="/sysadmin" element={<AdminLoginPage />} />
             <Route path="/staff/login" element={<StaffLoginPage />} />
-            <Route path="/profile" element={<CustomerProfile />} />
+            <Route path="/user/profile" element={<CustomerProfile />} />
           </Routes>
         </Router>
       </LanguageProvider>

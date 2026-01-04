@@ -87,6 +87,9 @@ export class Booking {
     @JoinColumn({ name: 'userId' })
     user: User;
 
-    @Column({ name: 'created_by_staff_id', nullable: true })
-    createdByStaffId: number;
+    @Column({ name: 'created_by', nullable: true })
+    createdBy: number;
+
+    @Column({ name: 'updated_by', nullable: true })
+    updatedBy: number;
 }

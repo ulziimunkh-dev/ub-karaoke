@@ -12,8 +12,11 @@ export class RoomsService {
         private roomsRepository: Repository<Room>,
     ) { }
 
-    async create(createRoomDto: CreateRoomDto): Promise<Room> {
-        const room = this.roomsRepository.create(createRoomDto);
+    async create(createRoomDto: CreateRoomDto, creatorId?: number): Promise<Room> {
+        const room = this.roomsRepository.create({
+            ...createRoomDto,
+            createdBy: creatorId,
+        });
         return this.roomsRepository.save(room);
     }
 
@@ -61,9 +64,12 @@ export class RoomsService {
         return room;
     }
 
-    async update(id: number, updateRoomDto: UpdateRoomDto): Promise<Room> {
+    async update(id: number, updateRoomDto: UpdateRoomDto, updaterId?: number): Promise<Room> {
         const room = await this.findOne(id);
         Object.assign(room, updateRoomDto);
+        if (updaterId) {
+            room.updatedBy = updaterId;
+        }
         return this.roomsRepository.save(room);
     }
 

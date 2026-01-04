@@ -64,11 +64,11 @@ const VenueCard = ({ venue, onBook, distance }) => {
                 <img src={featuredImage} alt={venue.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
                 {/* Badges */}
-                <div className="absolute top-3 left-3 bg-[#a000ff] px-3 py-1 rounded text-xs font-bold text-white shadow-md">
+                <div className="absolute top-3 left-3 bg-[#a000ff] tag-responsive rounded text-white font-bold shadow-md">
                     {distance ? `${formatDistance(distance)} ${t('away')}` : '2.4km'}
                 </div>
 
-                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded text-xs font-medium text-white/90">
+                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md tag-responsive rounded font-medium text-white/90">
                     {venue.district}
                 </div>
 
@@ -122,7 +122,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
 
                 {/* Action Button */}
                 <button
-                    className={`w-full py-4 rounded-full font-bold text-sm transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
+                    className={`w-full btn-responsive rounded-full font-bold transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
                         ? 'bg-transparent border border-white/10 text-gray-500 cursor-not-allowed'
                         : 'bg-neon-purple-pattern text-white shadow-[0_0_20px_rgba(176,0,255,0.3)] hover:shadow-[0_0_30px_rgba(176,0,255,0.5)]'
                         }`}

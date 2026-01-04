@@ -15,8 +15,11 @@ export class ReviewsService {
         private venuesRepository: Repository<Venue>,
     ) { }
 
-    async create(createReviewDto: CreateReviewDto): Promise<Review> {
-        const review = this.reviewsRepository.create(createReviewDto);
+    async create(createReviewDto: CreateReviewDto, creatorId?: number): Promise<Review> {
+        const review = this.reviewsRepository.create({
+            ...createReviewDto,
+            createdBy: creatorId,
+        });
         const saved = await this.reviewsRepository.save(review);
 
         // Update venue rating
@@ -48,9 +51,12 @@ export class ReviewsService {
         return review;
     }
 
-    async update(id: number, updateReviewDto: UpdateReviewDto): Promise<Review> {
+    async update(id: number, updateReviewDto: UpdateReviewDto, updaterId?: number): Promise<Review> {
         const review = await this.findOne(id);
         Object.assign(review, updateReviewDto);
+        if (updaterId) {
+            review.updatedBy = updaterId;
+        }
         const updated = await this.reviewsRepository.save(review);
 
         // Update venue rating if rating changed

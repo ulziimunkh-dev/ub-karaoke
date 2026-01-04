@@ -32,6 +32,30 @@
     pointer-events: none;
     opacity: 0.3;
   }
+
+  /* Responsive Button Sizing */
+  .btn-responsive {
+    @apply py-2 px-4 text-xs md:py-3 md:px-6 md:text-sm lg:py-4 lg:px-8 lg:text-base;
+  }
+
+  /* Responsive Tags */
+  .tag-responsive {
+    @apply px-2 py-0.5 text-[10px] md:px-3 md:py-1 md:text-xs lg:px-4 lg:py-1.5 lg:text-sm;
+  }
+
+  /* New Secondary Button Design */
+  .btn-secondary-modern {
+    @apply border border-[#00f0ff]/50 text-[#00f0ff] bg-[#00f0ff]/5 rounded-xl font-bold transition-all duration-300 relative overflow-hidden backdrop-blur-md;
+  }
+
+  .btn-secondary-modern:hover {
+    @apply border-[#00f0ff] bg-[#00f0ff]/20 text-white scale-[1.02];
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+  }
+
+  .btn-secondary-modern:active {
+    @apply scale-[0.98];
+  }
 }
 
 @keyframes colorShift {
@@ -78,6 +102,28 @@
 
 .logo-text-animated {
   animation: logoTextShift 3s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 

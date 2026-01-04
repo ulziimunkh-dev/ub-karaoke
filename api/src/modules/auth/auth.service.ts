@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import { User } from './entities/user.entity';
 import { Staff } from '../staff/entities/staff.entity';
 import { SignupDto } from './dto/signup.dto';
+import { IsString, IsOptional } from 'class-validator';
 import { LoginDto } from './dto/login.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -48,6 +49,10 @@ export class AuthService {
 
         const savedUser = await this.usersRepository.save(user);
 
+        // Update createdBy to the user's own ID
+        savedUser.createdBy = savedUser.id;
+        await this.usersRepository.save(savedUser);
+
         // Send (mock) Verification
         // await this.notificationsService.sendVerificationCode(savedUser.email || savedUser.phone, verificationCode);
 
@@ -73,28 +78,56 @@ export class AuthService {
     async resetPassword(token: string, newPassword: string) { return { message: 'Disabled' }; }
 
     async login(loginDto: LoginDto) {
-        const { identifier, password } = loginDto;
+        const { identifier, password, orgCode } = loginDto;
+        let user: any;
+        let userType: string;
 
-        // Try staff table first
-        let user: any = await this.staffRepository.findOne({
-            where: [
-                { email: identifier },
-                { username: identifier }
-            ],
-            relations: ['organization']
-        });
+        // STRICT SEPARATION
+        if (orgCode) {
+            // STAFF / MANAGER LOGIN
+            // Must match Org Code + Username (Staff mostly use username)
+            user = await this.staffRepository.findOne({
+                where: {
+                    username: identifier,
+                    organization: { code: orgCode }
+                },
+                relations: ['organization']
+            });
+            userType = 'staff';
+        } else {
+            console.log(`[Auth] Attempting login for ${identifier} (No Org Code)`);
 
-        let userType = 'staff';
-
-        // If not found in staff, try users (customers)
-        if (!user) {
+            // CUSTOMER LOGIN OR SYSADMIN LOGIN
+            // 1. Try Customer (Users)
             user = await this.usersRepository.findOne({
                 where: [
                     { email: identifier },
+                    { phone: identifier },
                     { username: identifier }
                 ]
             });
             userType = 'customer';
+            console.log(`[Auth] Found in Users?: ${!!user}`);
+
+            // 2. If not found, try Sysadmin (Staff with no org or system role)
+            if (!user) {
+                console.log(`[Auth] Checking Staff repository for Sysadmin...`);
+                user = await this.staffRepository.findOne({
+                    where: { username: identifier },
+                    relations: ['organization']
+                });
+                console.log(`[Auth] Found in Staff?: ${!!user}, Role: ${user?.role}`);
+
+                // Only allow if role is sysadmin/admin, otherwise regular staff MUST use org code
+                if (user && (user.role === 'sysadmin' || user.role === 'admin')) {
+                    userType = 'staff';
+                    console.log(`[Auth] Sysadmin/Admin identified`);
+                } else if (user) {
+                    // Found a staff but they tried to login without Org Code -> deny
+                    console.log(`[Auth] Staff found but rejected (Org Code required)`);
+                    user = null;
+                }
+            }
         }
 
         if (!user) {
@@ -115,9 +148,9 @@ export class AuthService {
         // Generate JWT
         const payload = {
             sub: user.id,
-            email: user.email,
+            email: user.email, // Staff might not have email? Entity says unique email.
             role: userType === 'staff' ? user.role : 'customer',
-            organizationId: user.organizationId,
+            organizationId: userType === 'staff' ? user.organization?.id : null,
             userType // 'staff' or 'customer'
         };
 
@@ -128,7 +161,7 @@ export class AuthService {
             action: 'LOGIN_SUCCESS',
             resource: 'Auth',
             userId: user.id,
-            details: { method: 'password', identifier, userType }
+            details: { method: 'password', identifier, userType, orgCode }
         });
 
         // Return user without password
@@ -138,6 +171,7 @@ export class AuthService {
             access_token: token,
         };
     }
+
 
     async validateUser(userId: number): Promise<User> {
         const user = await this.usersRepository.findOne({

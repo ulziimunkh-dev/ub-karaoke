@@ -45,32 +45,37 @@ async function run() {
             }
         }
 
-        // 1. Organizations
-        const orgRes1 = await client.query("INSERT INTO organizations (code, name) VALUES ('UBK-GRP', 'UB Karaoke Group') RETURNING id");
+        // 1. Global Sysadmin
+        const sPass = await bcrypt.hash('sysadmin', 10);
+        const adminRes = await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('sysadmin@ubkaraoke.mn', 'sysadmin', $1, 'Global Admin', 'sysadmin', null) RETURNING id", [sPass]);
+        const adminId = adminRes.rows[0].id;
+
+        // Self-audit for sysadmin
+        await client.query("UPDATE staff SET created_by = $1, updated_by = $1 WHERE id = $1", [adminId]);
+        console.log(`✅ Created Sysadmin (ID: ${adminId})`);
+
+        // 2. Organizations
+        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1) RETURNING id", [adminId]);
         const orgId1 = orgRes1.rows[0].id;
-        const orgRes2 = await client.query("INSERT INTO organizations (code, name) VALUES ('STAR-K', 'Star Karaoke Management') RETURNING id");
+        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1) RETURNING id", [adminId]);
         const orgId2 = orgRes2.rows[0].id;
 
-        // 2. Staff
-        const sPass = await bcrypt.hash('sysadmin', 10);
+        // 3. Other Staff
         const mPass = await bcrypt.hash('manager', 10);
         const stPass = await bcrypt.hash('staff', 10);
 
-        // Global Sysadmin
-        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('sysadmin@ubkaraoke.mn', 'sysadmin', $1, 'Global Admin', 'sysadmin', null)", [sPass]);
-
         // Org 1 Staff
-        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('manager1@ubkaraoke.mn', 'manager1', $1, 'UBK Manager', 'manager', $2)", [mPass, orgId1]);
-        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('staff1@ubkaraoke.mn', 'staff1', $1, 'UBK Front Desk', 'staff', $2)", [stPass, orgId1]);
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('manager1@ubkaraoke.mn', 'manager1', $1, 'UBK Manager', 'manager', $2, $3, $3)", [mPass, orgId1, adminId]);
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('staff1@ubkaraoke.mn', 'staff1', $1, 'UBK Front Desk', 'staff', $2, $3, $3)", [stPass, orgId1, adminId]);
 
         // Org 2 Staff
-        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('manager2@ubkaraoke.mn', 'manager2', $1, 'Star Manager', 'manager', $2)", [mPass, orgId2]);
-        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id) VALUES ('staff2@ubkaraoke.mn', 'staff2', $1, 'Star Assistant', 'staff', $2)", [stPass, orgId2]);
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('manager2@ubkaraoke.mn', 'manager2', $1, 'Star Manager', 'manager', $2, $3, $3)", [mPass, orgId2, adminId]);
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('staff2@ubkaraoke.mn', 'staff2', $1, 'Star Assistant', 'staff', $2, $3, $3)", [stPass, orgId2, adminId]);
 
-        // 3. Customer
+        // 4. Customer
         const cPass = await bcrypt.hash('123', 10);
-        await client.query("INSERT INTO users (email, username, password, name, phone, role) VALUES ('bat@gmail.com', 'customer', $1, 'Bat-Erdene', '99998888', 'customer')", [cPass]);
-        await client.query("INSERT INTO users (email, username, password, name, phone, role) VALUES ('saraa@gmail.com', 'saraa', $1, 'Saranduya', '88887777', 'customer')", [cPass]);
+        await client.query("INSERT INTO users (email, username, password, name, phone, role, created_by, updated_by) VALUES ('bat@gmail.com', 'customer', $1, 'Bat-Erdene', '99998888', 'customer', $2, $2)", [cPass, adminId]);
+        await client.query("INSERT INTO users (email, username, password, name, phone, role, created_by, updated_by) VALUES ('saraa@gmail.com', 'saraa', $1, 'Saranduya', '88887777', 'customer', $2, $2)", [cPass, adminId]);
 
         // 4. Venues & Rooms
         const venues = [
@@ -146,18 +151,18 @@ async function run() {
 
         for (const venue of venues) {
             const vRes = await client.query(
-                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
-                [venue.orgId, venue.name, venue.district, venue.address, venue.description, venue.phone, venue.email, venue.priceRange, venue.rating, venue.totalReviews, JSON.stringify(venue.amenities), JSON.stringify(venue.openingHours), JSON.stringify(venue.images), venue.featuredImage, venue.latitude, venue.longitude]
+                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, created_by, updated_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17) RETURNING id`,
+                [venue.orgId, venue.name, venue.district, venue.address, venue.description, venue.phone, venue.email, venue.priceRange, venue.rating, venue.totalReviews, JSON.stringify(venue.amenities), JSON.stringify(venue.openingHours), JSON.stringify(venue.images), venue.featuredImage, venue.latitude, venue.longitude, adminId]
             );
             const venueId = vRes.rows[0].id;
             console.log(`✅ Created venue: ${venue.name} (Org: ${venue.orgId})`);
 
             for (const room of venue.rooms) {
                 await client.query(
-                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, features, images, specs, "partySupport")
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
-                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.features), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport)]
+                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, features, images, specs, "partySupport", created_by, updated_by)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)`,
+                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.features), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), adminId]
                 );
                 console.log(`  ➕ Created room: ${room.name}`);
             }

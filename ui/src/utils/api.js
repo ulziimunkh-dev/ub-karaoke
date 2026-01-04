@@ -26,8 +26,8 @@ apiInstance.interceptors.request.use((config) => {
 
 export const api = {
     // Auth
-    login: async (identifier, password) => { // identifier: username or phone
-        const response = await apiInstance.post('/auth/login', { identifier, password });
+    login: async (identifier, password, orgCode) => { // identifier: username or phone
+        const response = await apiInstance.post('/auth/login', { identifier, password, orgCode });
         return response.data;
     },
     signup: async (userData) => {
@@ -178,8 +178,9 @@ export const api = {
     },
 
     // Staff
-    getStaff: async () => {
-        const response = await apiInstance.get('/staff');
+    getStaff: async (organizationId) => {
+        const query = organizationId ? `?organizationId=${organizationId}` : '';
+        const response = await apiInstance.get(`/staff${query}`);
         return response.data;
     },
     createStaff: async (data) => {

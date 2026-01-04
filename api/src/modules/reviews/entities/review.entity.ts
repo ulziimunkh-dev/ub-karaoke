@@ -39,6 +39,12 @@ export class Review {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @Column({ name: 'created_by', nullable: true })
+    createdBy: number;
+
+    @Column({ name: 'updated_by', nullable: true })
+    updatedBy: number;
+
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;

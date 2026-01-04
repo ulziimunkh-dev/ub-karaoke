@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useData } from '../contexts/DataContext';
+import LoginModal from './LoginModal';
 import ReviewSection from './ReviewSection';
 import { useLanguage } from '../contexts/LanguageContext';
 import defaultRoom from '../assets/defaults/karaoke_minimal.png';
@@ -12,6 +14,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const { t } = useLanguage();
     const [step, setStep] = useState(1); // 1: Room Selection, 2: Details, 3: Payment, 4: Success
     const [selectedRooms, setSelectedRooms] = useState([]);
+    const { currentUser } = useData();
+    const [showLogin, setShowLogin] = useState(false);
 
     // Default Date: Today
     const [bookingDate, setBookingDate] = useState(new Date());
@@ -90,6 +94,16 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     };
 
     const handlePayment = () => {
+        if (!currentUser) {
+            setShowLogin(true);
+            return;
+        }
+
+        if (currentUser.role === 'staff' || currentUser.role === 'manager' || currentUser.role === 'sysadmin') {
+            alert(t('staffBookingRestriction') || "Staff must use Admin Panel for manual bookings.");
+            return;
+        }
+
         setTimeout(() => {
             onConfirmBooking(venue.id, {
                 ...bookingData,
@@ -332,6 +346,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                     )}
                 </div>
             </div>
+            {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
         </div>
     );
 };

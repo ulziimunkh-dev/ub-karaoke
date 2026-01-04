@@ -34,10 +34,14 @@ const LoginModal = ({ onClose }) => {
             if (mode === 'login') {
                 if (loginMethod === 'password') {
                     const user = await login(formData.identifier, formData.password);
-                    if (user) handleUserRouting(user);
-                    else setError(t('invalidCredentials'));
+                    if (user) {
+                        handleUserRouting(user);
+                    } else {
+                        // If logic failed but no error thrown (returns null)
+                        setError(t('invalidCredentials'));
+                    }
                 } else {
-                    // OTP Login
+                    // Custoemr OTP Login
                     if (step === 1) {
                         await requestLoginOtp(formData.identifier);
                         setStep(2);
@@ -58,8 +62,6 @@ const LoginModal = ({ onClose }) => {
                     setMessage('Account created. Please enter verification code from backend console.');
                 } else {
                     await verifyAccount(formData.code);
-                    // Login automatically or ask to login?
-                    // Let's ask to login for simplicity or auto-login if backend returned token (it doesn't for verify)
                     alert('Verified! Please login.');
                     setMode('login');
                     setStep(1);
@@ -82,172 +84,220 @@ const LoginModal = ({ onClose }) => {
     };
 
     const handleUserRouting = (user) => {
-        if (user.role === 'sysadmin' || user.role === 'manager' || user.role === 'staff' || user.role === 'customer') {
-            onClose();
-        } else {
-            onClose();
-        }
+        onClose();
     };
 
     return ReactDOM.createPortal(
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 2000
-        }}>
-            <div style={{ background: '#222', padding: '30px', borderRadius: '10px', width: '400px', color: 'white' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <h3>
-                        {mode === 'login' && 'Login'}
-                        {mode === 'signup' && 'Sign Up'}
-                        {mode === 'forgot_password' && 'Reset Password'}
-                    </h3>
-                    <button className="btn btn-text" onClick={onClose}>X</button>
-                </div>
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+            {/* Backdrop with blur */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-[fadeIn_0.3s_ease-out]" onClick={onClose}></div>
 
-                {error && <p style={{ color: 'red', fontSize: '0.9rem', marginBottom: '10px' }}>{error}</p>}
-                {message && <p style={{ color: '#4CAF50', fontSize: '0.9rem', marginBottom: '10px' }}>{message}</p>}
+            {/* Modal Container */}
+            <div className="relative w-full max-w-md bg-[#161622]/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden animate-[scaleIn_0.3s_ease-out]">
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {/* Ambient Glows */}
+                <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-[#b000ff]/20 rounded-full blur-[80px] pointer-events-none"></div>
+                <div className="absolute bottom-[-20%] right-[-20%] w-[50%] h-[50%] bg-[#eb79b2]/20 rounded-full blur-[80px] pointer-events-none"></div>
 
-                    {/* LOGIN FIELDS */}
-                    {mode === 'login' && (
-                        <>
-                            {step === 1 && (
-                                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                                    <button type="button" onClick={() => setLoginMethod('password')}
-                                        style={{ flex: 1, padding: '5px', background: loginMethod === 'password' ? '#E91E63' : '#333', border: 'none', color: 'white' }}>
-                                        Password
-                                    </button>
-                                    <button type="button" onClick={() => setLoginMethod('otp')}
-                                        style={{ flex: 1, padding: '5px', background: loginMethod === 'otp' ? '#E91E63' : '#333', border: 'none', color: 'white' }}>
-                                        OTP
-                                    </button>
-                                </div>
-                            )}
+                <div className="relative p-8 z-10">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-8">
+                        <h3 className="text-2xl font-bold text-white tracking-tight">
+                            {mode === 'login' && <span className="bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent">Welcome Back</span>}
+                            {mode === 'signup' && <span className="bg-gradient-to-r from-[#b000ff] to-[#eb79b2] bg-clip-text text-transparent">Create Account</span>}
+                            {mode === 'forgot_password' && <span className="text-white">Reset Password</span>}
+                        </h3>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                            ✕
+                        </button>
+                    </div>
 
-                            <input
-                                placeholder="Email or Phone"
-                                value={formData.identifier}
-                                onChange={e => setFormData({ ...formData, identifier: e.target.value })}
-                                required
-                                style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                disabled={step === 2 && loginMethod === 'otp'}
-                            />
-
-                            {loginMethod === 'password' && (
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    value={formData.password}
-                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                    required
-                                    style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                />
-                            )}
-
-                            {loginMethod === 'otp' && step === 2 && (
-                                <input
-                                    placeholder="Enter OTP Code"
-                                    value={formData.code}
-                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                    required
-                                    style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                />
-                            )}
-                        </>
+                    {/* Messages */}
+                    {error && (
+                        <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-400 text-sm animate-pulse">
+                            <span>⚠️</span> {error}
+                        </div>
+                    )}
+                    {message && (
+                        <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-3 text-green-400 text-sm">
+                            <span>✅</span> {message}
+                        </div>
                     )}
 
-                    {/* SIGNUP FIELDS */}
-                    {mode === 'signup' && (
-                        <>
-                            {step === 1 ? (
-                                <>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+                        {/* LOGIN FIELDS */}
+                        {mode === 'login' && (
+                            <>
+                                {/* Toggle Password vs OTP */}
+                                {step === 1 && (
+                                    <div className="flex bg-[#0f0f16] p-1 rounded-xl border border-white/5 mb-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setLoginMethod('password')}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 ${loginMethod === 'password'
+                                                ? 'bg-[#2a2a35] text-white shadow-lg'
+                                                : 'text-gray-500 hover:text-gray-300'
+                                                }`}
+                                        >
+                                            Password
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLoginMethod('otp')}
+                                            className={`flex-1 py-2 px-4 rounded-lg text-sm font-bold transition-all duration-300 ${loginMethod === 'otp'
+                                                ? 'bg-[#2a2a35] text-white shadow-lg'
+                                                : 'text-gray-500 hover:text-gray-300'
+                                                }`}
+                                        >
+                                            SMS / OTP
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
                                     <input
-                                        placeholder="Email or Phone"
+                                        placeholder="Email or Phone Number"
                                         value={formData.identifier}
                                         onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+                                        className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
                                         required
-                                        style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
+                                        disabled={step === 2 && loginMethod === 'otp'}
                                     />
-                                    <input
-                                        type="password"
-                                        placeholder="Create Password"
-                                        value={formData.password}
-                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                        required
-                                        style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                    />
-                                </>
-                            ) : (
-                                <input
-                                    placeholder="Verification Code"
-                                    value={formData.code}
-                                    onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                    required
-                                    style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                />
-                            )}
-                        </>
-                    )}
 
-                    {/* FORGOT PASSWORD FIELDS */}
-                    {mode === 'forgot_password' && (
-                        <>
-                            {step === 1 ? (
-                                <input
-                                    placeholder="Enter your email"
-                                    value={formData.identifier}
-                                    onChange={e => setFormData({ ...formData, identifier: e.target.value })}
-                                    required
-                                    style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                />
-                            ) : (
-                                <>
-                                    <input
-                                        placeholder="Reset Token"
-                                        value={formData.resetToken}
-                                        onChange={e => setFormData({ ...formData, resetToken: e.target.value })}
-                                        required
-                                        style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                    />
-                                    <input
-                                        type="password"
-                                        placeholder="New Password"
-                                        value={formData.newPassword}
-                                        onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
-                                        required
-                                        style={{ padding: '10px', background: '#333', border: 'none', color: 'white' }}
-                                    />
-                                </>
-                            )}
-                        </>
-                    )}
+                                    {loginMethod === 'password' && (
+                                        <input
+                                            type="password"
+                                            placeholder="Password"
+                                            value={formData.password}
+                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                            required
+                                        />
+                                    )}
 
-                    <button type="submit" className="btn btn-primary" style={{ padding: '10px' }}>
-                        {mode === 'login' && (loginMethod === 'otp' && step === 1 ? 'Send OTP' : 'Login')}
-                        {mode === 'signup' && (step === 1 ? 'Sign Up' : 'Verify & Complete')}
-                        {mode === 'forgot_password' && (step === 1 ? 'Send Reset Link' : 'Reset Password')}
-                    </button>
-                </form>
+                                    {loginMethod === 'otp' && step === 2 && (
+                                        <input
+                                            placeholder="Enter 6-digit Code"
+                                            value={formData.code}
+                                            onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest text-lg font-mono"
+                                            required
+                                        />
+                                    )}
+                                </div>
+                            </>
+                        )}
 
-                {/* Footer Links */}
-                <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.9rem', color: '#aaa', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {mode === 'login' && (
-                        <>
-                            <button onClick={() => setMode('forgot_password')} className='btn-text' style={{ color: '#aaa', textDecoration: 'underline' }}>
-                                Forgot Password?
-                            </button>
-                            <span>
-                                Don't have an account?{' '}
-                                <button onClick={() => { setMode('signup'); setStep(1); }} className='btn-text' style={{ color: '#E91E63' }}>Sign Up</button>
-                            </span>
-                        </>
-                    )}
-                    {mode !== 'login' && (
-                        <button onClick={() => { setMode('login'); setStep(1); }} className='btn-text' style={{ color: '#E91E63' }}>
-                            Back to Login
+                        {/* SIGNUP FIELDS */}
+                        {mode === 'signup' && (
+                            <div className="space-y-4">
+                                {step === 1 ? (
+                                    <>
+                                        <input
+                                            placeholder="Email or Phone Number"
+                                            value={formData.identifier}
+                                            onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                            required
+                                        />
+                                        <input
+                                            type="password"
+                                            placeholder="Create Strong Password"
+                                            value={formData.password}
+                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                            required
+                                        />
+                                    </>
+                                ) : (
+                                    <input
+                                        placeholder="Verification Code"
+                                        value={formData.code}
+                                        onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                        className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest font-mono"
+                                        required
+                                    />
+                                )}
+                            </div>
+                        )}
+
+                        {/* FORGOT PASSWORD FIELDS */}
+                        {mode === 'forgot_password' && (
+                            <div className="space-y-4">
+                                {step === 1 ? (
+                                    <input
+                                        placeholder="Enter your email"
+                                        value={formData.identifier}
+                                        onChange={e => setFormData({ ...formData, identifier: e.target.value })}
+                                        className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                        required
+                                    />
+                                ) : (
+                                    <>
+                                        <input
+                                            placeholder="Reset Token"
+                                            value={formData.resetToken}
+                                            onChange={e => setFormData({ ...formData, resetToken: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none font-mono"
+                                            required
+                                        />
+                                        <input
+                                            type="password"
+                                            placeholder="New Password"
+                                            value={formData.newPassword}
+                                            onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                            required
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            className="w-full h-12 mt-2 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_20px_rgba(176,0,255,0.4)] hover:shadow-[0_0_30px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center uppercase tracking-wide text-sm"
+                        >
+                            {mode === 'login' && (loginMethod === 'otp' && step === 1 ? 'Send One-Time Code' : 'Sign In')}
+                            {mode === 'signup' && (step === 1 ? 'Create Account' : 'Verify & Complete')}
+                            {mode === 'forgot_password' && (step === 1 ? 'Send Reset Link' : 'Update Password')}
                         </button>
-                    )}
+                    </form>
+
+                    {/* Footer Links */}
+                    <div className="mt-8 text-center flex flex-col gap-3">
+                        {mode === 'login' && (
+                            <>
+                                <button
+                                    onClick={() => setMode('forgot_password')}
+                                    className="text-gray-400 hover:text-white text-sm transition-colors"
+                                >
+                                    Forgot Password?
+                                </button>
+                                <div className="text-gray-500 text-sm">
+                                    Don't have an account?{' '}
+                                    <button
+                                        onClick={() => { setMode('signup'); setStep(1); }}
+                                        className="text-[#eb79b2] font-bold hover:text-[#b000ff] transition-colors ml-1"
+                                    >
+                                        Sign Up
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                        {mode !== 'login' && (
+                            <button
+                                onClick={() => { setMode('login'); setStep(1); }}
+                                className="text-gray-400 hover:text-white text-sm font-bold transition-colors flex items-center justify-center gap-1"
+                            >
+                                ← Back to Login
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>,

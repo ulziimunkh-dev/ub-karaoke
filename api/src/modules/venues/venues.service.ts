@@ -19,8 +19,11 @@ export class VenuesService {
         private auditService: AuditService,
     ) { }
 
-    async create(createVenueDto: CreateVenueDto): Promise<Venue> {
-        const venue = this.venuesRepository.create(createVenueDto);
+    async create(createVenueDto: CreateVenueDto, creatorId?: number): Promise<Venue> {
+        const venue = this.venuesRepository.create({
+            ...createVenueDto,
+            createdBy: creatorId,
+        });
         const saved = await this.venuesRepository.save(venue);
         await this.cacheManager.del('venues:all');
 
@@ -28,7 +31,8 @@ export class VenuesService {
             action: 'VENUE_CREATED',
             resource: 'Venue',
             resourceId: saved.id.toString(),
-            details: { name: saved.name }
+            details: { name: saved.name },
+            userId: creatorId
         });
 
         return saved;
@@ -102,9 +106,12 @@ export class VenuesService {
         return venue;
     }
 
-    async update(id: number, updateVenueDto: UpdateVenueDto): Promise<Venue> {
+    async update(id: number, updateVenueDto: UpdateVenueDto, updaterId?: number): Promise<Venue> {
         const venue = await this.findOne(id);
         Object.assign(venue, updateVenueDto);
+        if (updaterId) {
+            venue.updatedBy = updaterId;
+        }
         const updated = await this.venuesRepository.save(venue);
         await this.cacheManager.del(`venue:${id}`);
         await this.cacheManager.del('venues:all');
@@ -113,7 +120,8 @@ export class VenuesService {
             action: 'VENUE_UPDATED',
             resource: 'Venue',
             resourceId: id.toString(),
-            details: updateVenueDto
+            details: updateVenueDto,
+            userId: updaterId
         });
 
         return updated;

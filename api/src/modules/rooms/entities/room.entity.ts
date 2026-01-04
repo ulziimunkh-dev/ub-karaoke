@@ -11,6 +11,9 @@ import {
 import { Venue } from '../../venues/entities/venue.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
+import { RoomType } from './room-type.entity';
+import { RoomFeature } from './room-feature.entity';
+import { ManyToMany, JoinTable } from 'typeorm';
 
 @Entity('rooms')
 export class Room {
@@ -74,6 +77,12 @@ export class Room {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @Column({ name: 'created_by', nullable: true })
+    createdBy: number;
+
+    @Column({ name: 'updated_by', nullable: true })
+    updatedBy: number;
+
     @ManyToOne(() => Venue, (venue) => venue.rooms)
     @JoinColumn({ name: 'venueId' })
     venue: Venue;
@@ -87,4 +96,19 @@ export class Room {
 
     @OneToMany(() => Booking, (booking) => booking.room)
     bookings: Booking[];
+
+    @ManyToOne(() => RoomType, (type) => type.rooms, { nullable: true })
+    @JoinColumn({ name: 'roomTypeId' })
+    roomType: RoomType;
+
+    @Column({ nullable: true })
+    roomTypeId: number;
+
+    @ManyToMany(() => RoomFeature, (feature) => feature.rooms)
+    @JoinTable({
+        name: 'room_features_rooms',
+        joinColumn: { name: 'roomId', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'featureId', referencedColumnName: 'id' }
+    })
+    roomFeatures: RoomFeature[];
 }
