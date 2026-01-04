@@ -9,6 +9,7 @@ import {
     Query,
     UseGuards,
     Req,
+    Patch as PatchMethod,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { VenuesService } from './venues.service';
@@ -23,8 +24,10 @@ export class VenuesController {
 
     @Post()
     @ApiOperation({ summary: 'Create a new venue' })
-    create(@Body() createVenueDto: CreateVenueDto) {
-        return this.venuesService.create(createVenueDto);
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    create(@Body() createVenueDto: CreateVenueDto, @Req() req: any) {
+        return this.venuesService.create(createVenueDto, req.user?.id);
     }
 
     @Get()
@@ -33,6 +36,7 @@ export class VenuesController {
     @ApiQuery({ name: 'priceRange', required: false })
     @ApiQuery({ name: 'search', required: false })
     @ApiQuery({ name: 'organizationId', required: false })
+    @ApiQuery({ name: 'includeInactive', required: false })
     @ApiBearerAuth()
     findAll(
         @Req() req: any,
@@ -40,6 +44,7 @@ export class VenuesController {
         @Query('priceRange') priceRange?: string,
         @Query('search') search?: string,
         @Query('organizationId') organizationId?: string,
+        @Query('includeInactive') includeInactive?: string,
     ) {
         let orgId = organizationId ? +organizationId : undefined;
 
@@ -48,7 +53,16 @@ export class VenuesController {
             orgId = req.user.organizationId;
         }
 
-        return this.venuesService.findAll({ district, priceRange, search, organizationId: orgId });
+        // Only admins and staff can see inactive venues
+        const shouldIncludeInactive = includeInactive === 'true' && req.user && (req.user.role === 'sysadmin' || req.user.role === 'manager' || req.user.role === 'staff');
+
+        return this.venuesService.findAll({
+            district,
+            priceRange,
+            search,
+            organizationId: orgId,
+            includeInactive: shouldIncludeInactive
+        });
     }
 
     @Get(':id')
@@ -59,12 +73,24 @@ export class VenuesController {
 
     @Patch(':id')
     @ApiOperation({ summary: 'Update a venue' })
-    update(@Param('id') id: string, @Body() updateVenueDto: UpdateVenueDto) {
-        return this.venuesService.update(+id, updateVenueDto);
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    update(@Param('id') id: string, @Body() updateVenueDto: UpdateVenueDto, @Req() req: any) {
+        return this.venuesService.update(+id, updateVenueDto, req.user?.id);
+    }
+
+    @PatchMethod(':id/status')
+    @ApiOperation({ summary: 'Toggle venue status' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean, @Req() req: any) {
+        return this.venuesService.updateStatus(+id, isActive, req.user?.id);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a venue' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
         return this.venuesService.remove(+id);
     }

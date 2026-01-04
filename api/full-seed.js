@@ -55,9 +55,9 @@ async function run() {
         console.log(`✅ Created Sysadmin (ID: ${adminId})`);
 
         // 2. Organizations
-        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1) RETURNING id", [adminId]);
+        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1, true) RETURNING id", [adminId]);
         const orgId1 = orgRes1.rows[0].id;
-        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1) RETURNING id", [adminId]);
+        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1, true) RETURNING id", [adminId]);
         const orgId2 = orgRes2.rows[0].id;
 
         // 3. Other Staff
@@ -151,8 +151,8 @@ async function run() {
 
         for (const venue of venues) {
             const vRes = await client.query(
-                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, created_by, updated_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17) RETURNING id`,
+                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, created_by, updated_by, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17, true) RETURNING id`,
                 [venue.orgId, venue.name, venue.district, venue.address, venue.description, venue.phone, venue.email, venue.priceRange, venue.rating, venue.totalReviews, JSON.stringify(venue.amenities), JSON.stringify(venue.openingHours), JSON.stringify(venue.images), venue.featuredImage, venue.latitude, venue.longitude, adminId]
             );
             const venueId = vRes.rows[0].id;
@@ -160,8 +160,8 @@ async function run() {
 
             for (const room of venue.rooms) {
                 await client.query(
-                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, features, images, specs, "partySupport", created_by, updated_by)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14)`,
+                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, features, images, specs, "partySupport", created_by, updated_by, is_active)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14, true)`,
                     [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.features), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), adminId]
                 );
                 console.log(`  ➕ Created room: ${room.name}`);

@@ -25,8 +25,11 @@ export class RoomsService {
         isVIP?: boolean;
         minCapacity?: number;
         organizationId?: number;
+        includeInactive?: boolean;
     }): Promise<Room[]> {
-        const query = this.roomsRepository.createQueryBuilder('room');
+        const query = this.roomsRepository.createQueryBuilder('room')
+            .leftJoinAndSelect('room.venue', 'venue')
+            .leftJoinAndSelect('venue.organization', 'organization');
 
         if (filters?.venueId) {
             query.andWhere('room.venueId = :venueId', { venueId: filters.venueId });
@@ -48,6 +51,12 @@ export class RoomsService {
             });
         }
 
+        if (!filters?.includeInactive) {
+            query.andWhere('room.is_active = :active', { active: true });
+            query.andWhere('venue.is_active = :active', { active: true });
+            query.andWhere('organization.is_active = :active', { active: true });
+        }
+
         return query.getMany();
     }
 
@@ -67,6 +76,15 @@ export class RoomsService {
     async update(id: number, updateRoomDto: UpdateRoomDto, updaterId?: number): Promise<Room> {
         const room = await this.findOne(id);
         Object.assign(room, updateRoomDto);
+        if (updaterId) {
+            room.updatedBy = updaterId;
+        }
+        return this.roomsRepository.save(room);
+    }
+
+    async updateStatus(id: number, isActive: boolean, updaterId?: number): Promise<Room> {
+        const room = await this.findOne(id);
+        room.isActive = isActive;
         if (updaterId) {
             room.updatedBy = updaterId;
         }

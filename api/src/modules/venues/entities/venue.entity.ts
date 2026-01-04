@@ -65,6 +65,9 @@ export class Venue {
     @Column({ name: 'isBookingEnabled', default: true })
     isBookingEnabled: boolean;
 
+    @Column({ name: 'is_active', default: true })
+    isActive: boolean;
+
     @Column({ name: 'bookingWindowStart', nullable: true })
     bookingWindowStart: string;
 

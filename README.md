@@ -104,3 +104,4 @@ npm run dev
 
 - **API Testing**: `npm run test` or `npm run test:e2e` in `api` directory.
 - **Linting**: `npm run lint` in both directories.
+- **Entity Standards**: All core entities use `isActive` (boolean) for status and include `createdBy`/`updatedBy` columns for audit tracking. Hierarchical deactivation is enforced at the service layer (e.g., deactivating an organization hides its venues).

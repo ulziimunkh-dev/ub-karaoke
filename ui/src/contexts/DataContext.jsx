@@ -276,6 +276,17 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const updateVenueStatus = async (id, isActive) => {
+        try {
+            const updated = await api.updateVenueStatus(id, isActive);
+            setVenues(prev => prev.map(v => (v.id === id ? { ...v, ...updated } : v)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update venue status:', error);
+            throw error;
+        }
+    };
+
     const deleteVenue = async id => {
         try {
             await api.deleteVenue(id);
@@ -432,8 +443,25 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const updateRoomStatus = (venueId, roomId, status) => {
-        updateRoom(venueId, roomId, { status });
+    const updateRoomStatus = async (venueId, roomId, isActive) => {
+        try {
+            const updated = await api.updateRoomStatus(roomId, isActive);
+            setVenues(prev =>
+                prev.map(v => {
+                    if (v.id === venueId) {
+                        return {
+                            ...v,
+                            rooms: v.rooms.map(r => (r.id === roomId ? updated : r))
+                        };
+                    }
+                    return v;
+                })
+            );
+            return updated;
+        } catch (error) {
+            console.error('Failed to update room status:', error);
+            throw error;
+        }
     };
 
     const processRefund = bookingId => {
@@ -580,7 +608,28 @@ export const DataProvider = ({ children }) => {
         currency: 'MNT',
         depositFixed: 50000
     };
-    const setSettings = () => { };
+    const updateOrganization = async (id, updates) => {
+        try {
+            const updated = await api.updateOrganization(id, updates);
+            setOrganizations(prev => prev.map(o => (o.id === id ? updated : o)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update organization:', error);
+            throw error;
+        }
+    };
+
+    const updateOrganizationStatus = async (id, isActive) => {
+        try {
+            const updated = await api.updateOrganizationStatus(id, isActive);
+            setOrganizations(prev => prev.map(o => (o.id === id ? updated : o)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update organization status:', error);
+            throw error;
+        }
+    };
+
     const promos = [];
 
     // --- ROOM CONFIG HELPERS ---
@@ -624,6 +673,7 @@ export const DataProvider = ({ children }) => {
                 venues,
                 addVenue,
                 updateVenue,
+                updateVenueStatus,
                 deleteVenue,
                 addRoom,
                 updateRoom,
@@ -633,6 +683,8 @@ export const DataProvider = ({ children }) => {
                 currentUser,
                 organizations,
                 setOrganizations,
+                updateOrganization,
+                updateOrganizationStatus,
                 activeVenueId,
                 setActiveVenueId,
                 login,

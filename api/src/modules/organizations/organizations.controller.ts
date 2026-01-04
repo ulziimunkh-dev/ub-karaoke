@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
@@ -22,11 +22,13 @@ export class OrganizationsController {
 
     @Get()
     @ApiOperation({ summary: 'Get all organizations (sysadmin only)' })
-    async findAll(@Req() req: any) {
+    async findAll(@Req() req: any, @Query('includeInactive') includeInactive?: string) {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can view all organizations');
         }
-        return this.organizationsService.findAll();
+        return this.organizationsService.findAll({
+            includeInactive: includeInactive === 'true'
+        });
     }
 
     @Get(':id')
@@ -49,7 +51,20 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can update organizations');
         }
-        return this.organizationsService.update(+id, updateOrganizationDto);
+        return this.organizationsService.update(+id, updateOrganizationDto, req.user.id);
+    }
+
+    @Patch(':id/status')
+    @ApiOperation({ summary: 'Update organization status (sysadmin only)' })
+    async updateStatus(
+        @Req() req: any,
+        @Param('id') id: string,
+        @Body('isActive') isActive: boolean
+    ) {
+        if (req.user.role !== 'sysadmin') {
+            throw new ForbiddenException('Only sysadmin can update organization status');
+        }
+        return this.organizationsService.updateStatus(+id, isActive, req.user.id);
     }
 
     @Delete(':id')
@@ -58,6 +73,6 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can deactivate organizations');
         }
-        return this.organizationsService.deactivate(+id);
+        return this.organizationsService.deactivate(+id, req.user.id);
     }
 }

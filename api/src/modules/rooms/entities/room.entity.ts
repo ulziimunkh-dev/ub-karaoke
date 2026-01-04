@@ -71,6 +71,9 @@ export class Room {
     @Column({ name: 'view360Url', nullable: true })
     view360Url: string;
 
+    @Column({ name: 'is_active', default: true })
+    isActive: boolean;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 

@@ -101,6 +101,10 @@ export const api = {
         const response = await apiInstance.delete(`/venues/${id}`);
         return response.data;
     },
+    updateVenueStatus: async (id, isActive) => {
+        const response = await apiInstance.patch(`/venues/${id}/status`, { isActive });
+        return response.data;
+    },
 
     // Rooms
     createRoom: async (data) => {
@@ -113,6 +117,10 @@ export const api = {
     },
     deleteRoom: async (id) => {
         const response = await apiInstance.delete(`/rooms/${id}`);
+        return response.data;
+    },
+    updateRoomStatus: async (id, isActive) => {
+        const response = await apiInstance.patch(`/rooms/${id}/status`, { isActive });
         return response.data;
     },
 
@@ -174,6 +182,10 @@ export const api = {
     },
     updateOrganization: async (id, data) => {
         const response = await apiInstance.patch(`/organizations/${id}`, data);
+        return response.data;
+    },
+    updateOrganizationStatus: async (id, isActive) => {
+        const response = await apiInstance.patch(`/organizations/${id}/status`, { isActive });
         return response.data;
     },
 

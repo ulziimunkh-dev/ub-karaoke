@@ -33,6 +33,7 @@
 - **Usability**: The application must be fully responsive and provide a consistent user experience across desktop and mobile devices. Modern UI components from **PrimeReact** are used to ensure high usability and accessibility.
 - **Scalability**: The backend architecture (NestJS + Redis) should support a growing number of users and venues.
 - **Reliability**: Secure handling of bookings and user data is critical.
+- **Data Integrity & Auditing**: All system entities must maintain strictly standardized audit trails (`createdBy`, `updatedBy`) and use unified boolean flags (`isActive`) for status management to ensure data consistency and simplified hierarchical filtering.
 
 ## 3. User Personas
 

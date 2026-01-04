@@ -197,7 +197,13 @@ const VenueManagement = () => {
     };
 
     const handleToggleStatus = (venue) => {
-        updateVenue(venue.id, { closed: !venue.closed });
+        const newIsActive = !venue.isActive;
+        updateVenueStatus(venue.id, newIsActive);
+        toast.current.show({
+            severity: 'info',
+            summary: 'Status Updated',
+            detail: `Venue marked as ${newIsActive ? 'active' : 'inactive'}`
+        });
     };
 
     // --- ROOM HANDLERS ---
@@ -263,6 +269,26 @@ const VenueManagement = () => {
 
     const roomRateBody = (rowData) => {
         return (rowData.hourlyRate || rowData.pricePerHour || 0).toLocaleString() + '₮';
+    };
+
+    const roomStatusBody = (rowData) => {
+        const isActive = rowData.isActive !== false; // Default to active if undefined
+        return (
+            <div className="flex items-center gap-2">
+                <Button
+                    icon={isActive ? "pi pi-check-circle" : "pi pi-times-circle"}
+                    severity={isActive ? "success" : "danger"}
+                    rounded
+                    text
+                    size="small"
+                    onClick={() => updateRoomStatus(selectedVenue.id, rowData.id, !isActive)}
+                    tooltip={isActive ? 'Deactivate Room' : 'Activate Room'}
+                />
+                <span className={`text-xs ${isActive ? 'text-green-400' : 'text-red-400'}`}>
+                    {isActive ? t('active') || 'Active' : t('inactive') || 'Inactive'}
+                </span>
+            </div>
+        );
     };
 
     const roomActionsBody = (rowData) => {
@@ -331,14 +357,14 @@ const VenueManagement = () => {
                         : venue.openHours;
 
                     return (
-                        <div key={venue.id} className="bg-white/5 p-4 sm:p-5 rounded-xl" style={{ borderLeft: `6px solid ${venue.closed ? '#ef4444' : '#22c55e'}` }}>
+                        <div key={venue.id} className="bg-white/5 p-4 sm:p-5 rounded-xl transition-all duration-300 hover:bg-white/[0.08]" style={{ borderLeft: `6px solid ${venue.isActive === false ? '#ef4444' : '#22c55e'}` }}>
                             <div className="flex flex-col lg:flex-row justify-between gap-4">
                                 <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        <h3 className={`text-xl sm:text-2xl font-bold m-0 ${venue.closed ? 'text-gray-500' : 'text-white'}`}>
+                                        <h3 className={`text-xl sm:text-2xl font-bold m-0 ${venue.isActive === false ? 'text-gray-500' : 'text-white'}`}>
                                             {venue.name}
                                         </h3>
-                                        {venue.closed && <Tag value={t('closed')} severity="danger" className="ml-2" />}
+                                        {venue.isActive === false && <Tag value={t('inactive') || 'Inactive'} severity="danger" className="ml-2" />}
                                         <Button
                                             icon="pi pi-pencil"
                                             onClick={() => openEditVenue(venue)}
@@ -352,7 +378,7 @@ const VenueManagement = () => {
                                         <span className="text-xs sm:text-sm font-bold uppercase text-gray-400">{t('rooms')}: {venue.rooms.length}</span>
                                         <div className="flex gap-1 flex-wrap">
                                             {venue.rooms?.slice(0, 5).map(room => (
-                                                <Tag key={room.id} value={room.name} severity={room.status === 'Maintenance' ? 'warning' : 'info'} style={{ fontSize: '0.7rem' }} />
+                                                <Tag key={room.id} value={room.name} severity={room.isActive === false ? 'danger' : 'info'} style={{ fontSize: '0.7rem' }} />
                                             ))}
                                             {venue.rooms?.length > 5 && <span className="text-xs text-gray-500">+{venue.rooms.length - 5}</span>}
                                         </div>
@@ -367,9 +393,9 @@ const VenueManagement = () => {
                                     />
                                     <div className="flex gap-2 w-full lg:w-auto">
                                         <Button
-                                            label={venue.closed ? t('reOpen') : t('closeBranch')}
-                                            icon={venue.closed ? "pi pi-play" : "pi pi-pause"}
-                                            severity={venue.closed ? "success" : "warning"}
+                                            label={venue.isActive === false ? (t('reOpen') || 'Activate') : (t('closeBranch') || 'Deactivate')}
+                                            icon={venue.isActive === false ? "pi pi-play" : "pi pi-pause"}
+                                            severity={venue.isActive === false ? "success" : "warning"}
                                             outlined
                                             onClick={() => handleToggleStatus(venue)}
                                             className="flex-1 lg:flex-none"
@@ -477,6 +503,7 @@ const VenueManagement = () => {
                             <Column field="type" header="Type"></Column>
                             <Column field="capacity" header={t('capacity')}></Column>
                             <Column header={t('total')} body={roomRateBody}></Column>
+                            <Column header="Status" body={roomStatusBody}></Column>
                             <Column header={t('actions')} body={roomActionsBody}></Column>
                         </DataTable>
                     </div>

@@ -9,6 +9,7 @@ import {
     Query,
     UseGuards,
     Req,
+    Patch as PatchMethod,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { RoomsService } from './rooms.service';
@@ -23,8 +24,10 @@ export class RoomsController {
 
     @Post()
     @ApiOperation({ summary: 'Create a new room' })
-    create(@Body() createRoomDto: CreateRoomDto) {
-        return this.roomsService.create(createRoomDto);
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    create(@Body() createRoomDto: CreateRoomDto, @Req() req: any) {
+        return this.roomsService.create(createRoomDto, req.user?.id);
     }
 
     @Get()
@@ -33,6 +36,7 @@ export class RoomsController {
     @ApiQuery({ name: 'isVIP', required: false })
     @ApiQuery({ name: 'minCapacity', required: false })
     @ApiQuery({ name: 'organizationId', required: false })
+    @ApiQuery({ name: 'includeInactive', required: false })
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     findAll(
@@ -41,6 +45,7 @@ export class RoomsController {
         @Query('isVIP') isVIP?: string,
         @Query('minCapacity') minCapacity?: string,
         @Query('organizationId') organizationId?: string,
+        @Query('includeInactive') includeInactive?: string,
     ) {
         let orgId = organizationId ? +organizationId : undefined;
 
@@ -48,11 +53,14 @@ export class RoomsController {
             orgId = req.user.organizationId;
         }
 
+        const shouldIncludeInactive = includeInactive === 'true' && req.user && (req.user.role === 'sysadmin' || req.user.role === 'manager' || req.user.role === 'staff');
+
         return this.roomsService.findAll({
             venueId: venueId ? +venueId : undefined,
             isVIP: isVIP ? isVIP === 'true' : undefined,
             minCapacity: minCapacity ? +minCapacity : undefined,
             organizationId: orgId,
+            includeInactive: shouldIncludeInactive
         });
     }
 
@@ -64,12 +72,24 @@ export class RoomsController {
 
     @Patch(':id')
     @ApiOperation({ summary: 'Update a room' })
-    update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto) {
-        return this.roomsService.update(+id, updateRoomDto);
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto, @Req() req: any) {
+        return this.roomsService.update(+id, updateRoomDto, req.user?.id);
+    }
+
+    @PatchMethod(':id/status')
+    @ApiOperation({ summary: 'Toggle room status' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean, @Req() req: any) {
+        return this.roomsService.updateStatus(+id, isActive, req.user?.id);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a room' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
         return this.roomsService.remove(+id);
     }

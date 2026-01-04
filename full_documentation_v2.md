@@ -9,21 +9,53 @@ UB Karaoke is a web-based platform for karaoke venue discovery and booking manag
 - **Caching**: **Redis** is used for caching and performance optimization.
 
 ```mermaid
-graph LR
-    User([User]) <--> UI[React Frontend]
-    UI <--> API[NestJS Backend]
-    API <--> DB[(PostgreSQL)]
-    API <--> Cache[(Redis)]
+graph TD
+    subgraph Client
+        UI[React SPA]
+    end
+
+    subgraph "Backend (NestJS)"
+        API[REST Controller]
+        Services[Business Logic Layer]
+        Auth[Auth & Guard Layer]
+    end
+
+    subgraph "Storage & Cache"
+        DB[(PostgreSQL)]
+        Cache[(Redis)]
+    end
+
+    UI <--> Auth
+    Auth <--> API
+    API <--> Services
+    Services <--> DB
+    Services <--> Cache
 ```
+
+### Backend Module Structure
+The API is split into domain-specific modules, each following the NestJS pattern of Controller-Service-Repository:
+- **`AuthModule`**: Passport/JWT strategy for multi-role support.
+- **`OrganizationsModule`**: Root of the business hierarchy.
+- **`VenuesModule`**: Branches managed by organizations.
+- **`RoomsModule`**: Booking units within venues.
+- **`BookingsModule`**: Transactional flow and availability.
+- **`AuditModule`**: Centralized logging for entity changes.
 
 ## 2. Database Schema
 The system uses the following core entities:
 
 - **User**: Stores registered users, including customers, staff, and admins. Includes role-based access control (RBAC).
+- **Organization**: Business entities that own one or more venues. Included in hierarchical filtering.
 - **Venue**: Represents a karaoke establishment, including metadata like district, address, price range, and booking rules.
 - **Room**: Individual karaoke rooms within a venue, each with specific capacities, rates, and features.
 - **Booking**: Records of room reservations made by customers.
 - **Review**: Customer-generated feedback and ratings for venues.
+
+### Standard Entity Columns
+All entities now follow a standardized schema for status and auditing:
+- **`isActive` (Boolean)**: Unified flag for enabling/disabling entities (replaces legacy `status` field).
+- **`createdBy` / `updatedBy`**: User IDs for audit tracking.
+- **`createdAt` / `updatedAt`**: Automatic timestamps.
 
 ### Entity Relationships
 - A **Venue** has many **Rooms**.
@@ -49,7 +81,45 @@ The backend is organized into functional modules:
 - **Authorization**: Role-based access control (RBAC) ensures users can only access endpoints and features appropriate for their role (`admin`, `staff`, `customer`).
 - **Data Protection**: Passwords are hashed using `bcrypt` before storage.
 
-## 5. Deployment & DevOps
+## 6. Logical Flows
+
+### 6.1 Hierarchical Deactivation Flow
+The system enforces hierarchy via the Service layer. When a parent entity is deactivated (`isActive: false`), child entities are implicitly filtered out from public lookups.
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant OrgService
+    participant VenueService
+    participant Cache
+
+    Admin->>OrgService: Update Organization (isActive=false)
+    OrgService->>DB: UPDATE organizations SET is_active=false
+    OrgService->>Cache: Invalidate Organization Cache
+    Note over OrgService,Cache: Venues/Rooms remain active in DB
+    
+    Customer->>VenueService: findAll()
+    VenueService->>DB: JOIN organizations ON organization.id = venue.organization_id
+    VenueService-->>DB: WHERE organization.is_active=true AND venue.is_active=true
+    DB-->>VenueService: Filtered Result
+    VenueService-->>Customer: Returns only globally active branches
+```
+
+### 6.2 Booking Flow
+The booking process involves real-time availability checks and role-based confirmation.
+
+```mermaid
+graph TD
+    Start[Customer selects Room/Time] --> Check{Availability Check}
+    Check -- Conflict --> Fail[Notify Conflict]
+    Check -- Available --> Create[Create Pending Booking]
+    Create --> Payment{Payment Process}
+    Payment -- Success --> Confirm[Update to Confirmed]
+    Payment -- Failure/Timeout --> Cancel[Release Room]
+    Confirm --> Notify[Notify Venue Staff]
+```
+
+## 7. Deployment & DevOps
 - **Containerization**: The system supports **Docker** for consistent development and deployment environments (`docker-compose.yml`).
 - **Configuration**: Environment variables (`.env`) manage sensitive credentials and environment-specific settings.
 # Requirement Documentation - UB Karaoke

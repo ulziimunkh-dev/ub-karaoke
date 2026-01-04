@@ -43,15 +43,10 @@ export class VenuesService {
         priceRange?: string;
         search?: string;
         organizationId?: number;
+        includeInactive?: boolean;
     }): Promise<Venue[]> {
-        const cacheKey = `venues:all:${JSON.stringify(filters || {})}`;
-        const cached = await this.cacheManager.get<Venue[]>(cacheKey);
-
-        if (cached) {
-            return cached;
-        }
-
         const query = this.venuesRepository.createQueryBuilder('venue')
+            .leftJoinAndSelect('venue.organization', 'organization')
             .leftJoinAndSelect('venue.rooms', 'room')
             .leftJoinAndSelect('venue.reviews', 'review');
 
@@ -80,8 +75,12 @@ export class VenuesService {
             });
         }
 
+        if (!filters?.includeInactive) {
+            query.andWhere('venue.is_active = :active', { active: true });
+            query.andWhere('organization.is_active = :active', { active: true });
+        }
+
         const venues = await query.getMany();
-        await this.cacheManager.set(cacheKey, venues, 300000); // 5 minutes
         return venues;
     }
 
@@ -121,6 +120,27 @@ export class VenuesService {
             resource: 'Venue',
             resourceId: id.toString(),
             details: updateVenueDto,
+            userId: updaterId
+        });
+
+        return updated;
+    }
+
+    async updateStatus(id: number, isActive: boolean, updaterId?: number): Promise<Venue> {
+        const venue = await this.findOne(id);
+        venue.isActive = isActive;
+        if (updaterId) {
+            venue.updatedBy = updaterId;
+        }
+        const updated = await this.venuesRepository.save(venue);
+        await this.cacheManager.del(`venue:${id}`);
+        await this.cacheManager.del('venues:all');
+
+        await this.auditService.log({
+            action: 'VENUE_STATUS_UPDATED',
+            resource: 'Venue',
+            resourceId: id.toString(),
+            details: { isActive },
             userId: updaterId
         });
 

@@ -11,7 +11,7 @@ import { Toast } from 'primereact/toast';
 import { api } from '../../utils/api';
 
 const OrganizationManagement = () => {
-    const { organizations, setOrganizations, refreshData } = useData();
+    const { organizations, setOrganizations, updateOrganization, updateOrganizationStatus, refreshData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
     const [orgForm, setOrgForm] = useState({ name: '', code: '', description: '', logoUrl: '' });
@@ -38,8 +38,7 @@ const OrganizationManagement = () => {
         e.preventDefault();
         try {
             if (editingOrg) {
-                const updated = await api.updateOrganization(editingOrg.id, orgForm);
-                setOrganizations(prev => prev.map(o => o.id === editingOrg.id ? updated : o));
+                await updateOrganization(editingOrg.id, orgForm);
                 toast.current.show({ severity: 'success', summary: 'Success', detail: 'Organization updated' });
             } else {
                 const created = await api.createOrganization(orgForm);
@@ -49,6 +48,17 @@ const OrganizationManagement = () => {
             setIsModalOpen(false);
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to save organization' });
+        }
+    };
+
+    const handleToggleStatus = async (org) => {
+        const newIsActive = !org.isActive;
+        try {
+            await updateOrganizationStatus(org.id, newIsActive);
+            toast.current.show({ severity: 'info', summary: 'Status Updated', detail: `Organization marked as ${newIsActive ? 'active' : 'inactive'}` });
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to update status' });
         }
     };
 
@@ -73,6 +83,9 @@ const OrganizationManagement = () => {
                     <Column field="id" header="ID" style={{ width: '80px' }}></Column>
                     <Column field="name" header="Name" sortable></Column>
                     <Column field="code" header="Unique Code" sortable body={(row) => <Tag value={row.code} severity="info" />}></Column>
+                    <Column field="isActive" header="Status" body={(row) => (
+                        <Tag value={row.isActive ? 'Active' : 'Inactive'} severity={row.isActive ? 'success' : 'danger'} />
+                    )} sortable></Column>
                     <Column field="description" header="Description" style={{ maxWidth: '300px' }} body={(row) => <span className="truncate block">{row.description}</span>}></Column>
                     <Column field="createdAt" header="Created" body={(row) => new Date(row.createdAt).toLocaleDateString()}></Column>
                     <Column
@@ -80,6 +93,15 @@ const OrganizationManagement = () => {
                         body={(row) => (
                             <div className="flex gap-2">
                                 <Button icon="pi pi-pencil" onClick={() => openEdit(row)} outlined size="small" className="h-8 w-8 !p-0" />
+                                <Button
+                                    icon={row.isActive ? "pi pi-pause" : "pi pi-play"}
+                                    onClick={() => handleToggleStatus(row)}
+                                    outlined
+                                    severity={row.isActive ? "warning" : "success"}
+                                    size="small"
+                                    className="h-8 w-8 !p-0"
+                                    tooltip={row.status === 'inactive' ? 'Activate' : 'Deactivate'}
+                                />
                             </div>
                         )}
                     ></Column>
