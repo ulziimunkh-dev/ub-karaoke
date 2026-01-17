@@ -307,4 +307,22 @@ export const api = {
         });
         return response.data;
     },
+
+    // Promotions
+    getPromotions: async () => {
+        const response = await apiInstance.get('/promotions');
+        return response.data;
+    },
+    createPromotion: async (data) => {
+        const response = await apiInstance.post('/promotions', data);
+        return response.data;
+    },
+    deletePromotion: async (id) => {
+        const response = await apiInstance.delete(`/promotions/${id}`);
+        return response.data;
+    },
+    validatePromotion: async (code) => {
+        const response = await apiInstance.post('/promotions/validate', { code });
+        return response.data;
+    },
 };

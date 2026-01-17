@@ -24,6 +24,13 @@ export const DataProvider = ({ children }) => {
         if (id) localStorage.setItem('activeVenueId', id);
     };
     const [loading, setLoading] = useState(true);
+    const [settings, setSettings] = useState({
+        taxRate: 0.1,
+        serviceCharge: 0.05,
+        currency: 'MNT',
+        depositFixed: 50000
+    });
+    const [promos, setPromos] = useState([]);
 
     // Load initial data
     // Load initial data
@@ -143,14 +150,16 @@ export const DataProvider = ({ children }) => {
                     // Global config for all admins
                     if (['sysadmin', 'manager', 'staff'].includes(userData.role)) {
                         try {
-                            const [types, features] = await Promise.all([
+                            const [types, features, promotions] = await Promise.all([
                                 api.getRoomTypes(),
-                                api.getRoomFeatures()
+                                api.getRoomFeatures(),
+                                api.getPromotions()
                             ]);
                             setRoomTypes(types);
                             setRoomFeatures(features);
+                            setPromos(promotions);
                         } catch (e) {
-                            console.error('Failed to load room config:', e);
+                            console.error('Failed to load room/promo config:', e);
                         }
                     }
                 } catch (error) {
@@ -214,15 +223,17 @@ export const DataProvider = ({ children }) => {
         // [Global] Load Room Configurations for all administrative roles
         if (['sysadmin', 'manager', 'staff'].includes(data.user.role)) {
             try {
-                const [types, features] = await Promise.all([
+                const [types, features, promotions] = await Promise.all([
                     api.getRoomTypes(),
-                    api.getRoomFeatures()
+                    api.getRoomFeatures(),
+                    api.getPromotions()
                 ]);
-                console.log('[DataContext] Loaded Room Config after Login:', { types, features });
+                console.log('[DataContext] Loaded Room/Promo Config after Login:', { types, features, promotions });
                 setRoomTypes(types);
                 setRoomFeatures(features);
+                setPromos(promotions);
             } catch (e) {
-                console.error('Failed to load room config after login:', e);
+                console.error('Failed to load room/promo config after login:', e);
             }
         }
     };
@@ -564,11 +575,24 @@ export const DataProvider = ({ children }) => {
     };
 
     const verifyPromoCode = code => {
-        const promos = [
-            { code: 'WELCOME', discountPercent: 10, expiry: '2025-12-31' },
-            { code: 'VIP100', discountAmount: 100000, expiry: '2025-12-31' }
-        ];
-        return promos.find(p => p.code === code) || null;
+        if (!code) return null;
+        const normalizedCode = code.toUpperCase();
+        const promo = promos.find(p => p.code.toUpperCase() === normalizedCode && p.isActive);
+        if (!promo) return null;
+
+        const now = new Date();
+        if (now < new Date(promo.validFrom) || now > new Date(promo.validTo)) {
+            return null;
+        }
+
+        // Map to the format expected by the booking logic if necessary, 
+        // or just return the promo object. 
+        // The booking logic seems to expect discountPercent or discountAmount.
+        return {
+            ...promo,
+            discountPercent: promo.discountType === 'PERCENT' ? promo.value : null,
+            discountAmount: promo.discountType === 'FIXED' ? promo.value : null
+        };
     };
 
     // Finance methods
@@ -703,12 +727,6 @@ export const DataProvider = ({ children }) => {
         }
     };
     const transactions = [];
-    const settings = {
-        taxRate: 0.1,
-        serviceCharge: 0.05,
-        currency: 'MNT',
-        depositFixed: 50000
-    };
     const updateOrganization = async (id, updates) => {
         try {
             const updated = await api.updateOrganization(id, updates);
@@ -731,7 +749,26 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const promos = [];
+    const addPromotion = async (data) => {
+        try {
+            const newPromo = await api.createPromotion(data);
+            setPromos(prev => [newPromo, ...prev]);
+            return newPromo;
+        } catch (error) {
+            console.error('Failed to add promotion:', error);
+            throw error;
+        }
+    };
+
+    const deletePromotion = async (id) => {
+        try {
+            await api.deletePromotion(id);
+            setPromos(prev => prev.filter(p => p.id !== id));
+        } catch (error) {
+            console.error('Failed to delete promotion:', error);
+            throw error;
+        }
+    };
 
     // --- ROOM CONFIG HELPERS ---
     const addRoomType = async (data) => {
@@ -823,7 +860,10 @@ export const DataProvider = ({ children }) => {
                 requestPayout,
                 updatePayoutStatus,
                 settings,
+                setSettings,
                 promos,
+                addPromotion,
+                deletePromotion,
                 verifyPromoCode,
                 refreshData: loadInitialData,
                 roomTypes,

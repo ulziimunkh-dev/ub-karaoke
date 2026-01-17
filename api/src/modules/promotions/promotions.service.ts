@@ -11,8 +11,10 @@ export class PromotionsService {
     ) { }
 
     async create(createPromotionDto: any, userId: number) {
+        const { organizationId, ...rest } = createPromotionDto;
         const promotion = this.promotionsRepository.create({
-            ...createPromotionDto,
+            ...rest,
+            organization: organizationId ? { id: organizationId } as any : null,
             createdBy: userId,
         });
         return this.promotionsRepository.save(promotion);

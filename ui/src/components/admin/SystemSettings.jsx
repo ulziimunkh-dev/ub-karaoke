@@ -6,15 +6,57 @@ import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { Toast } from 'primereact/toast';
 import { Divider } from 'primereact/divider';
+import { Dialog } from 'primereact/dialog';
+import { Dropdown } from 'primereact/dropdown';
+import { Calendar } from 'primereact/calendar';
+import { Tag } from 'primereact/tag';
 
 const SystemSettings = () => {
-    const { settings, setSettings, promos } = useData();
+    const { settings, setSettings, promos, addPromotion, deletePromotion } = useData();
     const [tempSettings, setTempSettings] = useState(settings);
+    const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+    const [newPromo, setNewPromo] = useState({
+        code: '',
+        discountType: 'PERCENT',
+        value: 10,
+        validFrom: new Date(),
+        validTo: new Date(new Date().setMonth(new Date().getMonth() + 1))
+    });
     const toast = useRef(null);
 
     const handleSave = () => {
         setSettings(tempSettings);
         toast.current.show({ severity: 'success', summary: 'Settings Saved', detail: 'System configuration updated successfully' });
+    };
+
+    const handleAddPromo = async () => {
+        try {
+            if (!newPromo.code || !newPromo.value) {
+                toast.current.show({ severity: 'warn', summary: 'Validation Error', detail: 'Please fill all fields' });
+                return;
+            }
+            await addPromotion(newPromo);
+            toast.current.show({ severity: 'success', summary: 'Promotion Added', detail: `Code ${newPromo.code} created` });
+            setIsPromoModalOpen(false);
+            setNewPromo({
+                code: '',
+                discountType: 'PERCENT',
+                value: 10,
+                validFrom: new Date(),
+                validTo: new Date(new Date().setMonth(new Date().getMonth() + 1))
+            });
+        } catch (error) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add promotion' });
+        }
+    };
+
+    const handleDeletePromo = async (id) => {
+        try {
+            await deletePromotion(id);
+            toast.current.show({ severity: 'success', summary: 'Promotion Deleted', detail: 'Code removed' });
+        } catch (error) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete promotion' });
+        }
     };
 
     return (
@@ -91,7 +133,7 @@ const SystemSettings = () => {
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
                             <i className="pi pi-ticket text-[#eb79b2]"></i> Active Promo Codes
                         </h3>
-                        <Button icon="pi pi-plus" label="Add New" className="p-button-sm p-button-outlined" />
+                        <Button icon="pi pi-plus" label="Add New" className="p-button-sm p-button-outlined" onClick={() => setIsPromoModalOpen(true)} />
                     </div>
                 }>
                     <div className="flex flex-col gap-4 pt-2">
@@ -105,24 +147,97 @@ const SystemSettings = () => {
                             <div key={idx} className="flex justify-between items-center p-4 bg-black/20 rounded-xl border border-white/5 hover:border-[#b000ff]/30 transition-all group">
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-black text-[#ff9800] tracking-wider">{promo.code}</span>
+                                        <span className="font-black text-[#ff9800] tracking-wider uppercase">{promo.code}</span>
                                         <Tag
-                                            value={promo.discountPercent ? `${promo.discountPercent}% OFF` : `-${Number(promo.discountAmount).toLocaleString()}₮`}
+                                            value={promo.discountType === 'PERCENT' ? `${promo.value}% OFF` : `-${Number(promo.value).toLocaleString()}₮`}
                                             severity="success"
                                             className="text-[10px]"
                                         />
                                     </div>
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase">Expires: {new Date(promo.expiry).toLocaleDateString()}</span>
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase">
+                                        Valid: {new Date(promo.validFrom).toLocaleDateString()} - {new Date(promo.validTo).toLocaleDateString()}
+                                    </span>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-secondary p-button-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <Button icon="pi pi-trash" className="p-button-rounded p-button-text p-button-danger p-button-sm opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <Button
+                                        icon="pi pi-trash"
+                                        className="p-button-rounded p-button-text p-button-danger p-button-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={() => handleDeletePromo(promo.id)}
+                                    />
                                 </div>
                             </div>
                         ))}
                     </div>
                 </Card>
             </div>
+
+            <Dialog
+                header="Add New Promo Code"
+                visible={isPromoModalOpen}
+                onHide={() => setIsPromoModalOpen(false)}
+                className="w-full max-w-md"
+                footer={
+                    <div className="flex gap-2 justify-end">
+                        <Button label="Cancel" onClick={() => setIsPromoModalOpen(false)} className="p-button-text" />
+                        <Button label="Create Promotion" onClick={handleAddPromo} className="p-button-primary" />
+                    </div>
+                }
+            >
+                <div className="flex flex-col gap-4 pt-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500">PROMO CODE</label>
+                        <InputText
+                            value={newPromo.code}
+                            onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                            placeholder="e.g. WELCOME10"
+                            className="bg-black/20"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-gray-500">TYPE</label>
+                            <Dropdown
+                                value={newPromo.discountType}
+                                options={[
+                                    { label: 'Percentage (%)', value: 'PERCENT' },
+                                    { label: 'Fixed Amount (₮)', value: 'FIXED' }
+                                ]}
+                                onChange={e => setNewPromo({ ...newPromo, discountType: e.value })}
+                                className="bg-black/20"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-gray-500">VALUE</label>
+                            <InputNumber
+                                value={newPromo.value}
+                                onValueChange={e => setNewPromo({ ...newPromo, value: e.value })}
+                                className="bg-black/20"
+                                min={0}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-gray-500">START DATE</label>
+                            <Calendar
+                                value={newPromo.validFrom}
+                                onChange={e => setNewPromo({ ...newPromo, validFrom: e.value })}
+                                showIcon
+                                className="bg-black/20"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold text-gray-500">END DATE</label>
+                            <Calendar
+                                value={newPromo.validTo}
+                                onChange={e => setNewPromo({ ...newPromo, validTo: e.value })}
+                                showIcon
+                                className="bg-black/20"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </Dialog>
 
             <style jsx>{`
                 .system-settings :global(.p-card-body) {

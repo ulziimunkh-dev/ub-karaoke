@@ -53,7 +53,7 @@ const AdminPage = () => {
         ] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? 'Venues & Rooms' : 'Branches & Rooms', icon: '🏢' },
         ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: 'Point of Sale', icon: '🖥️' }] : []),
-        { id: 'users', label: 'Users', icon: '👥' },
+        ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
         { id: 'staffs', label: 'Staffs', icon: '👥' },
         { id: 'audit', label: 'Audit Logs', icon: '📋' },
         { id: 'reports', label: 'Reports', icon: '📈' },
@@ -156,7 +156,7 @@ const AdminPage = () => {
                 {activeTab === 'plans' && <PlanManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
-                {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'users' && (currentUser.role === 'sysadmin' || currentUser.role === 'admin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
                 {activeTab === 'audit' && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
