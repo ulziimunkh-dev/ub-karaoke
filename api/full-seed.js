@@ -47,7 +47,7 @@ async function run() {
 
         // We will try to truncate only the tables that exist.
         console.log('🗑️ Clearing existing data...');
-        const tables = ['organizations', 'staff', 'users', 'venues', 'rooms', 'bookings', 'payments', 'reviews', 'audit_logs', 'plans'];
+        const tables = ['organizations', 'staff', 'users', 'venues', 'rooms', 'bookings', 'payments', 'reviews', 'audit_logs', 'plans', 'room_types', 'room_features'];
 
         for (const table of tables) {
             try {
@@ -212,6 +212,54 @@ async function run() {
                 console.log(`  ➕ Created room: ${room.name}`);
             }
         }
+
+        // 6. Seed Room Types and Features (Global - not org-specific)
+        console.log('🌱 Seeding Global Room Types and Features...');
+
+        const roomTypesData = [
+            { name: 'Standard', description: 'Basic karaoke room' },
+            { name: 'Premium', description: 'Enhanced experience' },
+            { name: 'VIP', description: 'Luxury suite' },
+            { name: 'Large', description: 'Group room' },
+        ];
+
+        const roomFeaturesData = [
+            { name: 'HD Screen', icon: '📺' },
+            { name: '4K Projector', icon: '🎥' },
+            { name: 'Dynamic Lighting', icon: '💡' },
+            { name: 'Professional Audio', icon: '🔊' },
+            { name: 'Stage', icon: '🎭' },
+            { name: 'Dance Floor', icon: '🕺' },
+            { name: 'Recording', icon: '🎙️' },
+            { name: 'Wireless Mics', icon: '🎤' },
+            { name: 'Air Conditioning', icon: '❄️' },
+            { name: 'Sound System (High-End)', icon: '🔈' },
+            { name: 'Premium Sound Insulation', icon: '🧱' },
+            { name: 'Smoke Machine', icon: '💨' },
+            { name: 'Tambourines', icon: '🪇' },
+            { name: 'Smart Ordering Tablet', icon: '📱' },
+            { name: 'Quality Acoustic Foam', icon: '🧽' },
+            { name: 'VIP Amenities', icon: '💎' },
+        ];
+
+        // Create global types and features (no organization_id)
+        for (const type of roomTypesData) {
+            await client.query(
+                `INSERT INTO room_types (name, description, created_by, updated_by)
+                 VALUES ($1, $2, $3, $3)`,
+                [type.name, type.description, adminId]
+            );
+        }
+        console.log(`  ➕ Created ${roomTypesData.length} global room types`);
+
+        for (const feature of roomFeaturesData) {
+            await client.query(
+                `INSERT INTO room_features (name, icon, created_by, updated_by)
+                 VALUES ($1, $2, $3, $3)`,
+                [feature.name, feature.icon, adminId]
+            );
+        }
+        console.log(`  ➕ Created ${roomFeaturesData.length} global room features`);
 
         console.log('✨ Seeded!');
 

@@ -17,10 +17,15 @@ import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+import { RoomsService } from '../rooms/rooms.service';
+
 @ApiTags('venues')
 @Controller('venues')
 export class VenuesController {
-    constructor(private readonly venuesService: VenuesService) { }
+    constructor(
+        private readonly venuesService: VenuesService,
+        private readonly roomsService: RoomsService
+    ) { }
 
     @Post()
     @ApiOperation({ summary: 'Create a new venue' })
@@ -93,5 +98,13 @@ export class VenuesController {
     @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
         return this.venuesService.remove(+id);
+    }
+
+    @Post(':id/pricing')
+    @ApiOperation({ summary: 'Add pricing to all rooms in a venue' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    addVenuePricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
+        return this.roomsService.addVenuePricing(+id, pricingData, req.user);
     }
 }

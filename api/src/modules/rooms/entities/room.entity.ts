@@ -46,8 +46,8 @@ export class Room {
     @Column('jsonb', { name: 'amenities' })
     amenities: string[];
 
-    @Column('jsonb', { name: 'features', nullable: true })
-    features: string[];
+    // @Column('jsonb', { name: 'features', nullable: true })
+    // features: string[];
 
     @Column('jsonb', { name: 'images', nullable: true })
     /**
@@ -78,6 +78,9 @@ export class Room {
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
+
+    @Column({ name: 'sort_order', default: 0 })
+    sortOrder: number;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

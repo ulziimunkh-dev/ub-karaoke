@@ -24,9 +24,6 @@ const AdminPage = () => {
     const { language, toggleLanguage, t } = useLanguage();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
-
-    console.log('AdminPage render - currentUser:', currentUser);
-
     if (!currentUser) {
         return <AdminLoginPage />;
     }

@@ -123,6 +123,10 @@ export const api = {
         const response = await apiInstance.patch(`/rooms/${id}/status`, { isActive });
         return response.data;
     },
+    reorderRooms: async (orders) => {
+        const response = await apiInstance.post('/rooms/reorder', orders);
+        return response.data;
+    },
 
     // Bookings
     getBookings: async (filters = {}) => {
@@ -211,6 +215,38 @@ export const api = {
     },
     deleteStaff: async (id) => {
         const response = await apiInstance.delete(`/staff/${id}`);
+        return response.data;
+    },
+
+    // Room Settings
+    getRoomTypes: async () => {
+        const response = await apiInstance.get('/room-settings/types');
+        return response.data;
+    },
+    getRoomFeatures: async () => {
+        const response = await apiInstance.get('/room-settings/features');
+        return response.data;
+    },
+
+    // Generic HTTP methods for flexible API calls
+    get: async (url) => {
+        const response = await apiInstance.get(url);
+        return response.data;
+    },
+    post: async (url, data) => {
+        const response = await apiInstance.post(url, data);
+        return response.data;
+    },
+    put: async (url, data) => {
+        const response = await apiInstance.put(url, data);
+        return response.data;
+    },
+    patch: async (url, data) => {
+        const response = await apiInstance.patch(url, data);
+        return response.data;
+    },
+    delete: async (url) => {
+        const response = await apiInstance.delete(url);
         return response.data;
     },
 

@@ -12,6 +12,7 @@ import { Room } from '../../rooms/entities/room.entity';
 import { Review } from '../../reviews/entities/review.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
 import { VenueOperatingHours } from './venue-operating-hours.entity';
+import { RoomPricing } from '../../rooms/entities/room-pricing.entity';
 
 @Entity('venues')
 export class Venue {
@@ -105,4 +106,7 @@ export class Venue {
 
     @OneToMany(() => VenueOperatingHours, (hours) => hours.venue)
     operatingHours: VenueOperatingHours[];
+
+    @OneToMany(() => RoomPricing, (pricing) => pricing.venue)
+    pricing: RoomPricing[];
 }

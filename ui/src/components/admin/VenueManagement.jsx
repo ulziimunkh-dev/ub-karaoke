@@ -53,7 +53,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, currentUser, organizations, roomTypes, roomFeatures } = useData();
+    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, currentUser, organizations, roomTypes, roomFeatures } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -88,7 +88,7 @@ const VenueManagement = () => {
         capacity: 6,
         hourlyRate: 40000,
         images: [imgStandard],
-        featureIds: [] // New features selection
+        roomFeatureIds: [] // New features selection
     });
 
     const selectedVenue = venues?.find(v => v.id === selectedVenueId); // Safe access
@@ -228,7 +228,7 @@ const VenueManagement = () => {
             capacity: room.capacity,
             hourlyRate: room.hourlyRate || room.pricePerHour, // Handle both for safety during transition
             images: (room.images && room.images.length > 0) ? room.images : [imgStandard],
-            featureIds: room.roomFeatures?.map(f => f.id) || []
+            roomFeatureIds: room.roomFeatures?.map(f => f.id) || []
         });
     };
 
@@ -251,7 +251,7 @@ const VenueManagement = () => {
             capacity: 6,
             hourlyRate: 40000,
             images: [imgStandard],
-            featureIds: []
+            roomFeatureIds: []
         });
     };
 
@@ -265,6 +265,20 @@ const VenueManagement = () => {
                 toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Room removed' });
             }
         });
+    };
+
+    const handleRowReorder = async (e) => {
+        // e.value is the new reordered array
+        const newOrder = e.value.map((room, index) => ({
+            roomId: room.id,
+            sortOrder: index + 1
+        }));
+        try {
+            await updateRoomSortOrders(selectedVenue.id, newOrder);
+            toast.current.show({ severity: 'success', summary: 'Sorted', detail: 'Room order updated' });
+        } catch (error) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to update order' });
+        }
     };
 
     const roomRateBody = (rowData) => {
@@ -498,10 +512,27 @@ const VenueManagement = () => {
             <Dialog header={`${t('manageRooms')}: ${selectedVenue?.name}`} visible={isRoomModalOpen} className="w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-[800px]" modal onHide={() => setIsRoomModalOpen(false)}>
                 <div className="flex flex-col gap-4">
                     <div className="overflow-x-auto">
-                        <DataTable value={selectedVenue?.rooms} className="mt-2">
+                        <DataTable
+                            value={selectedVenue?.rooms}
+                            className="mt-2"
+                            reorderableRows
+                            onRowReorder={handleRowReorder}
+                            dataKey="id"
+                        >
+                            <Column rowReorder style={{ width: '3rem' }} />
                             <Column field="name" header={t('roomName')}></Column>
-                            <Column field="type" header="Type"></Column>
+                            <Column header="Type" body={(rowData) => rowData.roomType?.name || rowData.type}></Column>
                             <Column field="capacity" header={t('capacity')}></Column>
+                            <Column header="Features" body={(rowData) => (
+                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                    {rowData.roomFeatures?.map(f => (
+                                        <Tag key={f.id} value={f.name} severity="info" className="text-[10px]" />
+                                    ))}
+                                    {(!rowData.roomFeatures || rowData.roomFeatures.length === 0) && (
+                                        <span className="text-xs text-gray-500 italic">No features</span>
+                                    )}
+                                </div>
+                            )}></Column>
                             <Column header={t('total')} body={roomRateBody}></Column>
                             <Column header="Status" body={roomStatusBody}></Column>
                             <Column header={t('actions')} body={roomActionsBody}></Column>
@@ -539,13 +570,13 @@ const VenueManagement = () => {
                             <div className="flex flex-col gap-2">
                                 <label className="font-bold text-sm text-text-muted">Features</label>
                                 <MultiSelect
-                                    value={roomForm.featureIds}
+                                    value={roomForm.roomFeatureIds}
                                     options={roomFeatures}
                                     optionLabel="name"
                                     optionValue="id"
                                     display="chip"
                                     placeholder="Select Features"
-                                    onChange={(e) => setRoomForm({ ...roomForm, featureIds: e.value })}
+                                    onChange={(e) => setRoomForm({ ...roomForm, roomFeatureIds: e.value })}
                                 />
                             </div>
                             <div className="flex flex-col gap-2">
@@ -572,7 +603,7 @@ const VenueManagement = () => {
                                         onClick={() => {
                                             setEditingRoom(null);
                                             setEditingRoom(null);
-                                            setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], featureIds: [] });
+                                            setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], roomFeatureIds: [] });
                                         }}
                                     />
                                 )}

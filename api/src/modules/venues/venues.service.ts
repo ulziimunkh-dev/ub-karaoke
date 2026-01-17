@@ -80,6 +80,9 @@ export class VenuesService {
             query.andWhere('organization.is_active = :active', { active: true });
         }
 
+        query.addOrderBy('room.sortOrder', 'ASC')
+            .addOrderBy('room.name', 'ASC');
+
         const venues = await query.getMany();
         return venues;
     }
@@ -92,10 +95,16 @@ export class VenuesService {
             return cached;
         }
 
-        const venue = await this.venuesRepository.findOne({
-            where: { id },
-            relations: ['rooms', 'reviews'],
-        });
+        const venue = await this.venuesRepository.createQueryBuilder('venue')
+            .leftJoinAndSelect('venue.organization', 'organization')
+            .leftJoinAndSelect('venue.rooms', 'room')
+            .leftJoinAndSelect('venue.reviews', 'review')
+            .leftJoinAndSelect('room.roomType', 'roomType')
+            .leftJoinAndSelect('room.roomFeatures', 'roomFeatures')
+            .where('venue.id = :id', { id })
+            .orderBy('room.sortOrder', 'ASC')
+            .addOrderBy('room.name', 'ASC')
+            .getOne();
 
         if (!venue) {
             throw new NotFoundException(`Venue with ID ${id} not found`);

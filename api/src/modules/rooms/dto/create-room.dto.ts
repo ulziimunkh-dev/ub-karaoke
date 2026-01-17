@@ -28,9 +28,6 @@ export class CreateRoomDto {
     @IsOptional()
     amenities?: string[];
 
-    @IsArray()
-    @IsOptional()
-    features?: string[];
 
     @IsArray()
     @IsOptional()
@@ -59,4 +56,16 @@ export class CreateRoomDto {
     @IsString()
     @IsOptional()
     view360Url?: string;
+
+    @IsNumber()
+    @IsOptional()
+    roomTypeId?: number;
+
+    @IsArray()
+    @IsOptional()
+    roomFeatureIds?: number[];
+
+    @IsNumber()
+    @IsOptional()
+    sortOrder?: number;
 }

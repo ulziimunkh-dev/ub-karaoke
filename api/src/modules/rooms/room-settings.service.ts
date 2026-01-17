@@ -14,12 +14,12 @@ export class RoomSettingsService {
     ) { }
 
     // --- TYPES ---
-    async getTypes(organizationId: number) {
-        return this.roomTypesRepository.find({ where: { organizationId } });
+    async getTypes() {
+        return this.roomTypesRepository.find();
     }
 
-    async createType(organizationId: number, data: { name: string, description?: string }, actorId?: number) {
-        const type = this.roomTypesRepository.create({ ...data, organizationId, createdBy: actorId });
+    async createType(data: { name: string, description?: string }, actorId?: number) {
+        const type = this.roomTypesRepository.create({ ...data, createdBy: actorId });
         return this.roomTypesRepository.save(type);
     }
 
@@ -39,12 +39,12 @@ export class RoomSettingsService {
     }
 
     // --- FEATURES ---
-    async getFeatures(organizationId: number) {
-        return this.roomFeaturesRepository.find({ where: { organizationId } });
+    async getFeatures() {
+        return this.roomFeaturesRepository.find();
     }
 
-    async createFeature(organizationId: number, data: { name: string, icon?: string }, actorId?: number) {
-        const feature = this.roomFeaturesRepository.create({ ...data, organizationId, createdBy: actorId });
+    async createFeature(data: { name: string, icon?: string }, actorId?: number) {
+        const feature = this.roomFeaturesRepository.create({ ...data, createdBy: actorId });
         return this.roomFeaturesRepository.save(feature);
     }
 

@@ -9,18 +9,18 @@ export class RoomSettingsController {
 
     // --- TYPES ---
     @Get('types')
-    getTypes(@Request() req: any) {
-        return this.settingsService.getTypes(req.user.organizationId);
+    getTypes() {
+        return this.settingsService.getTypes();
     }
 
     @Post('types')
     createType(@Request() req: any, @Body() body: { name: string, description?: string }) {
-        return this.settingsService.createType(req.user.organizationId, body);
+        return this.settingsService.createType(body, req.user.id);
     }
 
     @Put('types/:id')
     updateType(@Request() req: any, @Param('id') id: string, @Body() body: { name?: string, description?: string }) {
-        return this.settingsService.updateType(parseInt(id), body);
+        return this.settingsService.updateType(parseInt(id), body, req.user.id);
     }
 
     @Delete('types/:id')
@@ -30,18 +30,18 @@ export class RoomSettingsController {
 
     // --- FEATURES ---
     @Get('features')
-    getFeatures(@Request() req: any) {
-        return this.settingsService.getFeatures(req.user.organizationId);
+    getFeatures() {
+        return this.settingsService.getFeatures();
     }
 
     @Post('features')
     createFeature(@Request() req: any, @Body() body: { name: string, icon?: string }) {
-        return this.settingsService.createFeature(req.user.organizationId, body);
+        return this.settingsService.createFeature(body, req.user.id);
     }
 
     @Put('features/:id')
     updateFeature(@Request() req: any, @Param('id') id: string, @Body() body: { name?: string, icon?: string }) {
-        return this.settingsService.updateFeature(parseInt(id), body);
+        return this.settingsService.updateFeature(parseInt(id), body, req.user.id);
     }
 
     @Delete('features/:id')

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
+import { RoomFeature } from './entities/room-feature.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { Organization } from '../organizations/entities/organization.entity';
@@ -20,13 +21,21 @@ export class RoomsService {
         private imagesRepository: Repository<RoomImage>,
         @InjectRepository(RoomAvailability)
         private availabilityRepository: Repository<RoomAvailability>,
+        @InjectRepository(RoomFeature)
+        private featuresRepository: Repository<RoomFeature>,
     ) { }
 
     async create(createRoomDto: CreateRoomDto, creatorId?: number): Promise<Room> {
+        const { roomFeatureIds, ...roomData } = createRoomDto;
         const room = this.roomsRepository.create({
-            ...createRoomDto,
+            ...roomData,
             createdBy: creatorId,
         });
+
+        if (roomFeatureIds?.length) {
+            room.roomFeatures = await this.featuresRepository.findByIds(roomFeatureIds);
+        }
+
         return this.roomsRepository.save(room);
     }
 
@@ -39,7 +48,11 @@ export class RoomsService {
     }): Promise<Room[]> {
         const query = this.roomsRepository.createQueryBuilder('room')
             .leftJoinAndSelect('room.venue', 'venue')
-            .leftJoinAndSelect('venue.organization', 'organization');
+            .leftJoinAndSelect('venue.organization', 'organization')
+            .leftJoinAndSelect('room.roomType', 'roomType')
+            .leftJoinAndSelect('room.roomFeatures', 'roomFeatures')
+            .orderBy('room.sortOrder', 'ASC')
+            .addOrderBy('room.name', 'ASC');
 
         if (filters?.venueId) {
             query.andWhere('room.venueId = :venueId', { venueId: filters.venueId });
@@ -92,10 +105,27 @@ export class RoomsService {
 
     async update(id: number, updateRoomDto: UpdateRoomDto, user: any) {
         // Ensure ownership
-        await this.findOne(id, user);
+        const room = await this.findOne(id, user);
 
-        await this.roomsRepository.update(id, updateRoomDto);
-        return this.findOne(id, user);
+        const { roomFeatureIds, ...roomData } = updateRoomDto;
+
+        // Update basic info
+        Object.assign(room, roomData);
+
+        // Update features if provided
+        if (roomFeatureIds !== undefined) {
+            if (roomFeatureIds.length > 0) {
+                room.roomFeatures = await this.featuresRepository.findByIds(roomFeatureIds);
+            } else {
+                room.roomFeatures = [];
+            }
+        }
+
+        if (user?.id) {
+            room.updatedBy = user.id;
+        }
+
+        return this.roomsRepository.save(room);
     }
 
     async updateStatus(id: number, isActive: boolean, user: any): Promise<Room> {
@@ -117,7 +147,21 @@ export class RoomsService {
         const pricing = this.pricingRepository.create({
             ...pricingData,
             roomId: room.id,
+            venueId: room.venueId,
             organizationId: user.organizationId,
+            createdBy: user.id
+        });
+        return this.pricingRepository.save(pricing);
+    }
+
+    async addVenuePricing(venueId: number, pricingData: Partial<RoomPricing>, user: any) {
+        // Here you would normally verify venue ownership
+        const pricing = this.pricingRepository.create({
+            ...pricingData,
+            venueId,
+            roomId: null, // Applies to all rooms
+            organizationId: user.organizationId,
+            createdBy: user.id
         });
         return this.pricingRepository.save(pricing);
     }
@@ -178,5 +222,16 @@ export class RoomsService {
         }
 
         return this.availabilityRepository.save(availability);
+    }
+
+    async updateSortOrders(orders: { roomId: number, sortOrder: number }[], user: any) {
+        // Simple sequential update for now
+        const updates = orders.map(async (item) => {
+            const room = await this.findOne(item.roomId, user);
+            room.sortOrder = item.sortOrder;
+            if (user?.id) room.updatedBy = user.id;
+            return this.roomsRepository.save(room);
+        });
+        return Promise.all(updates);
     }
 }

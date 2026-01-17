@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, ManyToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Organization } from '../../organizations/entities/organization.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Room } from './room.entity';
 
 @Entity('room_features')
@@ -12,13 +11,6 @@ export class RoomFeature {
 
     @Column({ nullable: true })
     icon: string; // Emoji character or icon class name
-
-    @Column({ name: 'organization_id' })
-    organizationId: number;
-
-    @ManyToOne(() => Organization)
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
 
     @ManyToMany(() => Room, (room) => room.roomFeatures)
     rooms: Room[];

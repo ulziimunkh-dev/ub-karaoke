@@ -127,4 +127,12 @@ export class RoomsController {
     removeImage(@Param('imageId') imageId: string, @Req() req: any) {
         return this.roomsService.removeImage(+imageId, req.user);
     }
+
+    @Post('reorder')
+    @ApiOperation({ summary: 'Update sort orders for multiple rooms' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    updateSortOrders(@Body() orders: { roomId: number, sortOrder: number }[], @Req() req: any) {
+        return this.roomsService.updateSortOrders(orders, req.user);
+    }
 }

@@ -86,7 +86,6 @@ export const DataProvider = ({ children }) => {
                                 api.getStaff(),
                                 api.getBookings()
                             ]);
-                            console.log('[DataContext] Sysadmin staffs:', staffData);
                             setOrganizations(orgsData);
                             setUsers(usersData);
                             setStaffs(staffData);
@@ -116,21 +115,23 @@ export const DataProvider = ({ children }) => {
                                 }
                             }
 
-                            // Load Room Configurations
-                            if (userData.role === 'manager' || userData.role === 'sysadmin') {
-                                try {
-                                    const [types, features] = await Promise.all([
-                                        api.get('/room-settings/types'),
-                                        api.get('/room-settings/features')
-                                    ]);
-                                    setRoomTypes(types);
-                                    setRoomFeatures(features);
-                                } catch (e) {
-                                    console.error('Failed to load room config:', e);
-                                }
-                            }
                         } catch (error) {
                             console.error('Failed to load manager/staff data:', error);
+                        }
+                    }
+
+                    // [Global] Load Room Configurations for all administrative roles
+                    if (['sysadmin', 'manager', 'staff'].includes(userData.role)) {
+                        try {
+                            const [types, features] = await Promise.all([
+                                api.getRoomTypes(),
+                                api.getRoomFeatures()
+                            ]);
+                            console.log('[DataContext] Loaded Room Config:', { types, features });
+                            setRoomTypes(types);
+                            setRoomFeatures(features);
+                        } catch (e) {
+                            console.error('Failed to load room config:', e);
                         }
                     } else {
                         // Regular user/customer - maybe load their own bookings?
@@ -192,6 +193,21 @@ export const DataProvider = ({ children }) => {
                 }
             } catch (error) {
                 console.error('Failed to load manager/staff data:', error);
+            }
+        }
+
+        // [Global] Load Room Configurations for all administrative roles
+        if (['sysadmin', 'manager', 'staff'].includes(data.user.role)) {
+            try {
+                const [types, features] = await Promise.all([
+                    api.getRoomTypes(),
+                    api.getRoomFeatures()
+                ]);
+                console.log('[DataContext] Loaded Room Config after Login:', { types, features });
+                setRoomTypes(types);
+                setRoomFeatures(features);
+            } catch (e) {
+                console.error('Failed to load room config after login:', e);
             }
         }
     };
@@ -393,7 +409,6 @@ export const DataProvider = ({ children }) => {
                 venueId: Number(venueId),
                 condition: roomData.condition || 'Good',
                 amenities: roomData.amenities || [],
-                features: roomData.features || [],
                 images: roomData.images || [],
                 specs: roomData.specs || { microphones: 2, speaker: 'Standard', screen: 55, seating: 'Sofa', ac: 'Manual', sound: 'Medium', lighting: ['Normal'], cleaning: 15 },
                 partySupport: roomData.partySupport || { birthday: false, decoration: false }
@@ -472,6 +487,28 @@ export const DataProvider = ({ children }) => {
             return updated;
         } catch (error) {
             console.error('Failed to update room status:', error);
+            throw error;
+        }
+    };
+
+    const updateRoomSortOrders = async (venueId, orders) => {
+        try {
+            await api.reorderRooms(orders);
+            // Refresh local state by updating sortOrder of affected rooms
+            setVenues(prev =>
+                prev.map(v => {
+                    if (v.id === venueId) {
+                        const updatedRooms = v.rooms.map(r => {
+                            const orderItem = orders.find(o => o.roomId === r.id);
+                            return orderItem ? { ...r, sortOrder: orderItem.sortOrder } : r;
+                        }).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                        return { ...v, rooms: updatedRooms };
+                    }
+                    return v;
+                })
+            );
+        } catch (error) {
+            console.error('Failed to update room sort orders:', error);
             throw error;
         }
     };
@@ -691,6 +728,7 @@ export const DataProvider = ({ children }) => {
                 updateRoom,
                 deleteRoom,
                 updateRoomStatus,
+                updateRoomSortOrders,
                 users,
                 currentUser,
                 organizations,
