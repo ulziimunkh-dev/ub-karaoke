@@ -4,12 +4,22 @@ import { Repository } from 'typeorm';
 import { Room } from './entities/room.entity';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { Organization } from '../organizations/entities/organization.entity';
+import { RoomPricing } from './entities/room-pricing.entity';
+import { RoomImage } from './entities/room-image.entity';
+import { RoomAvailability } from './entities/room-availability.entity';
 
 @Injectable()
 export class RoomsService {
     constructor(
         @InjectRepository(Room)
         private roomsRepository: Repository<Room>,
+        @InjectRepository(RoomPricing)
+        private pricingRepository: Repository<RoomPricing>,
+        @InjectRepository(RoomImage)
+        private imagesRepository: Repository<RoomImage>,
+        @InjectRepository(RoomAvailability)
+        private availabilityRepository: Repository<RoomAvailability>,
     ) { }
 
     async create(createRoomDto: CreateRoomDto, creatorId?: number): Promise<Room> {
@@ -60,10 +70,17 @@ export class RoomsService {
         return query.getMany();
     }
 
-    async findOne(id: number): Promise<Room> {
+    async findOne(id: number, user: any) {
+        // If system admin or checking existence, bypass org check 
+        // But here we generally want to verify ownership if user is staff/admin
+        const where: any = { id };
+        if (user && user.role !== 'sysadmin' && user.role !== 'customer') {
+            where.organization = { id: user.organizationId };
+        }
+
         const room = await this.roomsRepository.findOne({
-            where: { id },
-            relations: ['venue'],
+            where,
+            relations: ['venue', 'roomType', 'roomFeatures', 'pricing', 'imagesList'],
         });
 
         if (!room) {
@@ -73,26 +90,93 @@ export class RoomsService {
         return room;
     }
 
-    async update(id: number, updateRoomDto: UpdateRoomDto, updaterId?: number): Promise<Room> {
-        const room = await this.findOne(id);
-        Object.assign(room, updateRoomDto);
-        if (updaterId) {
-            room.updatedBy = updaterId;
-        }
-        return this.roomsRepository.save(room);
+    async update(id: number, updateRoomDto: UpdateRoomDto, user: any) {
+        // Ensure ownership
+        await this.findOne(id, user);
+
+        await this.roomsRepository.update(id, updateRoomDto);
+        return this.findOne(id, user);
     }
 
-    async updateStatus(id: number, isActive: boolean, updaterId?: number): Promise<Room> {
-        const room = await this.findOne(id);
+    async updateStatus(id: number, isActive: boolean, user: any): Promise<Room> {
+        const room = await this.findOne(id, user);
         room.isActive = isActive;
-        if (updaterId) {
-            room.updatedBy = updaterId;
+        if (user?.id) {
+            room.updatedBy = user.id;
         }
         return this.roomsRepository.save(room);
     }
 
-    async remove(id: number): Promise<void> {
-        const room = await this.findOne(id);
+    async remove(id: number, user: any): Promise<void> {
+        const room = await this.findOne(id, user);
         await this.roomsRepository.remove(room);
+    }
+
+    async addPricing(roomId: number, pricingData: Partial<RoomPricing>, user: any) {
+        const room = await this.findOne(roomId, user);
+        const pricing = this.pricingRepository.create({
+            ...pricingData,
+            roomId: room.id,
+            organizationId: user.organizationId,
+        });
+        return this.pricingRepository.save(pricing);
+    }
+
+    async removePricing(id: number, user: any) {
+        const pricing = await this.pricingRepository.findOne({ where: { id } });
+        if (pricing) {
+            // Verify ownership via room or direct relation if practical, 
+            // but for now relying on user context being passed to findOne logic if extended
+            if (user && user.role !== 'sysadmin' && pricing.organizationId !== user.organizationId) {
+                throw new NotFoundException('Pricing not found or access denied');
+            }
+            return this.pricingRepository.remove(pricing);
+        }
+    }
+
+    async addImage(roomId: number, imageData: Partial<RoomImage>, user: any) {
+        const room = await this.findOne(roomId, user);
+        const image = this.imagesRepository.create({
+            ...imageData,
+            roomId: room.id,
+            organizationId: user.organizationId,
+        });
+        return this.imagesRepository.save(image);
+    }
+
+    async removeImage(id: number, user: any) {
+        const image = await this.imagesRepository.findOne({ where: { id } });
+        if (image) {
+            if (user && user.role !== 'sysadmin' && image.organizationId !== user.organizationId) {
+                throw new NotFoundException('Image not found or access denied');
+            }
+            return this.imagesRepository.remove(image);
+        }
+    }
+
+    async setAvailability(roomId: number, date: string, startTime: string, endTime: string, isAvailable: boolean, user: any) {
+        const room = await this.findOne(roomId, user);
+
+        // Check if override exists
+        let availability = await this.availabilityRepository.findOne({
+            where: { roomId, date, startTime, endTime }
+        });
+
+        if (availability) {
+            availability.isAvailable = isAvailable;
+            availability.updatedBy = user.id;
+        } else {
+            availability = this.availabilityRepository.create({
+                roomId,
+                date,
+                startTime,
+                endTime,
+                isAvailable,
+                organizationId: user.organizationId,
+                createdBy: user.id
+            });
+        }
+
+        return this.availabilityRepository.save(availability);
     }
 }

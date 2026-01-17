@@ -167,6 +167,12 @@ export const api = {
         return response.data;
     },
 
+    // Plans
+    getPlans: async () => {
+        const response = await apiInstance.get('/plans');
+        return response.data;
+    },
+
     // Organizations
     getOrganizations: async () => {
         const response = await apiInstance.get('/organizations');
@@ -205,6 +211,18 @@ export const api = {
     },
     deleteStaff: async (id) => {
         const response = await apiInstance.delete(`/staff/${id}`);
+        return response.data;
+    },
+
+    // Files
+    uploadFile: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiInstance.post('/uploads', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     },
 };

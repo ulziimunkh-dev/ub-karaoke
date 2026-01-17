@@ -1,6 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
+import { PaymentTransaction } from './payment-transaction.entity';
+import { Refund } from './refund.entity';
+import { OneToMany } from 'typeorm';
 
 export enum PaymentStatus {
     PENDING = 'PENDING',
@@ -67,4 +70,10 @@ export class Payment {
 
     @Column({ name: 'updated_by', nullable: true })
     updatedBy: number;
+
+    @OneToMany(() => PaymentTransaction, (transaction) => transaction.payment)
+    transactions: PaymentTransaction[];
+
+    @OneToMany(() => Refund, (refund) => refund.payment)
+    refunds: Refund[];
 }

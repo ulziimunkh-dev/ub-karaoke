@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
-import { useData } from '../contexts/DataContext';
-import BookingManager from './staff/BookingManager';
-import AuditLogViewer from './staff/AuditLogViewer';
-import PaymentHistory from './staff/PaymentHistory';
+import { useNavigate } from 'react-router-dom';
 
 const StaffPortal = () => {
     const { venues, bookings, updateRoomStatus, updateBookingStatus, updateVenue, addOrder, currentUser, logout, activeVenueId, setActiveVenueId } = useData();
+    const navigate = useNavigate();
 
     // Filter venues for this organization if staff
     const orgVenues = currentUser.role === 'sysadmin' ? venues : venues.filter(v => v.organizationId === currentUser.organizationId);
@@ -109,7 +106,16 @@ const StaffPortal = () => {
                         <p style={{ color: '#888', margin: 0, fontSize: '0.9rem' }}>{currentUser.name}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '15px' }}>
-                        <button onClick={logout} className="btn btn-outline" style={{ fontSize: '0.9rem' }}>Logout</button>
+                        <button
+                            onClick={() => {
+                                const redirectPath = logout();
+                                navigate(redirectPath);
+                            }}
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.9rem' }}
+                        >
+                            Logout
+                        </button>
                     </div>
                 </div>
 

@@ -8,18 +8,45 @@ import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Tag } from 'primereact/tag';
 import { Toast } from 'primereact/toast';
+import { FileUpload } from 'primereact/fileupload';
+import { Calendar } from 'primereact/calendar';
 import { api } from '../../utils/api';
 
 const OrganizationManagement = () => {
     const { organizations, setOrganizations, updateOrganization, updateOrganizationStatus, refreshData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
-    const [orgForm, setOrgForm] = useState({ name: '', code: '', description: '', logoUrl: '' });
+    const [orgForm, setOrgForm] = useState({
+        name: '', code: '', description: '', logoUrl: '', address: '', phone: '', email: '', planId: '',
+        planStartedAt: null, planEndsAt: null
+    });
+    const [plans, setPlans] = useState([]);
+    const [planHistory, setPlanHistory] = useState([]);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [selectedOrgForHistory, setSelectedOrgForHistory] = useState(null);
     const toast = useRef(null);
+
+    React.useEffect(() => {
+        api.getPlans().then(setPlans).catch(console.error);
+    }, []);
+
+    const fetchPlanHistory = async (orgId) => {
+        try {
+            const res = await api.get(`/organizations/${orgId}/plan-history`);
+            setPlanHistory(res);
+        } catch (error) {
+            console.error("Failed to fetch plan history", error);
+            setPlanHistory([]);
+        }
+    };
 
     const openCreate = () => {
         setEditingOrg(null);
-        setOrgForm({ name: '', code: '', description: '', logoUrl: '' });
+        setOrgForm({
+            name: '', code: '', description: '', logoUrl: '', address: '', phone: '', email: '',
+            planId: plans.length > 0 ? plans[0].id : '',
+            planStartedAt: new Date(), planEndsAt: null
+        });
         setIsModalOpen(true);
     };
 
@@ -29,9 +56,22 @@ const OrganizationManagement = () => {
             name: org.name,
             code: org.code,
             description: org.description || '',
-            logoUrl: org.logoUrl || ''
+            logoUrl: org.logoUrl || '',
+            address: org.address || '',
+            phone: org.phone || '',
+            email: org.email || '',
+            planId: org.plan?.id || org.planId || '',
+            planStartedAt: org.planStartedAt ? new Date(org.planStartedAt) : null,
+            planEndsAt: org.planEndsAt ? new Date(org.planEndsAt) : null
         });
+        fetchPlanHistory(org.id);
         setIsModalOpen(true);
+    };
+
+    const openHistory = (org) => {
+        setSelectedOrgForHistory(org);
+        fetchPlanHistory(org.id);
+        setIsHistoryModalOpen(true);
     };
 
     const handleSave = async (e) => {
@@ -46,8 +86,21 @@ const OrganizationManagement = () => {
                 toast.current.show({ severity: 'success', summary: 'Success', detail: 'Organization created' });
             }
             setIsModalOpen(false);
+            refreshData(); // Refresh to get updated plan relations
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to save organization' });
+        }
+    };
+
+    const onFileUpload = async (event) => {
+        const file = event.files[0];
+        try {
+            const res = await api.uploadFile(file);
+            setOrgForm(prev => ({ ...prev, logoUrl: res.path }));
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Logo uploaded' });
+        } catch (error) {
+            console.error(error);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to upload logo' });
         }
     };
 
@@ -62,6 +115,11 @@ const OrganizationManagement = () => {
         }
     };
 
+    const planTemplate = (rowData) => {
+        const plan = rowData.plan || plans.find(p => p.id === rowData.planId);
+        return plan ? <Tag value={plan.name} severity="warning" /> : <span className="text-gray-400">No Plan</span>;
+    };
+
     return (
         <div className="p-6">
             <Toast ref={toast} />
@@ -71,27 +129,32 @@ const OrganizationManagement = () => {
                     <p className="text-gray-500 text-sm mt-1">Manage business entities and their configurations</p>
                 </div>
                 <Button
-                    label="Create Organization"
+                    label="New Organization"
                     icon="pi pi-plus"
                     onClick={openCreate}
-                    className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold"
+                    className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold flex items-center gap-2"
                 />
             </div>
 
             <div className="card shadow-md rounded-xl overflow-hidden bg-[#1a1a24] border border-white/5">
                 <DataTable value={organizations} responsiveLayout="scroll" className="p-datatable-sm">
                     <Column field="id" header="ID" style={{ width: '80px' }}></Column>
+                    <Column field="logoUrl" header="Logo" body={(row) => row.logoUrl ? <img src={row.logoUrl} alt="logo" className="w-10 h-10 object-cover rounded" /> : null} width="6rem"></Column>
                     <Column field="name" header="Name" sortable></Column>
                     <Column field="code" header="Unique Code" sortable body={(row) => <Tag value={row.code} severity="info" />}></Column>
-                    <Column field="isActive" header="Status" body={(row) => (
-                        <Tag value={row.isActive ? 'Active' : 'Inactive'} severity={row.isActive ? 'success' : 'danger'} />
+                    <Column header="Plan" body={planTemplate} sortable field="plan.name"></Column>
+                    <Column field="status" header="Plan Status" body={(row) => row.status ? <Tag value={row.status.toUpperCase()} severity={row.status === 'active' ? 'success' : 'warning'} /> : '-'} sortable></Column>
+                    <Column field="planStartedAt" header="Plan Start" body={(row) => row.planStartedAt ? new Date(row.planStartedAt).toLocaleDateString() : '-'} sortable></Column>
+                    <Column field="planEndsAt" header="Plan End" body={(row) => row.planEndsAt ? new Date(row.planEndsAt).toLocaleDateString() : '-'} sortable></Column>
+                    <Column field="isActive" header="Active" body={(row) => (
+                        <Tag value={row.isActive ? 'Yes' : 'No'} severity={row.isActive ? 'success' : 'danger'} />
                     )} sortable></Column>
-                    <Column field="description" header="Description" style={{ maxWidth: '300px' }} body={(row) => <span className="truncate block">{row.description}</span>}></Column>
                     <Column field="createdAt" header="Created" body={(row) => new Date(row.createdAt).toLocaleDateString()}></Column>
                     <Column
                         header="Actions"
                         body={(row) => (
                             <div className="flex gap-2">
+                                <Button icon="pi pi-clock" onClick={() => openHistory(row)} outlined size="small" className="h-8 w-8 !p-0" tooltip="View Plan History" />
                                 <Button icon="pi pi-pencil" onClick={() => openEdit(row)} outlined size="small" className="h-8 w-8 !p-0" />
                                 <Button
                                     icon={row.isActive ? "pi pi-pause" : "pi pi-play"}
@@ -112,7 +175,7 @@ const OrganizationManagement = () => {
                 header={editingOrg ? "Edit Organization" : "Create New Organization"}
                 visible={isModalOpen}
                 onHide={() => setIsModalOpen(false)}
-                style={{ width: '500px' }}
+                style={{ width: '700px' }}
                 modal
             >
                 <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
@@ -135,6 +198,87 @@ const OrganizationManagement = () => {
                             className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
                             required
                             placeholder="e.g. LUX_KARAOKE"
+                            disabled={!!editingOrg}
+                        />
+                    </div>
+                    <div className="field">
+                        <label className="block text-sm font-bold mb-2">Plan</label>
+                        <select
+                            value={orgForm.planId}
+                            onChange={(e) => setOrgForm({ ...orgForm, planId: e.target.value })}
+                            className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
+                        >
+                            <option value="">Select a Plan</option>
+                            {plans.map(p => (
+                                <option key={p.id} value={p.id}>{p.name} - {p.monthlyFee.toLocaleString()}₮</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {editingOrg && (
+                        <div className="grid grid-cols-3 gap-2 bg-gray-800 p-3 rounded">
+                            <div>
+                                <label className="text-xs text-gray-400">Plan Status</label>
+                                <div className="text-sm font-bold text-white">{editingOrg.status || '-'}</div>
+                            </div>
+                            <div className="field m-0">
+                                <label className="text-xs text-gray-400 block mb-1">Start Date</label>
+                                <Calendar
+                                    value={orgForm.planStartedAt}
+                                    onChange={(e) => setOrgForm({ ...orgForm, planStartedAt: e.value })}
+                                    showIcon
+                                    className="w-full p-inputtext-sm"
+                                    dateFormat="yy-mm-dd"
+                                />
+                            </div>
+                            <div className="field m-0">
+                                <label className="text-xs text-gray-400 block mb-1">End Date</label>
+                                <Calendar
+                                    value={orgForm.planEndsAt}
+                                    onChange={(e) => setOrgForm({ ...orgForm, planEndsAt: e.value })}
+                                    showIcon
+                                    className="w-full p-inputtext-sm"
+                                    dateFormat="yy-mm-dd"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="field">
+                        <label className="block text-sm font-bold mb-2">Logo</label>
+                        <div className="flex items-center gap-4">
+                            {orgForm.logoUrl && <img src={orgForm.logoUrl} alt="logo" className="w-16 h-16 object-cover rounded border border-gray-600" />}
+                            <FileUpload mode="basic" name="file" accept="image/*" maxFileSize={1000000} customUpload uploadHandler={onFileUpload} auto chooseLabel="Upload Logo" className="p-button-outlined p-button-secondary" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="field">
+                            <label htmlFor="email" className="block text-sm font-bold mb-2">Email</label>
+                            <InputText
+                                id="email"
+                                value={orgForm.email}
+                                onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })}
+                                className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
+                            />
+                        </div>
+                        <div className="field">
+                            <label htmlFor="phone" className="block text-sm font-bold mb-2">Phone</label>
+                            <InputText
+                                id="phone"
+                                value={orgForm.phone}
+                                onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })}
+                                className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
+                            />
+                        </div>
+                    </div>
+                    <div className="field">
+                        <label htmlFor="address" className="block text-sm font-bold mb-2">Address</label>
+                        <InputTextarea
+                            id="address"
+                            value={orgForm.address}
+                            onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })}
+                            className="w-full p-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
+                            rows={2}
                         />
                     </div>
                     <div className="field">
@@ -147,13 +291,33 @@ const OrganizationManagement = () => {
                             rows={3}
                         />
                     </div>
+
                     <div className="mt-6 flex justify-end gap-3">
                         <Button label="Cancel" outlined onClick={() => setIsModalOpen(false)} className="h-10 px-6" />
                         <Button label="Save Changes" type="submit" className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold" />
                     </div>
                 </form>
             </Dialog>
-        </div>
+
+            <Dialog
+                header={`Plan History: ${selectedOrgForHistory?.name || ''}`}
+                visible={isHistoryModalOpen}
+                onHide={() => setIsHistoryModalOpen(false)}
+                style={{ width: '800px' }}
+                modal
+            >
+                <div className="bg-gray-900 p-3 rounded border border-gray-700">
+                    <DataTable value={planHistory} size="small" emptyMessage="No history found" stripedRows>
+                        <Column field="planName" header="Plan" sortable></Column>
+                        <Column field="startDate" header="Start Date" body={(row) => new Date(row.startDate).toLocaleString()} sortable></Column>
+                        <Column field="endDate" header="End Date" body={(row) => row.endDate ? new Date(row.endDate).toLocaleString() : <Tag severity="success" value="Active" />} sortable></Column>
+                        <Column field="price" header="Price" body={(row) => `${Number(row.price).toLocaleString()}₮`} sortable></Column>
+                        <Column field="commissionRate" header="Comm %" body={(row) => `${row.commissionRate}%`}></Column>
+                        <Column field="status" header="Status" body={(row) => <Tag severity={row.status === 'active' ? 'success' : 'info'} value={row.status} />}></Column>
+                    </DataTable>
+                </div>
+            </Dialog>
+        </div >
     );
 };
 

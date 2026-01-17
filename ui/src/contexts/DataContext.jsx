@@ -222,9 +222,21 @@ export const DataProvider = ({ children }) => {
     };
 
     const logout = () => {
+        // Determine redirect path based on user role
+        let redirectPath = '/';
+        if (currentUser) {
+            if (currentUser.role === 'sysadmin') {
+                redirectPath = '/sysadmin';
+            } else if (currentUser.role === 'manager' || currentUser.role === 'staff') {
+                redirectPath = '/staff/login';
+            }
+        }
+
         setCurrentUser(null);
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
+
+        return redirectPath;
     };
 
     const registerCustomer = async data => {
@@ -715,7 +727,6 @@ export const DataProvider = ({ children }) => {
                 logIssue,
                 transactions,
                 settings,
-                setSettings,
                 promos,
                 verifyPromoCode,
                 refreshData: loadInitialData,

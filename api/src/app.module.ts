@@ -16,6 +16,12 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { StaffModule } from './modules/staff/staff.module';
+import { FilesModule } from './modules/files/files.module';
+import { PlansModule } from './modules/plans/plans.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -59,6 +65,14 @@ import { StaffModule } from './modules/staff/staff.module';
     NotificationsModule,
     OrganizationsModule,
     StaffModule,
+    FilesModule,
+    PlansModule,
+    PromotionsModule,
+    AccountsModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

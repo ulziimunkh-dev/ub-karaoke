@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Staff } from '../../staff/entities/staff.entity';
 import { Venue } from '../../venues/entities/venue.entity';
+import { Plan } from '../../plans/entities/plan.entity';
+import { OrganizationPayoutAccount } from './organization-payout-account.entity';
 
 @Entity('organizations')
 export class Organization {
@@ -14,6 +16,12 @@ export class Organization {
     name: string;
 
     @Column({ nullable: true })
+    description: string;
+
+    @Column({ nullable: true })
+    logoUrl: string;
+
+    @Column({ nullable: true })
     address: string;
 
     @Column({ nullable: true })
@@ -24,6 +32,23 @@ export class Organization {
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
+
+    // Plans
+    @Column({ name: 'plan_id', nullable: true })
+    planId: string;
+
+    @ManyToOne(() => Plan, plan => plan.organizations, { nullable: true })
+    @JoinColumn({ name: 'plan_id' })
+    plan: Plan;
+
+    @Column({ name: 'plan_started_at', type: 'timestamptz', nullable: true })
+    planStartedAt: Date;
+
+    @Column({ name: 'plan_ends_at', type: 'timestamptz', nullable: true })
+    planEndsAt: Date;
+
+    @Column({ nullable: true })
+    status: string; // active, suspended, etc.
 
     @OneToMany(() => Staff, staff => staff.organization)
     staff: Staff[];
@@ -42,4 +67,7 @@ export class Organization {
 
     @Column({ name: 'updated_by', nullable: true })
     updatedBy: number;
+
+    @OneToMany(() => OrganizationPayoutAccount, (account) => account.organization)
+    payoutAccounts: OrganizationPayoutAccount[];
 }

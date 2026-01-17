@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { Button } from 'primereact/button';
 
 const CustomerProfile = () => {
     const { currentUser, bookings, updateBookingStatus, logout, updateProfile } = useData();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('bookings');
     const [editForm, setEditForm] = useState({
         name: currentUser?.name || '',
@@ -58,7 +59,10 @@ const CustomerProfile = () => {
                 <Button
                     label="Logout"
                     outlined
-                    onClick={logout}
+                    onClick={() => {
+                        const redirectPath = logout();
+                        navigate(redirectPath);
+                    }}
                     className="h-10 px-5"
                 />
             </div>

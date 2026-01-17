@@ -6,26 +6,17 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
+    OneToMany,
 } from 'typeorm';
 import { Room } from '../../rooms/entities/room.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
 import { User } from '../../auth/entities/user.entity';
 import { Staff } from '../../staff/entities/staff.entity';
-
-export enum BookingStatus {
-    PENDING = 'PENDING',
-    CONFIRMED = 'CONFIRMED',
-    CANCELLED = 'CANCELLED',
-    REJECTED = 'REJECTED',
-}
-
-export enum BookingPaymentStatus {
-    UNPAID = 'UNPAID',
-    PAID = 'PAID',
-    PARTIAL = 'PARTIAL',
-    REFUNDED = 'REFUNDED',
-}
+import { Promotion } from '../../promotions/entities/promotion.entity';
+import { BookingStatusHistory } from './booking-status-history.entity';
+import { BookingPromotion } from './booking-promotion.entity';
+import { BookingStatus, BookingPaymentStatus } from '../enums/booking.enums';
 
 @Entity('bookings')
 export class Booking {
@@ -83,6 +74,13 @@ export class Booking {
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
     organizationId: number;
 
+    @ManyToOne(() => Promotion, { nullable: true })
+    @JoinColumn({ name: 'appliedPromotionId' })
+    promotion: Promotion;
+
+    @Column({ name: 'appliedPromotionId', nullable: true })
+    appliedPromotionId: number;
+
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'userId' })
     user: User;
@@ -92,4 +90,10 @@ export class Booking {
 
     @Column({ name: 'updated_by', nullable: true })
     updatedBy: number;
+
+    @OneToMany(() => BookingStatusHistory, (history) => history.booking)
+    statusHistory: BookingStatusHistory[];
+
+    @OneToMany(() => BookingPromotion, (bookingPromotion) => bookingPromotion.booking)
+    promotions: BookingPromotion[];
 }

@@ -14,6 +14,8 @@ import { Organization } from '../../organizations/entities/organization.entity';
 import { RoomType } from './room-type.entity';
 import { RoomFeature } from './room-feature.entity';
 import { ManyToMany, JoinTable } from 'typeorm';
+import { RoomPricing } from './room-pricing.entity';
+import { RoomImage } from './room-image.entity';
 
 @Entity('rooms')
 export class Room {
@@ -47,7 +49,10 @@ export class Room {
     @Column('jsonb', { name: 'features', nullable: true })
     features: string[];
 
-    @Column('jsonb', { name: 'images' })
+    @Column('jsonb', { name: 'images', nullable: true })
+    /**
+     * @deprecated Use imagesList instead
+     */
     images: string[];
 
     @Column('jsonb', { name: 'specs', nullable: true })
@@ -114,4 +119,10 @@ export class Room {
         inverseJoinColumn: { name: 'featureId', referencedColumnName: 'id' }
     })
     roomFeatures: RoomFeature[];
+
+    @OneToMany(() => RoomPricing, (pricing) => pricing.room)
+    pricing: RoomPricing[];
+
+    @OneToMany(() => RoomImage, (image) => image.room)
+    imagesList: RoomImage[];
 }

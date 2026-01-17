@@ -16,6 +16,7 @@ import AdminLoginPage from './AdminLoginPage';
 
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
+import PlanManagement from '../components/admin/PlanManagement';
 import { Dropdown } from 'primereact/dropdown'; // Added missing import
 
 const AdminPage = () => {
@@ -48,7 +49,10 @@ const AdminPage = () => {
     // Admin Sidebar Navigation
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-        ...(currentUser.role === 'sysadmin' ? [{ id: 'organizations', label: 'Organizations', icon: '🏛️' }] : []),
+        ...(currentUser.role === 'sysadmin' ? [
+            { id: 'organizations', label: 'Organizations', icon: '🏛️' },
+            { id: 'plans', label: 'Plans', icon: '📑' }
+        ] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? 'Venues & Rooms' : 'Branches & Rooms', icon: '🏢' },
         ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: 'Point of Sale', icon: '🖥️' }] : []),
         { id: 'users', label: 'Users', icon: '👥' },
@@ -110,7 +114,10 @@ const AdminPage = () => {
                         </div>
                     </div>
                     <button
-                        onClick={logout}
+                        onClick={() => {
+                            const redirectPath = logout();
+                            navigate(redirectPath);
+                        }}
                         className="w-full h-10 px-4 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold text-sm mb-3"
                     >
                         Logout
@@ -148,6 +155,7 @@ const AdminPage = () => {
 
                 {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
+                {activeTab === 'plans' && <PlanManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
                 {activeTab === 'users' && currentUser.role === 'sysadmin' && <UserManagement />}

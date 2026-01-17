@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { VenuesService } from './venues.service';
 import { VenuesController } from './venues.controller';
 import { Venue } from './entities/venue.entity';
+import { VenueOperatingHours } from './entities/venue-operating-hours.entity';
 
 @Module({
     imports: [TypeOrmModule.forFeature([Venue])],

@@ -7,14 +7,32 @@ import { Organization } from './entities/organization.entity';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { AuditService } from '../audit/audit.service';
 
+import { PlansService } from '../plans/plans.service';
+import { OrganizationPlanHistory } from './entities/organization-plan-history.entity';
+import { OrganizationPayoutAccount } from './entities/organization-payout-account.entity';
+import { OrganizationEarning } from './entities/organization-earning.entity';
+import { OrganizationPayout } from './entities/organization-payout.entity';
+import { OrganizationPayoutItem } from './entities/organization-payout-item.entity';
+
 @Injectable()
 export class OrganizationsService {
     constructor(
         @InjectRepository(Organization)
         private organizationsRepository: Repository<Organization>,
+        @InjectRepository(OrganizationPlanHistory)
+        private planHistoryRepository: Repository<OrganizationPlanHistory>,
+        @InjectRepository(OrganizationPayoutAccount)
+        private payoutAccountsRepository: Repository<OrganizationPayoutAccount>,
+        @InjectRepository(OrganizationEarning)
+        private earningsRepository: Repository<OrganizationEarning>,
+        @InjectRepository(OrganizationPayout)
+        private payoutsRepository: Repository<OrganizationPayout>,
+        @InjectRepository(OrganizationPayoutItem)
+        private payoutItemsRepository: Repository<OrganizationPayoutItem>,
         @Inject(CACHE_MANAGER)
         private cacheManager: Cache,
         private auditService: AuditService,
+        private plansService: PlansService,
     ) { }
 
     async create(createOrganizationDto: CreateOrganizationDto, createdByStaffId: number) {
@@ -33,14 +51,44 @@ export class OrganizationsService {
             createdBy: createdByStaffId,
         });
 
+        // Handle Plan Assignment
+        let selectedPlan = null;
+        if (createOrganizationDto.planId) {
+            try {
+                selectedPlan = await this.plansService.findOne(createOrganizationDto.planId);
+                organization.plan = selectedPlan;
+                organization.planStartedAt = new Date();
+                organization.status = 'active';
+                // Default 1 month subscription
+                const endDate = new Date();
+                endDate.setMonth(endDate.getMonth() + 1);
+                organization.planEndsAt = endDate;
+            } catch (error) {
+                console.warn(`Plan ${createOrganizationDto.planId} not found, proceeding without plan.`);
+            }
+        }
+
         const saved = await this.organizationsRepository.save(organization);
+
+        // Save initial plan history
+        if (selectedPlan) {
+            await this.planHistoryRepository.save({
+                organizationId: saved.id,
+                planId: selectedPlan.id,
+                planName: selectedPlan.name,
+                price: selectedPlan.monthlyFee,
+                commissionRate: selectedPlan.commissionRate || 0,
+                startDate: new Date(),
+                status: 'active'
+            });
+        }
 
         // Audit log
         await this.auditService.log({
             action: 'ORGANIZATION_CREATED',
             resource: 'Organization',
             resourceId: saved.id.toString(),
-            details: { code: saved.code, name: saved.name }
+            details: { code: saved.code, name: saved.name, planId: createOrganizationDto.planId }
         });
 
         return saved;
@@ -48,7 +96,8 @@ export class OrganizationsService {
 
     async findAll(filters?: { includeInactive?: boolean }) {
         const query: any = {
-            order: { createdAt: 'DESC' }
+            order: { createdAt: 'DESC' },
+            relations: ['plan']
         };
 
         if (!filters?.includeInactive) {
@@ -61,7 +110,7 @@ export class OrganizationsService {
     async findOne(id: number) {
         const organization = await this.organizationsRepository.findOne({
             where: { id },
-            relations: ['staff', 'users', 'venues']
+            relations: ['staff', 'venues', 'plan']
         });
 
         if (!organization) {
@@ -73,8 +122,67 @@ export class OrganizationsService {
 
     async update(id: number, updateDto: Partial<CreateOrganizationDto>, updatedByStaffId?: number) {
         const organization = await this.findOne(id);
+        const oldPlanId = organization.plan?.id;
 
         Object.assign(organization, updateDto);
+
+        // Handle Plan Update
+        if (updateDto.planId && updateDto.planId !== oldPlanId) {
+            const plan = await this.plansService.findOne(updateDto.planId);
+
+            // Close previous history if exists
+            const currentHistory = await this.planHistoryRepository.findOne({
+                where: { organizationId: id, status: 'active' },
+                order: { startDate: 'DESC' }
+            });
+
+            if (currentHistory) {
+                currentHistory.endDate = new Date();
+                currentHistory.status = 'completed';
+                await this.planHistoryRepository.save(currentHistory);
+            }
+
+            // Create new history
+            await this.planHistoryRepository.save({
+                organizationId: id,
+                planId: plan.id,
+                planName: plan.name,
+                price: plan.monthlyFee,
+                commissionRate: plan.commissionRate || 0,
+                startDate: new Date(),
+                status: 'active'
+            });
+
+
+            organization.plan = plan;
+            organization.planStartedAt = new Date();
+            const endDate = new Date();
+            endDate.setMonth(endDate.getMonth() + 1);
+            organization.planEndsAt = endDate;
+            organization.status = 'active';
+        }
+
+        // Allow manual date updates
+        if (updateDto.planStartedAt) {
+            organization.planStartedAt = updateDto.planStartedAt;
+        }
+        if (updateDto.planEndsAt) {
+            organization.planEndsAt = updateDto.planEndsAt;
+        }
+
+        // Sync active history dates if dates changed (either by plan change or manual update)
+        // Find current active history
+        const activeHistory = await this.planHistoryRepository.findOne({
+            where: { organizationId: id, status: 'active' },
+            order: { startDate: 'DESC' }
+        });
+
+        if (activeHistory) {
+            if (updateDto.planStartedAt) activeHistory.startDate = updateDto.planStartedAt;
+            if (updateDto.planEndsAt) activeHistory.endDate = updateDto.planEndsAt;
+            await this.planHistoryRepository.save(activeHistory);
+        }
+
         if (updatedByStaffId) {
             organization.updatedBy = updatedByStaffId;
         }
@@ -101,14 +209,12 @@ export class OrganizationsService {
 
         // Clear venue caches because venues depend on org status
         await this.cacheManager.del('venues:all');
-        // If we had specific venue caches, we might need to clear them too
-        // For now, clearing 'venues:all' is the primary list for customers
 
         await this.auditService.log({
             action: 'ORGANIZATION_STATUS_UPDATED',
             resource: 'Organization',
             resourceId: id.toString(),
-            details: { status },
+            details: { isActive },
             userId: updatedByStaffId
         });
 
@@ -117,5 +223,187 @@ export class OrganizationsService {
 
     async deactivate(id: number, updatedByStaffId?: number) {
         return this.updateStatus(id, false, updatedByStaffId);
+    }
+
+    async getPlanHistory(organizationId: number) {
+        return this.planHistoryRepository.find({
+            where: { organizationId },
+            order: { startDate: 'DESC' }
+        });
+    }
+
+    async addPayoutAccount(organizationId: number, accountData: Partial<OrganizationPayoutAccount>, userId: number) {
+        const organization = await this.findOne(organizationId);
+
+        // If this is the first account or marked as default, make it default
+        const existingAccounts = await this.payoutAccountsRepository.find({
+            where: { organizationId }
+        });
+
+        if (accountData.isDefault || existingAccounts.length === 0) {
+            // Unset other defaults
+            await this.payoutAccountsRepository.update(
+                { organizationId, isDefault: true },
+                { isDefault: false }
+            );
+        }
+
+        const account = this.payoutAccountsRepository.create({
+            ...accountData,
+            organizationId,
+            createdBy: userId,
+        });
+
+        return this.payoutAccountsRepository.save(account);
+    }
+
+    async updatePayoutAccount(id: string, updateData: Partial<OrganizationPayoutAccount>, userId: number) {
+        const account = await this.payoutAccountsRepository.findOne({ where: { id } });
+        if (!account) {
+            throw new NotFoundException('Payout account not found');
+        }
+
+        // If setting as default, unset other defaults first
+        if (updateData.isDefault) {
+            await this.payoutAccountsRepository.update(
+                { organizationId: account.organizationId, isDefault: true },
+                { isDefault: false }
+            );
+        }
+
+        Object.assign(account, updateData);
+        account.updatedBy = userId;
+        return this.payoutAccountsRepository.save(account);
+    }
+
+    async getPayoutAccounts(organizationId: number) {
+        return this.payoutAccountsRepository.find({
+            where: { organizationId },
+            order: { isDefault: 'DESC', createdAt: 'DESC' }
+        });
+    }
+
+    async removePayoutAccount(id: string) {
+        const account = await this.payoutAccountsRepository.findOne({ where: { id } });
+        if (!account) {
+            throw new NotFoundException('Payout account not found');
+        }
+        return this.payoutAccountsRepository.remove(account);
+    }
+
+    async recordEarning(data: Partial<OrganizationEarning>, userId?: number) {
+        const earning = this.earningsRepository.create({
+            ...data,
+            createdBy: userId,
+        });
+        return this.earningsRepository.save(earning);
+    }
+
+    async getEarnings(organizationId: number, filters?: { status?: string; startDate?: Date; endDate?: Date }) {
+        const query = this.earningsRepository.createQueryBuilder('earning')
+            .where('earning.organizationId = :organizationId', { organizationId });
+
+        if (filters?.status) {
+            query.andWhere('earning.status = :status', { status: filters.status });
+        }
+
+        if (filters?.startDate) {
+            query.andWhere('earning.createdAt >= :startDate', { startDate: filters.startDate });
+        }
+
+        if (filters?.endDate) {
+            query.andWhere('earning.createdAt <= :endDate', { endDate: filters.endDate });
+        }
+
+        return query.orderBy('earning.createdAt', 'DESC').getMany();
+    }
+
+    async updateEarningStatus(id: number, status: string, userId?: number) {
+        const earning = await this.earningsRepository.findOne({ where: { id } });
+        if (!earning) {
+            throw new NotFoundException('Earning record not found');
+        }
+
+        earning.status = status as any;
+        if (userId) {
+            earning.updatedBy = userId;
+        }
+        return this.earningsRepository.save(earning);
+    }
+
+    async getTotalEarnings(organizationId: number, status?: string) {
+        const query = this.earningsRepository.createQueryBuilder('earning')
+            .select('SUM(earning.netAmount)', 'total')
+            .where('earning.organizationId = :organizationId', { organizationId });
+
+        if (status) {
+            query.andWhere('earning.status = :status', { status });
+        }
+
+        const result = await query.getRawOne();
+        return parseFloat(result?.total || '0');
+    }
+
+    async createPayout(organizationId: number, data: Partial<OrganizationPayout>, earningIds: number[], userId?: number) {
+        const organization = await this.findOne(organizationId);
+
+        // Calculate total from earnings
+        const earnings = await this.earningsRepository.findByIds(earningIds);
+        const totalAmount = earnings.reduce((sum, earning) => sum + parseFloat(earning.netAmount.toString()), 0);
+
+        const payout = this.payoutsRepository.create({
+            ...data,
+            organizationId,
+            totalAmount,
+            createdBy: userId,
+        });
+
+        const savedPayout = await this.payoutsRepository.save(payout);
+
+        // Create payout items
+        const items = earningIds.map(earningId => {
+            const earning = earnings.find(e => e.id === earningId);
+            return this.payoutItemsRepository.create({
+                payoutId: savedPayout.id,
+                earningId,
+                amount: earning?.netAmount || 0,
+            });
+        });
+
+        await this.payoutItemsRepository.save(items);
+
+        // Update earnings status to PAID
+        await this.earningsRepository.update(earningIds, { status: 'PAID' as any });
+
+        return savedPayout;
+    }
+
+    async getPayouts(organizationId: number, filters?: { status?: string }) {
+        const query = this.payoutsRepository.createQueryBuilder('payout')
+            .leftJoinAndSelect('payout.payoutAccount', 'account')
+            .leftJoinAndSelect('payout.items', 'items')
+            .where('payout.organizationId = :organizationId', { organizationId });
+
+        if (filters?.status) {
+            query.andWhere('payout.status = :status', { status: filters.status });
+        }
+
+        return query.orderBy('payout.createdAt', 'DESC').getMany();
+    }
+
+    async updatePayoutStatus(id: number, status: string, userId?: number) {
+        const payout = await this.payoutsRepository.findOne({ where: { id } });
+        if (!payout) {
+            throw new NotFoundException('Payout not found');
+        }
+
+        payout.status = status as any;
+        if (status === 'PAID' || status === 'FAILED') {
+            payout.processedAt = new Date();
+        }
+        if (userId) {
+            payout.updatedBy = userId;
+        }
+        return this.payoutsRepository.save(payout);
     }
 }

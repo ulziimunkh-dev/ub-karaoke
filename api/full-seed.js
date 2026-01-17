@@ -19,9 +19,35 @@ async function run() {
         console.log('✅ Connected to:', client.database, 'PID:', pidRes.rows[0].pg_backend_pid);
 
         // Note: With TypeORM synchronize: true, tables are created automatically by the backend.
+        // However, since we can't easily restart the backend to sync, we ensure table exists here.
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS plans (
+                id uuid DEFAULT gen_random_uuid() NOT NULL,
+                code character varying NOT NULL,
+                name character varying NOT NULL,
+                monthly_fee integer NOT NULL,
+                commission_rate numeric(4,2) NOT NULL,
+                max_branches integer,
+                max_rooms integer,
+                features jsonb,
+                is_active boolean DEFAULT true NOT NULL,
+                created_at timestamp without time zone DEFAULT now() NOT NULL,
+                CONSTRAINT "PK_plans_id" PRIMARY KEY (id),
+                CONSTRAINT "UQ_plans_code" UNIQUE (code)
+            );
+        `);
+
+        // Manually update organizations table schema if needed
+        await client.query(`
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS "plan_id" uuid;
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS "plan_started_at" timestamptz;
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS "plan_ends_at" timestamptz;
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS "status" text;
+        `);
+
         // We will try to truncate only the tables that exist.
         console.log('🗑️ Clearing existing data...');
-        const tables = ['organizations', 'staff', 'users', 'venues', 'rooms', 'bookings', 'payments', 'reviews', 'audit_logs'];
+        const tables = ['organizations', 'staff', 'users', 'venues', 'rooms', 'bookings', 'payments', 'reviews', 'audit_logs', 'plans'];
 
         for (const table of tables) {
             try {
@@ -54,10 +80,29 @@ async function run() {
         await client.query("UPDATE staff SET created_by = $1, updated_by = $1 WHERE id = $1", [adminId]);
         console.log(`✅ Created Sysadmin (ID: ${adminId})`);
 
-        // 2. Organizations
-        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1, true) RETURNING id", [adminId]);
+        // 5. Plans
+        console.log('🌱 Seeding Plans...');
+        const plansData = [
+            { code: 'STARTER', name: 'Starter', monthlyFee: 25000, commissionRate: 5.00, maxBranches: 1, maxRooms: 5, features: { description: 'First-time digital users', bestFor: 'Small karaoke' } },
+            { code: 'GROWTH', name: 'Growth', monthlyFee: 75000, commissionRate: 3.00, maxBranches: 3, maxRooms: 15, features: { description: 'Serious operators', bestFor: 'Medium karaoke' } },
+            { code: 'FRANCHISE', name: 'Franchise', monthlyFee: 0, commissionRate: 1.50, maxBranches: null, maxRooms: null, features: { description: 'Franchise / premium relationship', bestFor: 'Large / chain' } }
+        ];
+
+        const planIds = {};
+        for (const p of plansData) {
+            const res = await client.query(
+                `INSERT INTO plans (code, name, monthly_fee, commission_rate, max_branches, max_rooms, features, is_active) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING id`,
+                [p.code, p.name, p.monthlyFee, p.commissionRate, p.maxBranches, p.maxRooms, JSON.stringify(p.features)]
+            );
+            planIds[p.code] = res.rows[0].id;
+            console.log(`  ➕ Plan: ${p.name}`);
+        }
+
+        // 2. Organizations (Updated with Plans)
+        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1, true, $2, 'active', NOW()) RETURNING id", [adminId, planIds['GROWTH']]);
         const orgId1 = orgRes1.rows[0].id;
-        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1, true) RETURNING id", [adminId]);
+        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1, true, $2, 'active', NOW()) RETURNING id", [adminId, planIds['STARTER']]);
         const orgId2 = orgRes2.rows[0].id;
 
         // 3. Other Staff

@@ -12,6 +12,14 @@ export class CreateOrganizationDto {
 
     @IsString()
     @IsOptional()
+    description?: string;
+
+    @IsString()
+    @IsOptional()
+    logoUrl?: string;
+
+    @IsString()
+    @IsOptional()
     address?: string;
 
     @IsString()
@@ -21,4 +29,14 @@ export class CreateOrganizationDto {
     @IsEmail()
     @IsOptional()
     email?: string;
+
+    @IsString()
+    @IsOptional()
+    planId?: string;
+
+    @IsOptional()
+    planStartedAt?: Date;
+
+    @IsOptional()
+    planEndsAt?: Date;
 }

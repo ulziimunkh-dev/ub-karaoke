@@ -67,6 +67,15 @@ export class OrganizationsController {
         return this.organizationsService.updateStatus(+id, isActive, req.user.id);
     }
 
+    @Get(':id/plan-history')
+    @ApiOperation({ summary: 'Get organization plan history (sysadmin only)' })
+    async getPlanHistory(@Req() req: any, @Param('id') id: string) {
+        if (req.user.role !== 'sysadmin') {
+            throw new ForbiddenException('Only sysadmin can view plan history');
+        }
+        return this.organizationsService.getPlanHistory(+id);
+    }
+
     @Delete(':id')
     @ApiOperation({ summary: 'Deactivate organization (sysadmin only)' })
     async remove(@Req() req: any, @Param('id') id: string) {

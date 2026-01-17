@@ -11,8 +11,8 @@ const Header = () => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logout();
-        navigate('/');
+        const redirectPath = logout();
+        navigate(redirectPath);
     };
 
     return (
@@ -25,7 +25,12 @@ const Header = () => {
                     </div>
                     <div className="w-2.5 h-2.5 rounded-full logo-dot-animated"></div>
                 </Link>
-                <nav className="flex items-center gap-4">
+                <nav className="flex items-center gap-6">
+                    <div className="hidden md:flex gap-6 mr-4">
+                        <Link to="/about" className="text-gray-300 hover:text-[#b000ff] font-semibold transition-colors no-underline text-sm uppercase tracking-wide">About Us</Link>
+                        <Link to="/pricing" className="text-gray-300 hover:text-[#b000ff] font-semibold transition-colors no-underline text-sm uppercase tracking-wide">Pricing</Link>
+                        <Link to="/faq" className="text-gray-300 hover:text-[#b000ff] font-semibold transition-colors no-underline text-sm uppercase tracking-wide">FAQ</Link>
+                    </div>
                     <button className="h-10 px-6 text-sm font-bold rounded-full border border-[#b000ff] text-[#eb79b2] bg-transparent hover:bg-[#b000ff]/10 hover:shadow-[0_0_15px_rgba(176,0,255,0.4)] transition-all flex items-center uppercase tracking-wide" onClick={toggleLanguage}>
                         {language === 'en' ? 'EN' : 'MN'}
                     </button>

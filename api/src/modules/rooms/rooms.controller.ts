@@ -66,8 +66,10 @@ export class RoomsController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Get a specific room by ID' })
-    findOne(@Param('id') id: string) {
-        return this.roomsService.findOne(+id);
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    findOne(@Param('id') id: string, @Req() req: any) {
+        return this.roomsService.findOne(+id, req.user);
     }
 
     @Patch(':id')
@@ -83,14 +85,46 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean, @Req() req: any) {
-        return this.roomsService.updateStatus(+id, isActive, req.user?.id);
+        return this.roomsService.updateStatus(+id, isActive, req.user);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a room' })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    remove(@Param('id') id: string) {
-        return this.roomsService.remove(+id);
+    remove(@Param('id') id: string, @Req() req: any) {
+        return this.roomsService.remove(+id, req.user);
+    }
+
+    @Post(':id/pricing')
+    @ApiOperation({ summary: 'Add pricing to a room' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    addPricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
+        return this.roomsService.addPricing(+id, pricingData, req.user);
+    }
+
+    @Delete('pricing/:pricingId')
+    @ApiOperation({ summary: 'Remove pricing from a room' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    removePricing(@Param('pricingId') pricingId: string, @Req() req: any) {
+        return this.roomsService.removePricing(+pricingId, req.user);
+    }
+
+    @Post(':id/images')
+    @ApiOperation({ summary: 'Add image to a room' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    addImage(@Param('id') id: string, @Body() imageData: any, @Req() req: any) {
+        return this.roomsService.addImage(+id, imageData, req.user);
+    }
+
+    @Delete('images/:imageId')
+    @ApiOperation({ summary: 'Remove image from a room' })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard)
+    removeImage(@Param('imageId') imageId: string, @Req() req: any) {
+        return this.roomsService.removeImage(+imageId, req.user);
     }
 }

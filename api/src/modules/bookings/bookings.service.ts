@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Booking, BookingStatus } from './entities/booking.entity';
+import { Booking } from './entities/booking.entity';
+import { BookingStatus } from './enums/booking.enums';
+import { BookingStatusHistory } from './entities/booking-status-history.entity';
+import { BookingPromotion } from './entities/booking-promotion.entity';
+import { Room } from '../rooms/entities/room.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { AuditService } from '../audit/audit.service';
@@ -15,6 +19,12 @@ export class BookingsService {
     constructor(
         @InjectRepository(Booking)
         private bookingsRepository: Repository<Booking>,
+        @InjectRepository(BookingStatusHistory)
+        private historyRepository: Repository<BookingStatusHistory>,
+        @InjectRepository(BookingPromotion)
+        private bookingPromotionsRepository: Repository<BookingPromotion>,
+        @InjectRepository(Room)
+        private roomsRepository: Repository<Room>,
         private readonly auditService: AuditService,
     ) { }
 
@@ -196,5 +206,25 @@ export class BookingsService {
         }
 
         return query.getMany();
+    }
+
+    async logStatusChange(bookingId: number, oldStatus: any, newStatus: any, userId: number, organizationId: number) {
+        const history = this.historyRepository.create({
+            bookingId,
+            oldStatus,
+            newStatus,
+            changedBy: userId,
+            organizationId,
+        });
+        return this.historyRepository.save(history);
+    }
+
+    async addPromotion(bookingId: number, promotionId: number, organizationId: number) {
+        const link = this.bookingPromotionsRepository.create({
+            bookingId,
+            promotionId,
+            organizationId,
+        });
+        return this.bookingPromotionsRepository.save(link);
     }
 }
