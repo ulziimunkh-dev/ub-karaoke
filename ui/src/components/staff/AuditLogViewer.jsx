@@ -4,6 +4,7 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
+import { Card } from 'primereact/card';
 
 const AuditLogViewer = () => {
     const [logs, setLogs] = useState([]);
@@ -26,45 +27,112 @@ const AuditLogViewer = () => {
     };
 
     const dateBodyTemplate = (rowData) => {
-        return new Date(rowData.createdAt).toLocaleString();
+        const d = new Date(rowData.createdAt);
+        return (
+            <div className="flex flex-col">
+                <span className="font-bold text-white text-xs">{d.toLocaleDateString()}</span>
+                <span className="text-[10px] text-gray-500 font-mono tracking-tighter uppercase">{d.toLocaleTimeString()}</span>
+            </div>
+        );
     };
 
     const actionBodyTemplate = (rowData) => {
-        return <Tag value={rowData.action} severity="success" />;
+        const action = rowData.action?.toUpperCase();
+        let severity = 'info';
+        if (action.includes('DELETE') || action.includes('REVOKE')) severity = 'danger';
+        if (action.includes('CREATE') || action.includes('ADD')) severity = 'success';
+        if (action.includes('UPDATE') || action.includes('EDIT')) severity = 'warning';
+
+        return <Tag value={action} severity={severity} className="text-[9px] px-2 py-0.5" />;
     };
 
     const userBodyTemplate = (rowData) => {
-        return rowData.user ? rowData.user.username : `User #${rowData.userId}`;
+        return (
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black border border-white/10 text-[#eb79b2]">
+                    {(rowData.user?.username || 'U').charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-bold text-gray-300">{rowData.user ? rowData.user.username : `User #${rowData.userId}`}</span>
+            </div>
+        );
     };
 
     const resourceBodyTemplate = (rowData) => {
-        return `${rowData.resource} #${rowData.resourceId}`;
+        return (
+            <div className="flex flex-col gap-0.5">
+                <span className="text-xs font-black text-white uppercase tracking-tighter italic">{rowData.resource}</span>
+                <span className="text-[9px] text-gray-500 font-mono">ID: {rowData.resourceId}</span>
+            </div>
+        );
     };
 
     const detailsBodyTemplate = (rowData) => {
         return (
-            <div style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.85rem' }}>
+            <div className="text-[10px] text-gray-500 font-mono max-h-12 overflow-y-auto custom-scrollbar p-2 bg-black/20 rounded border border-white/5 leading-relaxed">
                 {JSON.stringify(rowData.details)}
             </div>
         );
     };
 
     return (
-        <div className="card">
-            <div className="flex justify-content-between align-items-center mb-4">
-                <h2 className="m-0">Audit Logs</h2>
-                <Button label="Refresh" icon="pi pi-refresh" onClick={loadLogs} loading={loading} outlined />
+        <div className="audit-viewer">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">System Audit Logs</h2>
+                    <p className="text-gray-500 text-sm mt-1 font-medium italic">Immutable trail of administrative platform activities</p>
+                </div>
+                <Button
+                    label="Refresh Stream"
+                    icon="pi pi-refresh"
+                    onClick={loadLogs}
+                    loading={loading}
+                    className="h-10 px-6 bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 transition-all font-bold text-sm"
+                />
             </div>
 
-            <DataTable value={logs} paginator rows={10} loading={loading}
-                rowsPerPageOptions={[5, 10, 25, 50]}
-                sortField="createdAt" sortOrder={-1} className="mt-2">
-                <Column field="createdAt" header="Date" body={dateBodyTemplate} sortable></Column>
-                <Column field="action" header="Action" body={actionBodyTemplate} sortable></Column>
-                <Column field="user.username" header="User" body={userBodyTemplate} sortable></Column>
-                <Column field="resource" header="Resource" body={resourceBodyTemplate} sortable></Column>
-                <Column field="details" header="Details" body={detailsBodyTemplate}></Column>
-            </DataTable>
+            <Card className="bg-[#1a1a24] border border-white/5 shadow-2xl p-0 overflow-hidden">
+                <DataTable
+                    value={logs}
+                    paginator
+                    rows={15}
+                    loading={loading}
+                    rowsPerPageOptions={[15, 30, 50]}
+                    sortField="createdAt"
+                    sortOrder={-1}
+                    className="p-datatable-sm select-none"
+                    responsiveLayout="scroll"
+                >
+                    <Column field="createdAt" header="Timestamp" body={dateBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '150px' }}></Column>
+                    <Column field="action" header="Activity" body={actionBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '120px' }}></Column>
+                    <Column field="user.username" header="Actor" body={userBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="resource" header="Target Entity" body={resourceBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="details" header="Event Metadata" body={detailsBodyTemplate} headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                </DataTable>
+            </Card>
+
+            <style jsx>{`
+                .audit-viewer :global(.p-card-body) {
+                    padding: 0;
+                }
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 10px;
+                }
+                :global(.p-datatable .p-datatable-tbody > tr) {
+                    background: transparent !important;
+                    color: white !important;
+                    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+                }
+                :global(.p-datatable .p-datatable-tbody > tr:hover) {
+                    background: rgba(255,255,255,0.01) !important;
+                }
+            `}</style>
         </div>
     );
 };

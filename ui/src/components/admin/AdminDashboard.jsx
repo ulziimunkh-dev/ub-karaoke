@@ -1,5 +1,6 @@
 import React from 'react';
 import { useData } from '../../contexts/DataContext';
+import { Button } from 'primereact/button';
 
 const AdminDashboard = () => {
     const { bookings, venues, organizations, users } = useData();
@@ -58,14 +59,16 @@ const AdminDashboard = () => {
                 <div className="bg-[#1a1a24] p-8 rounded-3xl border border-white/5 shadow-xl">
                     <h3 className="text-lg font-bold text-white mb-6">System Administration</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-left">
-                            <p className="text-xs text-gray-500 font-bold mb-1">MANAGE</p>
-                            <p className="font-bold">Audit Logs</p>
-                        </button>
-                        <button className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-left">
-                            <p className="text-xs text-gray-500 font-bold mb-1">EXPORT</p>
-                            <p className="font-bold">Financial CSV</p>
-                        </button>
+                        <Button
+                            label="Audit Logs"
+                            icon="pi pi-history"
+                            className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-left flex flex-col items-start gap-1"
+                        />
+                        <Button
+                            label="Financial CSV"
+                            icon="pi pi-file-excel"
+                            className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10 text-left flex flex-col items-start gap-1"
+                        />
                     </div>
                 </div>
 

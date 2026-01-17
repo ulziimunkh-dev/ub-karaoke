@@ -205,9 +205,9 @@ async function run() {
 
             for (const room of venue.rooms) {
                 await client.query(
-                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, features, images, specs, "partySupport", created_by, updated_by, is_active)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $14, true)`,
-                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.features), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), adminId]
+                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, images, specs, "partySupport", created_by, updated_by, is_active)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13, true)`,
+                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), adminId]
                 );
                 console.log(`  ➕ Created room: ${room.name}`);
             }
@@ -260,6 +260,24 @@ async function run() {
             );
         }
         console.log(`  ➕ Created ${roomFeaturesData.length} global room features`);
+
+        // 7. Seed Sample Customers (Users)
+        console.log('🌱 Seeding Sample Customers...');
+        const customerPass = await bcrypt.hash('password123', 10);
+        const customers = [
+            { username: 'customer1', email: 'customer1@gmail.com', name: 'Bat-Erdene P.', phone: '99112233', role: 'customer' },
+            { username: 'customer2', email: 'customer2@yahoo.com', name: 'Sarnai B.', phone: '88005544', role: 'customer' },
+            { username: 'testuser', email: 'test@example.com', name: 'Test User', phone: '90001122', role: 'customer' }
+        ];
+
+        for (const c of customers) {
+            await client.query(
+                `INSERT INTO users (username, email, password, name, phone, role, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, true)`,
+                [c.username, c.email, customerPass, c.name, c.phone, c.role]
+            );
+            console.log(`  ➕ Customer: ${c.name}`);
+        }
 
         console.log('✨ Seeded!');
 

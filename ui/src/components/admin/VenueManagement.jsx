@@ -307,21 +307,23 @@ const VenueManagement = () => {
 
     const roomActionsBody = (rowData) => {
         return (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
                 <Button
                     icon="pi pi-pencil"
-                    rounded
                     outlined
                     size="small"
+                    className="h-9 w-9"
                     onClick={() => handleEditRoom(rowData)}
+                    tooltip="Edit Room"
                 />
                 <Button
                     icon="pi pi-trash"
-                    rounded
                     outlined
                     severity="danger"
                     size="small"
+                    className="h-9 w-9"
                     onClick={() => handleDeleteRoom(rowData.id)}
+                    tooltip="Delete Room"
                 />
             </div>
         );
@@ -398,28 +400,28 @@ const VenueManagement = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col lg:flex-row gap-2 items-center">
+                                <div className="flex flex-col lg:flex-row gap-4 items-center">
                                     <Button
                                         label={t('manageRooms')}
                                         icon="pi pi-building"
                                         onClick={() => handleManageRooms(venue)}
-                                        className="w-full lg:w-auto bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold hover:shadow-[0_0_15px_rgba(176,0,255,0.5)] transition-all duration-300"
+                                        className="w-full lg:w-auto h-11 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold hover:shadow-[0_0_15px_rgba(176,0,255,0.5)] transition-all duration-300"
                                     />
-                                    <div className="flex gap-2 w-full lg:w-auto">
+                                    <div className="flex gap-3 w-full lg:w-auto">
                                         <Button
                                             label={venue.isActive === false ? (t('reOpen') || 'Activate') : (t('closeBranch') || 'Deactivate')}
                                             icon={venue.isActive === false ? "pi pi-play" : "pi pi-pause"}
                                             severity={venue.isActive === false ? "success" : "warning"}
                                             outlined
                                             onClick={() => handleToggleStatus(venue)}
-                                            className="flex-1 lg:flex-none"
+                                            className="flex-1 lg:flex-none h-11 px-4"
                                         />
                                         <Button
                                             icon="pi pi-trash"
                                             severity="danger"
                                             outlined
                                             onClick={() => handleDeleteVenue(venue.id)}
-                                            className=""
+                                            className="h-11 w-11"
                                             tooltip={t('delete')}
                                             tooltipOptions={{ position: 'top' }}
                                         />
@@ -610,6 +612,7 @@ const VenueManagement = () => {
                                 <Button
                                     type="submit"
                                     label={editingRoom ? t('save') : t('addRoom')}
+                                    className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold rounded-lg shadow-lg shadow-[#b000ff]/20"
                                 />
                             </div>
                         </form>

@@ -15,6 +15,9 @@ export const DataProvider = ({ children }) => {
     const [organizations, setOrganizations] = useState([]);
     const [roomTypes, setRoomTypes] = useState([]);
     const [roomFeatures, setRoomFeatures] = useState([]);
+    const [earnings, setEarnings] = useState([]);
+    const [payouts, setPayouts] = useState([]);
+    const [payoutAccounts, setPayoutAccounts] = useState([]);
     const [activeVenueId, _setActiveVenueId] = useState(null);
     const setActiveVenueId = (id) => {
         _setActiveVenueId(id);
@@ -77,36 +80,46 @@ export const DataProvider = ({ children }) => {
                     const userData = await api.getProfile();
                     setCurrentUser(userData);
 
-                    // Load organization-specific data
+                    // Load role-specific data
                     if (userData.role === 'sysadmin') {
                         try {
-                            const [orgsData, usersData, staffData, bookingsData] = await Promise.all([
+                            const [orgsData, usersData, staffData, bookingsData, earningsData, payoutsData] = await Promise.all([
                                 api.getOrganizations(),
                                 api.getUsers(),
                                 api.getStaff(),
-                                api.getBookings()
+                                api.getBookings(),
+                                api.getEarnings(),
+                                api.getPayouts()
                             ]);
                             setOrganizations(orgsData);
                             setUsers(usersData);
                             setStaffs(staffData);
                             setBookings(bookingsData);
+                            setEarnings(earningsData);
+                            setPayouts(payoutsData);
                         } catch (error) {
                             console.error('Failed to load sysadmin data:', error);
                         }
                     } else if (userData.role === 'manager' || userData.role === 'staff') {
                         try {
-                            const [staffData, bookingsData] = await Promise.all([
+                            const [staffData, bookingsData, earningsData, payoutsData, accountsData, usersData] = await Promise.all([
                                 api.getStaff(),
-                                api.getBookings({ organizationId: userData.organizationId })
+                                api.getBookings({ organizationId: userData.organizationId }),
+                                api.getEarnings(),
+                                api.getPayouts(),
+                                api.getPayoutAccounts(),
+                                api.getUsers()
                             ]);
-                            console.log('[DataContext] Manager staffs:', staffData);
                             setStaffs(staffData);
                             setBookings(bookingsData);
+                            setEarnings(earningsData);
+                            setPayouts(payoutsData);
+                            setPayoutAccounts(accountsData);
+                            setUsers(usersData);
 
-                            // Set activeVenueId to the first venue of the organization
+                            // Set activeVenueId
                             const orgVenues = processedVenues.filter(v => v.organizationId === userData.organizationId);
                             if (orgVenues.length > 0) {
-                                // Prefer previously selected if it still belongs to this org, otherwise first one
                                 const savedVenueId = localStorage.getItem('activeVenueId');
                                 if (savedVenueId && orgVenues.some(v => v.id === parseInt(savedVenueId))) {
                                     setActiveVenueId(parseInt(savedVenueId));
@@ -114,36 +127,34 @@ export const DataProvider = ({ children }) => {
                                     setActiveVenueId(orgVenues[0].id);
                                 }
                             }
-
                         } catch (error) {
                             console.error('Failed to load manager/staff data:', error);
                         }
+                    } else {
+                        // Customer
+                        try {
+                            const myBookings = await api.getBookings();
+                            setBookings(myBookings);
+                        } catch (error) {
+                            console.error('Failed to load customer bookings:', error);
+                        }
                     }
 
-                    // [Global] Load Room Configurations for all administrative roles
+                    // Global config for all admins
                     if (['sysadmin', 'manager', 'staff'].includes(userData.role)) {
                         try {
                             const [types, features] = await Promise.all([
                                 api.getRoomTypes(),
                                 api.getRoomFeatures()
                             ]);
-                            console.log('[DataContext] Loaded Room Config:', { types, features });
                             setRoomTypes(types);
                             setRoomFeatures(features);
                         } catch (e) {
                             console.error('Failed to load room config:', e);
                         }
-                    } else {
-                        // Regular user/customer - maybe load their own bookings?
-                        try {
-                            const myBookings = await api.getBookings(); // Backend should filter for current user
-                            setBookings(myBookings);
-                        } catch (error) {
-                            console.error('Failed to load customer bookings:', error);
-                        }
                     }
                 } catch (error) {
-                    // Token expired or invalid
+                    console.error('Session validation failed:', error);
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('user');
                 }
@@ -177,8 +188,12 @@ export const DataProvider = ({ children }) => {
             }
         } else if (data.user.role === 'manager' || data.user.role === 'staff') {
             try {
-                const staffData = await api.getStaff();
+                const [staffData, usersData] = await Promise.all([
+                    api.getStaff(),
+                    api.getUsers()
+                ]);
                 setStaffs(staffData);
+                setUsers(usersData);
 
                 // Refresh venues to ensure org-scoped if necessary (though already fetched globally in loadInitialData for now)
                 // Set activeVenueId
@@ -556,6 +571,43 @@ export const DataProvider = ({ children }) => {
         return promos.find(p => p.code === code) || null;
     };
 
+    // Finance methods
+    const addPayoutAccount = async (data) => {
+        try {
+            const newAccount = await api.addPayoutAccount(data);
+            setPayoutAccounts(prev => [newAccount, ...prev]);
+            return newAccount;
+        } catch (error) {
+            console.error('Failed to add payout account:', error);
+            throw error;
+        }
+    };
+
+    const requestPayout = async (data) => {
+        try {
+            const newPayout = await api.requestPayout(data);
+            setPayouts(prev => [newPayout, ...prev]);
+            // Refresh earnings after payout request since they change status
+            const updatedEarnings = await api.getEarnings();
+            setEarnings(updatedEarnings);
+            return newPayout;
+        } catch (error) {
+            console.error('Failed to request payout:', error);
+            throw error;
+        }
+    };
+
+    const updatePayoutStatus = async (id, status) => {
+        try {
+            const updated = await api.updatePayoutStatus(id, status);
+            setPayouts(prev => prev.map(p => p.id === id ? updated : p));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update payout status:', error);
+            throw error;
+        }
+    };
+
     // User management mock functions
     const addUser = async (userData) => {
         try {
@@ -764,6 +816,12 @@ export const DataProvider = ({ children }) => {
                 addOrder,
                 logIssue,
                 transactions,
+                earnings,
+                payouts,
+                payoutAccounts,
+                addPayoutAccount,
+                requestPayout,
+                updatePayoutStatus,
                 settings,
                 promos,
                 verifyPromoCode,

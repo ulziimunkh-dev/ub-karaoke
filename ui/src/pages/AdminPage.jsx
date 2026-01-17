@@ -17,7 +17,8 @@ import AdminLoginPage from './AdminLoginPage';
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
 import PlanManagement from '../components/admin/PlanManagement';
-import { Dropdown } from 'primereact/dropdown'; // Added missing import
+import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
 
 const AdminPage = () => {
     const { currentUser, logout, venues, activeVenueId, setActiveVenueId } = useData();
@@ -74,51 +75,51 @@ const AdminPage = () => {
                         </div>
                         <div className="w-2 h-2 rounded-full logo-dot-animated"></div>
                     </div>
-                    <button
+                    <Button
+                        label={language.toUpperCase()}
                         onClick={toggleLanguage}
-                        className="h-8 px-3 text-xs font-bold rounded-full border border-[#b000ff] text-[#eb79b2] bg-transparent hover:bg-[#b000ff]/10 transition-all uppercase"
-                    >
-                        {language.toUpperCase()}
-                    </button>
+                        className="h-8 px-3 text-[10px] font-black rounded-full p-button-outlined p-button-sm border-[#b000ff] text-[#eb79b2] hover:bg-[#b000ff]/10 transition-all"
+                    />
                 </div>
 
                 <nav className="flex-1">
-                    <ul className="list-none p-0">
+                    <ul className="list-none p-0 m-0">
                         {navItems.map(item => (
                             <li key={item.id} className="mb-2">
                                 <button
                                     onClick={() => setActiveTab(item.id)}
-                                    className={`w-full text-left px-4 py-3 rounded-lg border-none cursor-pointer flex items-center gap-3 text-base transition-all ${activeTab === item.id
-                                        ? 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold shadow-[0_0_15px_rgba(176,0,255,0.3)]'
-                                        : 'bg-transparent text-gray-400 hover:bg-white/5 hover:text-[#b000ff]'
+                                    className={`w-full text-left px-4 py-3 rounded-xl border-none cursor-pointer flex items-center gap-3 text-sm transition-all ${activeTab === item.id
+                                        ? 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold shadow-[0_0_20px_rgba(176,0,255,0.3)]'
+                                        : 'bg-transparent text-gray-500 hover:bg-white/5 hover:text-[#b000ff]'
                                         }`}
                                 >
-                                    <span>{item.icon}</span> {item.label}
+                                    <span className="text-lg">{item.icon}</span>
+                                    <span className="font-bold tracking-tight">{item.label}</span>
                                 </button>
                             </li>
                         ))}
                     </ul>
                 </nav>
 
-                <div className="border-t border-white/10 pt-5">
-                    <div className="flex items-center gap-3 mb-4 px-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center font-bold text-xs">
+                <div className="border-t border-white/5 pt-6 mt-4">
+                    <div className="flex items-center gap-3 mb-6 px-2">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center font-black text-white shadow-lg shadow-[#b000ff]/20">
                             {currentUser.name?.charAt(0)}
                         </div>
-                        <div>
-                            <p className="m-0 text-xs text-gray-500 uppercase tracking-tighter font-bold">{currentUser.role}</p>
-                            <p className="m-0 text-sm font-bold text-white truncate w-32">{currentUser.name}</p>
+                        <div className="overflow-hidden">
+                            <p className="m-0 text-[10px] text-gray-500 uppercase tracking-widest font-black leading-none mb-1.5">{currentUser.role}</p>
+                            <p className="m-0 text-sm font-bold text-white truncate">{currentUser.name}</p>
                         </div>
                     </div>
-                    <button
+                    <Button
+                        label="End Session"
+                        icon="pi pi-power-off"
                         onClick={() => {
                             const redirectPath = logout();
                             navigate(redirectPath);
                         }}
-                        className="w-full h-10 px-4 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold text-sm mb-3"
-                    >
-                        Logout
-                    </button>
+                        className="w-full h-11 p-button-outlined p-button-danger border-[#ff3d32]/30 text-[#ff3d32] hover:bg-[#ff3d32]/10 transition-all font-bold text-xs uppercase tracking-widest rounded-xl mb-4"
+                    />
                     <a href="/" className="block text-center text-gray-500 no-underline text-[10px] hover:text-[#b000ff] transition-colors">PUBLIC SITE</a>
                 </div>
             </aside>
@@ -155,7 +156,7 @@ const AdminPage = () => {
                 {activeTab === 'plans' && <PlanManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
-                {activeTab === 'users' && currentUser.role === 'sysadmin' && <UserManagement />}
+                {activeTab === 'users' && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
                 {activeTab === 'audit' && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}

@@ -153,17 +153,17 @@ const OrganizationManagement = () => {
                     <Column
                         header="Actions"
                         body={(row) => (
-                            <div className="flex gap-2">
-                                <Button icon="pi pi-clock" onClick={() => openHistory(row)} outlined size="small" className="h-8 w-8 !p-0" tooltip="View Plan History" />
-                                <Button icon="pi pi-pencil" onClick={() => openEdit(row)} outlined size="small" className="h-8 w-8 !p-0" />
+                            <div className="flex gap-3">
+                                <Button icon="pi pi-clock" onClick={() => openHistory(row)} outlined size="small" className="h-9 w-9" tooltip="View Plan History" />
+                                <Button icon="pi pi-pencil" onClick={() => openEdit(row)} outlined size="small" className="h-9 w-9" />
                                 <Button
                                     icon={row.isActive ? "pi pi-pause" : "pi pi-play"}
                                     onClick={() => handleToggleStatus(row)}
                                     outlined
                                     severity={row.isActive ? "warning" : "success"}
                                     size="small"
-                                    className="h-8 w-8 !p-0"
-                                    tooltip={row.status === 'inactive' ? 'Activate' : 'Deactivate'}
+                                    className="h-9 w-9"
+                                    tooltip={row.isActive ? 'Deactivate' : 'Activate'}
                                 />
                             </div>
                         )}

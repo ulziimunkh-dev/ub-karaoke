@@ -95,7 +95,7 @@ const StaffManagement = () => {
         const canManage = currentUser.role === 'sysadmin' || (currentUser.role === 'manager' && rowData.role === 'staff');
 
         return (
-            <div className="flex gap-2 flex-wrap select-none">
+            <div className="flex gap-3 flex-wrap">
                 {canManage && !isSelf && (
                     <Button
                         label={rowData.isActive ? 'Deactivate' : 'Activate'}
@@ -111,11 +111,12 @@ const StaffManagement = () => {
                         outlined
                         size="small"
                         severity={rowData.isActive ? 'danger' : 'success'}
-                        className="h-8 px-3 text-xs whitespace-nowrap !border-current !text-current hover:!bg-opacity-10"
+                        className="h-9 px-4 text-xs font-bold"
                     />
                 )}
                 <Button
                     icon="pi pi-pencil"
+                    label="Edit"
                     onClick={() => {
                         setEditingStaff({ ...rowData });
                         setIsEditModalOpen(true);
@@ -123,17 +124,16 @@ const StaffManagement = () => {
                     outlined
                     size="small"
                     severity="info"
-                    className="h-8 w-8 p-0"
-                    tooltip="Edit Details"
+                    className="h-9 px-4 text-xs font-bold"
                 />
                 <Button
                     icon="pi pi-lock-open"
+                    label="Reset"
                     onClick={() => handleResetPassword(rowData)}
                     outlined
                     size="small"
                     severity="warning"
-                    className="h-8 w-8 p-0"
-                    tooltip="Reset Password"
+                    className="h-9 px-4 text-xs font-bold"
                 />
             </div>
         );

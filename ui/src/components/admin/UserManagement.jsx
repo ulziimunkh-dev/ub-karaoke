@@ -57,11 +57,10 @@ const UserManagement = () => {
         if (rowData.role === 'sysadmin') return null;
 
         return (
-            <div className="flex gap-2 flex-wrap select-none">
+            <div className="flex gap-3 flex-wrap">
                 <Button
                     label={rowData.isActive ? 'Deactivate' : 'Activate'}
                     onClick={() => {
-                        // [REF] Use toggleUserStatus with 'customer' role context
                         toggleUserStatus(rowData.id, 'customer');
                         toast.current.show({
                             severity: 'success',
@@ -73,16 +72,16 @@ const UserManagement = () => {
                     outlined
                     size="small"
                     severity={rowData.isActive ? 'danger' : 'success'}
-                    className="h-8 px-3 text-xs whitespace-nowrap !border-current !text-current hover:!bg-opacity-10"
+                    className="h-9 px-4 text-xs font-bold"
                 />
                 <Button
-                    label="Reset"
+                    label="Reset Password"
                     onClick={() => handleResetPassword(rowData)}
                     outlined
                     size="small"
                     severity="warning"
                     icon="pi pi-lock-open"
-                    className="h-8 px-3 text-xs whitespace-nowrap !border-current !text-current hover:!bg-opacity-10"
+                    className="h-9 px-4 text-xs font-bold"
                 />
             </div>
         );

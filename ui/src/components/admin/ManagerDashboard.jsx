@@ -1,5 +1,6 @@
 import React from 'react';
 import { useData } from '../../contexts/DataContext';
+import { Button } from 'primereact/button';
 
 const ManagerDashboard = () => {
     const { bookings, venues, currentUser, activeVenueId } = useData();
@@ -57,17 +58,25 @@ const ManagerDashboard = () => {
             </div>
 
             <div className="bg-[#1a1a24] p-8 rounded-3xl border border-white/5 shadow-xl">
-                <h3 className="text-lg font-bold text-white mb-6">Manager Quick Actions</h3>
+                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <i className="pi pi-bolt text-[#eb79b2]"></i> Manager Quick Actions
+                </h3>
                 <div className="flex flex-wrap gap-4">
-                    <button className="px-6 h-12 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2">
-                        <span>➕</span> Manual Reservation
-                    </button>
-                    <button className="px-6 h-12 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2">
-                        <span>📊</span> Branch Performance Report
-                    </button>
-                    <button className="px-6 h-12 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl transition-all border border-white/10 flex items-center gap-2">
-                        <span>👥</span> View Branch Staff
-                    </button>
+                    <Button
+                        label="Manual Reservation"
+                        icon="pi pi-plus-circle"
+                        className="p-button-outlined p-button-info px-6 h-12 font-bold !bg-white/5 border-white/10 hover:!bg-white/10 transition-all rounded-xl"
+                    />
+                    <Button
+                        label="Performance Report"
+                        icon="pi pi-chart-line"
+                        className="p-button-outlined px-6 h-12 font-bold !bg-white/5 border-white/10 hover:!bg-white/10 transition-all rounded-xl"
+                    />
+                    <Button
+                        label="View Branch Staff"
+                        icon="pi pi-users"
+                        className="p-button-outlined px-6 h-12 font-bold !bg-white/5 border-white/10 hover:!bg-white/10 transition-all rounded-xl"
+                    />
                 </div>
             </div>
         </div>

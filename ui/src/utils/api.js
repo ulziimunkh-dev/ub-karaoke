@@ -251,6 +251,52 @@ export const api = {
     },
 
     // Files
+    // Finance
+    getEarnings: async (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        const response = await apiInstance.get(`/finance/earnings${query ? '?' + query : ''}`);
+        return response.data;
+    },
+    getTotalEarnings: async (status, organizationId) => {
+        let url = `/finance/earnings/total`;
+        const params = new URLSearchParams();
+        if (status) params.append('status', status);
+        if (organizationId) params.append('organizationId', organizationId);
+        const query = params.toString();
+        const response = await apiInstance.get(`${url}${query ? '?' + query : ''}`);
+        return response.data;
+    },
+    getPayouts: async (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        const response = await apiInstance.get(`/finance/payouts${query ? '?' + query : ''}`);
+        return response.data;
+    },
+    getPayoutAccounts: async (organizationId) => {
+        const query = organizationId ? `?organizationId=${organizationId}` : '';
+        const response = await apiInstance.get(`/finance/payout-accounts${query}`);
+        return response.data;
+    },
+    addPayoutAccount: async (data) => {
+        const response = await apiInstance.post('/finance/payout-accounts', data);
+        return response.data;
+    },
+    updatePayoutAccount: async (id, data) => {
+        const response = await apiInstance.patch(`/finance/payout-accounts/${id}`, data);
+        return response.data;
+    },
+    deletePayoutAccount: async (id) => {
+        const response = await apiInstance.delete(`/finance/payout-accounts/${id}`);
+        return response.data;
+    },
+    requestPayout: async (data) => {
+        const response = await apiInstance.post('/finance/payout-request', data);
+        return response.data;
+    },
+    updatePayoutStatus: async (id, status) => {
+        const response = await apiInstance.patch(`/finance/payouts/${id}/status`, { status });
+        return response.data;
+    },
+
     uploadFile: async (file) => {
         const formData = new FormData();
         formData.append('file', file);

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationsController } from './organizations.controller';
+import { FinanceController } from './finance.controller';
 import { Organization } from './entities/organization.entity';
 import { AuditModule } from '../audit/audit.module';
 import { PlansModule } from '../plans/plans.module';
@@ -17,7 +18,7 @@ import { OrganizationPayoutItem } from './entities/organization-payout-item.enti
         AuditModule,
         PlansModule,
     ],
-    controllers: [OrganizationsController],
+    controllers: [OrganizationsController, FinanceController],
     providers: [OrganizationsService],
     exports: [OrganizationsService],
 })
