@@ -3,9 +3,10 @@
 ## 1. Functional Requirements
 
 ### 1.1 User Authentication & Profile
-- **Login/Register**: Users must be able to create accounts and log in securely.
+- **Login/Register**: Users must be able to create accounts and log in securely. Supports **OTP (One-Time Password)** login via email/phone for customers.
 - **Profile Management**: Users can update their profile information (name, phone, email).
 - **Loyalty Program**: Customers earn points based on their bookings.
+- **Deferred Login**: Customers can browse venues and rooms without logging in, only requiring authentication at the final booking step.
 
 ### 1.2 Venue Discovery
 - **List Venues**: Display a list of available karaoke venues with key information (rating, price range).
@@ -19,9 +20,15 @@
 - **My Bookings**: Customers can view their booking history and upcoming reservations.
 
 ### 1.4 Admin & Staff Portals
-- **Venue Management**: Admins can add, edit, or remove venues and configure their booking rules.
-- **Room Management**: Staff/Admins can manage room details and features.
+- **Role-Based Login Separatio  n**:
+    - **System Admins & Admins**: Log in via `/admin`.
+    - **Managers & Staff**: Log in via `/staff/login`.
+- **Venue Management**: Admins can add, edit, or remove venues and configure their booking rules. Includes the ability to toggle venue visibility and booking availability.
+- **Room Management**: Staff/Admins can manage room details, features, and pricing.
+- **Organization Management**: System Admins can manage organizations, including manual overrides for **Subscription Plan Dates** (Start/End).
+- **Promo Code Management**: Admins can create and manage promotional codes (percentage or fixed discounts) with validity periods.
 - **Booking Tracking**: Real-time tracking of bookings for staff to manage venue operations.
+- **Finance & Payouts**: Management of venue earnings and withdrawal/payout requests for organization owners.
 
 ### 1.5 Reviews & Ratings
 - **Submit Reviews**: Customers can rate and review venues after their visit.

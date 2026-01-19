@@ -39,16 +39,19 @@ The API is split into domain-specific modules, each following the NestJS pattern
 - **`VenuesModule`**: Branches managed by organizations.
 - **`RoomsModule`**: Booking units within venues.
 - **`BookingsModule`**: Transactional flow and availability.
+- **`PromotionsModule`**: Management of discount codes and validity.
+- **`PlansModule`**: Configuration of subscription tiers for organizations.
 - **`AuditModule`**: Centralized logging for entity changes.
 
 ## 2. Database Schema
 The system uses the following core entities:
 
 - **User**: Stores registered users, including customers, staff, and admins. Includes role-based access control (RBAC).
-- **Organization**: Business entities that own and manage venues.
+- **Organization**: Business entities that own and manage venues. Includes subscription plan tracking (`planId`, `planStartedAt`, `planEndsAt`).
 - **Venue**: Represents a karaoke establishment, including metadata like district, address, price range, and booking rules.
 - **Room**: Individual karaoke rooms within a venue, each with specific capacities, rates, and features.
 - **Booking**: Records of room reservations made by customers.
+- **Promotion**: Discount codes with specific values (PERCENT/FIXED) and validity periods, linked to organizations or venues.
 - **Review**: Customer-generated feedback and ratings for venues.
 
 ### Common Metadata (Auditing & Status)
@@ -76,11 +79,15 @@ The backend is organized into functional modules:
 | **Venues** | CRUD operations for venue details and management. |
 | **Rooms** | Management of room availability and specifications. |
 | **Bookings** | Core logic for creating, viewing, and cancelling reservations. |
+| **Promotions** | Management of discount codes and validation logic. |
 | **Reviews** | Handling user feedback and calculating venue ratings. |
 
 ## 4. Security & Authentication
-- **Authentication**: JWT (JSON Web Tokens) are used for secure session management.
-- **Authorization**: Role-based access control (RBAC) ensures users can only access endpoints and features appropriate for their role (`admin`, `staff`, `customer`).
+- **Authentication**: JWT (JSON Web Tokens) are used for secure session management. Supports both password-based and **OTP (One-Time Password)** flows.
+- **Authorization**: Role-based access control (RBAC) ensures users can only access endpoints and features appropriate for their role (`sysadmin`, `admin`, `manager`, `staff`, `customer`).
+- **Role-Based Login Paths**:
+    - Administrative users (Sysadmin, Admin) log in through the `/admin` entry point.
+    - Operational users (Manager, Staff) use the `/staff/login` entry point.
 - **Data Protection**: Passwords are hashed using `bcrypt` before storage.
 
 ## 6. Logical Flows
