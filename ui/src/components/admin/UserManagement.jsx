@@ -109,7 +109,7 @@ const UserManagement = () => {
                 />
             </div>
 
-            <div className="card p-0 shadow-md">
+            <div className="card p-0 shadow-md hidden lg:block">
                 <DataTable
                     value={displayUsers}
                     paginator
@@ -129,6 +129,73 @@ const UserManagement = () => {
                     <Column header="Status" body={statusBodyTemplate} style={{ width: '10%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column header="Actions" body={actionBodyTemplate} style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                 </DataTable>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+                {displayUsers.map(user => (
+                    <div key={user.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-base font-bold text-gray-900 mb-1">{user.name}</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500 font-mono">@{user.username}</span>
+                                    <Tag value={user.isActive ? 'Active' : 'Inactive'} severity={user.isActive ? 'success' : 'danger'} className="text-[10px] px-2 py-1 origin-left" />
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-lg font-black text-[#b000ff] m-0">{user.loyaltyPoints || 0}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest m-0">Points</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Email</p>
+                                <p className="text-sm text-gray-700 truncate font-bold">{user.email}</p>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Phone</p>
+                                <p className="text-sm text-gray-700 font-bold">{user.phone}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2.5">
+                            <Button
+                                label={user.isActive ? 'Deactivate' : 'Activate'}
+                                icon={`pi ${user.isActive ? 'pi-user-minus' : 'pi-user-plus'}`}
+                                onClick={() => {
+                                    toggleUserStatus(user.id, 'customer');
+                                    toast.current.show({
+                                        severity: 'success',
+                                        summary: 'Status Updated',
+                                        detail: `Customer ${user.isActive ? 'deactivated' : 'activated'} successfully`,
+                                        life: 3000
+                                    });
+                                }}
+                                outlined
+                                size="small"
+                                severity={user.isActive ? 'danger' : 'success'}
+                                className="flex-1 h-12 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+                            />
+                            <Button
+                                label="Password"
+                                icon="pi pi-lock-open"
+                                onClick={() => handleResetPassword(user)}
+                                outlined
+                                size="small"
+                                severity="warning"
+                                className="flex-1 h-12 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+                            />
+                        </div>
+                    </div>
+                ))}
+                {displayUsers.length === 0 && (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <i className="pi pi-users text-4xl text-gray-300 mb-3"></i>
+                        <p className="text-gray-500 font-medium">No customers found</p>
+                    </div>
+                )}
             </div>
 
             <Dialog

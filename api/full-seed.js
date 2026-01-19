@@ -99,11 +99,18 @@ async function run() {
             console.log(`  ➕ Plan: ${p.name}`);
         }
 
-        // 2. Organizations (Updated with Plans)
-        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at) VALUES ('UBK-GRP', 'UB Karaoke Group', $1, $1, true, $2, 'active', NOW()) RETURNING id", [adminId, planIds['GROWTH']]);
+        // 2. Organizations
+        // Org 1: Expired Plan
+        const orgRes1 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at, plan_ends_at) VALUES ('UBK-EXP', 'Expired Org', $1, $1, true, $2, 'active', NOW() - INTERVAL '31 days', NOW() - INTERVAL '1 day') RETURNING id", [adminId, planIds['GROWTH']]);
         const orgId1 = orgRes1.rows[0].id;
-        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at) VALUES ('STAR-K', 'Star Karaoke Management', $1, $1, true, $2, 'active', NOW()) RETURNING id", [adminId, planIds['STARTER']]);
+
+        // Org 2: No Plan
+        const orgRes2 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status) VALUES ('UBK-NOP', 'No Plan Org', $1, $1, true, NULL, 'active') RETURNING id", [adminId]);
         const orgId2 = orgRes2.rows[0].id;
+
+        // Org 3: Active Plan
+        const orgRes3 = await client.query("INSERT INTO organizations (code, name, created_by, updated_by, is_active, plan_id, status, plan_started_at) VALUES ('UBK-ACT', 'Active Org', $1, $1, true, $2, 'active', NOW()) RETURNING id", [adminId, planIds['GRANCHISE'] || planIds['GROWTH']]);
+        const orgId3 = orgRes3.rows[0].id;
 
         // 3. Other Staff
         const mPass = await bcrypt.hash('manager', 10);
@@ -117,6 +124,10 @@ async function run() {
         await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('manager2@ubkaraoke.mn', 'manager2', $1, 'Star Manager', 'manager', $2, $3, $3)", [mPass, orgId2, adminId]);
         await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('staff2@ubkaraoke.mn', 'staff2', $1, 'Star Assistant', 'staff', $2, $3, $3)", [stPass, orgId2, adminId]);
 
+        // Org 3 Staff (Active)
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('manager3@ubkaraoke.mn', 'manager3', $1, 'Active Manager', 'manager', $2, $3, $3)", [mPass, orgId3, adminId]);
+        await client.query("INSERT INTO staff (email, username, password, name, role, organization_id, created_by, updated_by) VALUES ('staff3@ubkaraoke.mn', 'staff3', $1, 'Active Staff', 'staff', $2, $3, $3)", [stPass, orgId3, adminId]);
+
         // 4. Customer
         const cPass = await bcrypt.hash('123', 10);
         await client.query("INSERT INTO users (email, username, password, name, phone, role, created_by, updated_by) VALUES ('bat@gmail.com', 'customer', $1, 'Bat-Erdene', '99998888', 'customer', $2, $2)", [cPass, adminId]);
@@ -124,7 +135,6 @@ async function run() {
 
         // 4. Venues & Rooms
         const venues = [
-            // Org 1 Venues
             {
                 orgId: orgId1,
                 name: "Neon Nights (Seoul St)",
@@ -140,15 +150,41 @@ async function run() {
                 openingHours: { "Daily": "12:00-04:00" },
                 images: ["/assets/defaults/karaoke_standard.png"],
                 featuredImage: "/assets/defaults/karaoke_standard.png",
+                isBookingEnabled: false,
                 latitude: 47.9188,
                 longitude: 106.9176,
                 rooms: [
-                    { name: 'Standard Alpha', type: 'Standard', capacity: 6, hourlyRate: 45000, condition: 'Excellent', features: ['HD Screen', 'Dynamic Lighting'], amenities: ['Wireless Mics'], images: ["/assets/defaults/karaoke_standard.png"], specs: { microphones: 2 }, partySupport: { birthday: true } },
-                    { name: 'Neon VIP Suite', type: 'VIP', capacity: 15, hourlyRate: 95000, isVIP: true, condition: 'Mint', features: ['4K Projector', 'Stage'], amenities: ['Champagne Service'], images: ["/assets/defaults/karaoke_vip.png"], specs: { microphones: 4 }, partySupport: { birthday: true, catering: true } }
+                    {
+                        name: 'Standard Alpha',
+                        type: 'Standard',
+                        capacity: 6,
+                        hourlyRate: 45000,
+                        condition: 'Excellent',
+                        features: ['HD Screen', 'Dynamic Lighting'],
+                        amenities: ['Wireless Mics'],
+                        images: ["/assets/defaults/karaoke_standard.png", "/assets/defaults/karaoke_minimal.png"],
+                        specs: { microphones: 2, screen: 55, seating: 'U-Shaped Sofa', ac: 'Central' },
+                        partySupport: { birthday: true },
+                        view360Url: 'https://oculus.com/experiences/quest/' // Example link
+                    },
+                    {
+                        name: 'Neon VIP Suite',
+                        type: 'VIP',
+                        capacity: 15,
+                        hourlyRate: 95000,
+                        isVIP: true,
+                        condition: 'Mint',
+                        features: ['4K Projector', 'Stage'],
+                        amenities: ['Champagne Service'],
+                        images: ["/assets/defaults/karaoke_vip.png", "/assets/defaults/karaoke_lux.png"],
+                        specs: { microphones: 4, screen: 120, seating: 'Luxury Leather', ac: 'Independent Control', sound: 'Bose Surround' },
+                        partySupport: { birthday: true, catering: true },
+                        view360Url: 'https://v-tour.com/tour/neon-nights-vip' // Example link
+                    }
                 ]
             },
             {
-                orgId: orgId1,
+                orgId: orgId2,
                 name: "Neon Nights (Zaisan)",
                 district: "Khan-Uul",
                 address: "Zaisan Hill Complex, 5th Floor",
@@ -165,13 +201,24 @@ async function run() {
                 latitude: 47.8864,
                 longitude: 106.9114,
                 rooms: [
-                    { name: 'Sky Room 1', type: 'Premium', capacity: 10, hourlyRate: 75000, condition: 'Excellent', features: ['Floor Window', 'Pro Audio'], amenities: ['iPad Ordering'], images: ["/assets/defaults/karaoke_lux.png"], specs: { microphones: 3 }, partySupport: { birthday: true } },
+                    {
+                        name: 'Sky Room 1',
+                        type: 'Premium',
+                        capacity: 10,
+                        hourlyRate: 75000,
+                        condition: 'Excellent',
+                        features: ['Floor Window', 'Pro Audio'],
+                        amenities: ['iPad Ordering'],
+                        images: ["/assets/defaults/karaoke_lux.png"],
+                        specs: { microphones: 3 },
+                        partySupport: { birthday: true },
+                        isBookingEnabled: false
+                    },
                     { name: 'Imperial VIP', type: 'VIP', capacity: 25, hourlyRate: 150000, isVIP: true, condition: 'Mint', features: ['8K Screen', 'Dance Floor'], amenities: ['Top Shelf Bar'], images: ["/assets/defaults/karaoke_vip.png"], specs: { microphones: 6 }, partySupport: { largeGroups: true } }
                 ]
             },
-            // Org 2 Venues
             {
-                orgId: orgId2,
+                orgId: orgId3,
                 name: "Star Voice Academy",
                 district: "Bayangol",
                 address: "Peace Avenue 45, 3rd Khoroo",
@@ -203,11 +250,31 @@ async function run() {
             const venueId = vRes.rows[0].id;
             console.log(`✅ Created venue: ${venue.name} (Org: ${venue.orgId})`);
 
+            // Seed venue_operating_hours
+            if (venue.openingHours && venue.openingHours['Daily']) {
+                const [start, end] = venue.openingHours['Daily'].split('-');
+                const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+                
+                for (const day of days) {
+                    // Check if specific day override exists (future proofing seed data)
+                    // Currently seed uses 'Daily' for all
+                    const daySpecific = venue.openingHours[day.charAt(0) + day.slice(1).toLowerCase()];
+                    const [s, e] = daySpecific ? daySpecific.split('-') : [start, end];
+
+                    await client.query(
+                        `INSERT INTO venue_operating_hours (venue_id, day_of_week, open_time, close_time)
+                         VALUES ($1, $2, $3, $4)`,
+                        [venueId, day, s, e]
+                    );
+                }
+                console.log(`  🕒 Added operating hours for ${venue.name}`);
+            }
+
             for (const room of venue.rooms) {
                 await client.query(
-                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, images, specs, "partySupport", created_by, updated_by, is_active)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13, true)`,
-                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), adminId]
+                    `INSERT INTO rooms (organization_id, "venueId", name, type, capacity, "hourlyRate", "isVIP", condition, amenities, images, specs, "partySupport", "view360Url", "isBookingEnabled", created_by, updated_by, is_active)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15, true)`,
+                    [venue.orgId, venueId, room.name, room.type, room.capacity, room.hourlyRate, room.isVIP || false, room.condition, JSON.stringify(room.amenities), JSON.stringify(room.images), JSON.stringify(room.specs), JSON.stringify(room.partySupport), room.view360Url || null, room.isBookingEnabled !== false, adminId]
                 );
                 console.log(`  ➕ Created room: ${room.name}`);
             }

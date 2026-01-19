@@ -17,19 +17,53 @@ export const parseTime = (timeStr) => {
     return hours * 60 + minutes;
 };
 
-export const isVenueOpen = (openingHours) => {
-    if (!openingHours) return false;
+export const formatTimeRange = (rangeStr) => {
+    if (!rangeStr) return '';
+    try {
+        const [start, end] = rangeStr.split('-');
+        const formatTime = (time) => {
+            const [h, m] = time.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            // User requested format like 16:00PM (24h + ampm suffix)
+            return `${time.trim()}${ampm}`;
+        };
+        return `${formatTime(start)}-${formatTime(end)}`;
+    } catch (e) {
+        return rangeStr;
+    }
+};
 
-    // Handle stringified JSON if necessary
-    let hoursMap = openingHours;
-    if (typeof openingHours === 'string') {
+export const getOpeningHoursMap = (operatingHours) => {
+    if (!operatingHours) return {};
+    let hoursMap = {};
+
+    // Handle new Array structure (from database)
+    if (Array.isArray(operatingHours)) {
+        operatingHours.forEach(h => {
+            const open = h.openTime.slice(0, 5);
+            const close = h.closeTime.slice(0, 5);
+            hoursMap[h.dayOfWeek.charAt(0) + h.dayOfWeek.slice(1).toLowerCase()] = `${open}-${close}`;
+        });
+    }
+    // Handle legacy JSON structure
+    else if (typeof operatingHours === 'object') {
+        hoursMap = operatingHours;
+    }
+    // Handle legacy stringified JSON
+    else if (typeof operatingHours === 'string') {
         try {
-            hoursMap = JSON.parse(openingHours);
+            hoursMap = JSON.parse(operatingHours);
         } catch (e) {
             console.error("Failed to parse opening hours", e);
-            return false;
+            return {};
         }
     }
+    return hoursMap;
+};
+
+export const isVenueOpen = (operatingHours) => {
+    const hoursMap = getOpeningHoursMap(operatingHours);
+    if (!hoursMap) return false;
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -37,7 +71,7 @@ export const isVenueOpen = (openingHours) => {
     const prevDay = getPreviousDayName(currentDay);
 
     // Check today's schedule
-    const todayRange = hoursMap[currentDay] || hoursMap['Daily'];
+    const todayRange = hoursMap[currentDay] || hoursMap['Daily'] || hoursMap[currentDay.toUpperCase()];
     if (todayRange) {
         const [startStr, endStr] = todayRange.split('-');
         const start = parseTime(startStr);
@@ -60,7 +94,7 @@ export const isVenueOpen = (openingHours) => {
     }
 
     // Check previous day's schedule (if it spills over to today)
-    const prevRange = hoursMap[prevDay] || hoursMap['Daily'];
+    const prevRange = hoursMap[prevDay] || hoursMap['Daily'] || hoursMap[prevDay.toUpperCase()];
     if (prevRange) {
         const [startStr, endStr] = prevRange.split('-');
         const start = parseTime(startStr);

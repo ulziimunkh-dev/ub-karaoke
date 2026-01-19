@@ -17,6 +17,7 @@ import AdminLoginPage from './AdminLoginPage';
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
 import PlanManagement from '../components/admin/PlanManagement';
+import SubscriptionManagement from '../components/admin/SubscriptionManagement';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 
@@ -25,6 +26,7 @@ const AdminPage = () => {
     const { language, toggleLanguage, t } = useLanguage();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     if (!currentUser) {
         return <AdminLoginPage />;
     }
@@ -52,6 +54,7 @@ const AdminPage = () => {
             { id: 'plans', label: 'Plans', icon: '📑' }
         ] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? 'Venues & Rooms' : 'Branches & Rooms', icon: '🏢' },
+        ...(currentUser.role === 'manager' ? [{ id: 'subscription', label: 'Subscription', icon: '💎' }] : []),
         ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: 'Point of Sale', icon: '🖥️' }] : []),
         ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
         { id: 'staffs', label: 'Staffs', icon: '👥' },
@@ -64,10 +67,46 @@ const AdminPage = () => {
 
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#121212', color: 'white' }}>
-            {/* Sidebar */}
-            <aside className="w-64 bg-[#1a1a24] p-5 flex flex-col border-r border-white/5">
-                <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#121212] color-white relative">
+            {/* Mobile Header */}
+            <header className="lg:hidden flex justify-between items-center bg-[#1a1a24] p-4 border-b border-white/5 sticky top-0 z-50">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-2 -ml-2 bg-transparent border-none text-white cursor-pointer"
+                    >
+                        <i className="pi pi-bars text-xl"></i>
+                    </button>
+                    <div className="flex items-baseline">
+                        <span className="text-xl font-black tracking-tighter text-[#eb79b2]">UB</span>
+                        <span className="text-xl font-black tracking-tighter ml-1">KARAOKE</span>
+                    </div>
+                </div>
+                <Button
+                    label={language.toUpperCase()}
+                    onClick={toggleLanguage}
+                    className="h-9 px-4 text-xs font-black rounded-full p-button-outlined p-button-sm border-[#b000ff] text-[#eb79b2]"
+                />
+            </header>
+
+            {/* Sidebar / Drawer */}
+            <aside className={`
+                fixed inset-0 z-[60] lg:relative lg:z-auto
+                w-72 lg:w-64 bg-[#1a1a24] p-5 flex flex-col border-r border-white/5
+                transition-transform duration-300 ease-in-out
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}>
+                {/* Mobile Sidebar Close Button */}
+                <div className="lg:hidden flex justify-end mb-4">
+                    <button
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="p-2 -mr-2 bg-transparent border-none text-gray-500 cursor-pointer"
+                    >
+                        <i className="pi pi-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div className="hidden lg:flex justify-between items-center mb-8">
                     <div className="flex items-center gap-1.5">
                         <div className="flex items-baseline">
                             <span className="text-2xl font-black tracking-tighter text-[#eb79b2] drop-shadow-[0_0_8px_rgba(175,175,175,0.3)]">UB</span>
@@ -82,18 +121,21 @@ const AdminPage = () => {
                     />
                 </div>
 
-                <nav className="flex-1">
+                <nav className="flex-1 overflow-y-auto">
                     <ul className="list-none p-0 m-0">
                         {navItems.map(item => (
                             <li key={item.id} className="mb-2">
                                 <button
-                                    onClick={() => setActiveTab(item.id)}
-                                    className={`w-full text-left px-4 py-3 rounded-xl border-none cursor-pointer flex items-center gap-3 text-sm transition-all ${activeTab === item.id
+                                    onClick={() => {
+                                        setActiveTab(item.id);
+                                        setIsSidebarOpen(false);
+                                    }}
+                                    className={`w-full text-left px-4 py-4 lg:py-3 rounded-xl border-none cursor-pointer flex items-center gap-4 text-base lg:text-sm transition-all shadow-sm ${activeTab === item.id
                                         ? 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold shadow-[0_0_20px_rgba(176,0,255,0.3)]'
-                                        : 'bg-transparent text-gray-500 hover:bg-white/5 hover:text-[#b000ff]'
+                                        : 'bg-transparent text-gray-400 hover:bg-white/5 hover:text-[#b000ff]'
                                         }`}
                                 >
-                                    <span className="text-lg">{item.icon}</span>
+                                    <span className="text-2xl lg:text-lg flex items-center justify-center min-w-[32px]">{item.icon}</span>
                                     <span className="font-bold tracking-tight">{item.label}</span>
                                 </button>
                             </li>
@@ -118,14 +160,22 @@ const AdminPage = () => {
                             const redirectPath = logout();
                             navigate(redirectPath);
                         }}
-                        className="w-full h-11 p-button-outlined p-button-danger border-[#ff3d32]/30 text-[#ff3d32] hover:bg-[#ff3d32]/10 transition-all font-bold text-xs uppercase tracking-widest rounded-xl mb-4"
+                        className="w-full h-11 p-button-outlined p-button-danger border-[#ff3d32]/30 text-[#ff3d32] hover:bg-[#ff3d32]/10 transition-all font-bold text-xs uppercase tracking-widest rounded-xl mb-4 flex items-center justify-center gap-2"
                     />
                     <a href="/" className="block text-center text-gray-500 no-underline text-[10px] hover:text-[#b000ff] transition-colors">PUBLIC SITE</a>
                 </div>
             </aside>
 
+            {/* Sidebar Backdrop (Mobile only) */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[55] lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Main Content */}
-            <main style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
+            <main className="flex-1 p-4 lg:p-8 overflow-y-auto pb-24 lg:pb-8">
                 {/* Header Filter Bar - visible for core management tabs */}
                 {['pos_view', 'venues'].includes(activeTab) && (
                     <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1a1a24] p-5 rounded-2xl border border-white/5 shadow-2xl">
@@ -154,6 +204,7 @@ const AdminPage = () => {
                 {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
                 {activeTab === 'plans' && <PlanManagement />}
+                {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
                 {activeTab === 'users' && (currentUser.role === 'sysadmin' || currentUser.role === 'admin') && <UserManagement />}
@@ -163,6 +214,29 @@ const AdminPage = () => {
                 {activeTab === 'finance' && <Finance />}
                 {activeTab === 'settings' && <SystemSettings />}
             </main>
+
+            {/* Bottom Navigation (Mobile Only) */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a24]/90 backdrop-blur-xl border-t border-white/5 px-2 py-3 flex justify-around items-center z-50">
+                {[
+                    { id: 'dashboard', label: 'Dash', icon: '📊' },
+                    { id: 'venues', label: 'Venues', icon: '🏢' },
+                    { id: 'staffs', label: 'Staff', icon: '👥' },
+                    { id: 'settings', label: 'Settings', icon: '⚙️' }
+                ].map(item => (
+                    <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer transition-all ${activeTab === item.id ? 'text-[#eb79b2]' : 'text-gray-500'
+                            }`}
+                    >
+                        <span className="text-2xl">{item.icon}</span>
+                        <span className="text-[11px] font-black uppercase tracking-tight">{item.label}</span>
+                        {activeTab === item.id && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#eb79b2] mt-0.5"></div>
+                        )}
+                    </button>
+                ))}
+            </nav>
         </div>
     );
 };

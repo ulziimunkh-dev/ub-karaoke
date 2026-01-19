@@ -406,4 +406,76 @@ export class OrganizationsService {
         }
         return this.payoutsRepository.save(payout);
     }
+
+    async extendPlan(organizationId: number, data: { planId: number, durationMonths: number }, userId: number) {
+        const organization = await this.findOne(organizationId);
+        const plan = await this.plansService.findOne(data.planId.toString());
+
+        // If it's a new plan, replace the old one. If it's the same, just extend.
+        const isSamePlan = organization.plan?.id === plan.id;
+
+        const now = new Date();
+        const currentEndDate = organization.planEndsAt && new Date(organization.planEndsAt) > now
+            ? new Date(organization.planEndsAt)
+            : now;
+
+        const newEndDate = new Date(currentEndDate);
+        newEndDate.setMonth(newEndDate.getMonth() + data.durationMonths);
+
+        // Update organization
+        organization.plan = plan;
+        organization.planEndsAt = newEndDate;
+        if (!isSamePlan) {
+            organization.planStartedAt = now;
+            // Complete previous history
+            const currentHistory = await this.planHistoryRepository.findOne({
+                where: { organizationId, status: 'active' },
+                order: { startDate: 'DESC' }
+            });
+
+            if (currentHistory) {
+                currentHistory.endDate = now;
+                currentHistory.status = 'completed';
+                await this.planHistoryRepository.save(currentHistory);
+            }
+
+            // Create new history
+            await this.planHistoryRepository.save({
+                organizationId,
+                planId: plan.id,
+                planName: plan.name,
+                price: plan.monthlyFee * data.durationMonths,
+                commissionRate: plan.commissionRate || 0,
+                startDate: now,
+                endDate: newEndDate,
+                status: 'active'
+            });
+        } else {
+            // Update current active history
+            const activeHistory = await this.planHistoryRepository.findOne({
+                where: { organizationId, status: 'active' },
+                order: { startDate: 'DESC' }
+            });
+            if (activeHistory) {
+                activeHistory.endDate = newEndDate;
+                activeHistory.price = Number(activeHistory.price || 0) + (plan.monthlyFee * data.durationMonths);
+                await this.planHistoryRepository.save(activeHistory);
+            }
+        }
+
+        organization.status = 'active'; // Reactivate
+        organization.updatedBy = userId;
+
+        const saved = await this.organizationsRepository.save(organization);
+
+        await this.auditService.log({
+            action: 'PLAN_EXTENDED',
+            resource: 'Organization',
+            resourceId: organizationId.toString(),
+            details: { ...data, newEndDate },
+            userId
+        });
+
+        return saved;
+    }
 }

@@ -66,7 +66,7 @@ const StaffManagement = () => {
     };
 
     const statusBodyTemplate = (rowData) => {
-        return <Tag value={rowData.isActive ? 'Active' : 'Inactive'} severity={rowData.isActive ? 'success' : 'danger'} />;
+        return <Tag value={rowData.isActive ? 'Active' : 'Inactive'} severity={rowData.isActive ? 'success' : 'danger'} className="px-2 py-1" />;
     };
 
     const roleBodyTemplate = (rowData) => {
@@ -185,7 +185,7 @@ const StaffManagement = () => {
                 </div>
             </div>
 
-            <div className="card p-0 shadow-md">
+            <div className="card p-0 shadow-md hidden lg:block">
                 <DataTable
                     value={displayStaffs}
                     paginator
@@ -205,6 +205,88 @@ const StaffManagement = () => {
                     <Column header="Status" body={statusBodyTemplate} style={{ width: '10%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column header="Actions" body={actionBodyTemplate} style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                 </DataTable>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+                {displayStaffs.map(staff => {
+                    const orgName = organizationBodyTemplate(staff);
+                    return (
+                        <div key={staff.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900 mb-1">{staff.name}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 font-mono">@{staff.username}</span>
+                                        <Tag value={staff.isActive ? 'Active' : 'Inactive'} severity={staff.isActive ? 'success' : 'danger'} className="text-[10px] px-2 py-1 origin-left" />
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    {roleBodyTemplate(staff)}
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-4">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Organization</span>
+                                    <span className="text-xs text-gray-700 font-bold">{orgName}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Email</span>
+                                    <span className="text-xs text-gray-700 font-medium truncate max-w-[150px]">{staff.email}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2.5">
+                                <Button
+                                    icon="pi pi-pencil"
+                                    onClick={() => {
+                                        setEditingStaff({ ...staff });
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    label="Edit"
+                                    outlined
+                                    size="small"
+                                    severity="info"
+                                    className="flex-1 h-12 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+                                />
+                                <Button
+                                    icon="pi pi-lock-open"
+                                    label="Reset"
+                                    onClick={() => handleResetPassword(staff)}
+                                    outlined
+                                    size="small"
+                                    severity="warning"
+                                    className="flex-1 h-12 text-sm font-bold rounded-xl flex items-center justify-center gap-2"
+                                />
+                                {(currentUser.role === 'sysadmin' || (currentUser.role === 'manager' && staff.role === 'staff')) && staff.id !== currentUser.id && (
+                                    <Button
+                                        icon={staff.isActive ? "pi pi-pause" : "pi pi-play"}
+                                        onClick={() => {
+                                            toggleStaffStatus(staff.id);
+                                            toast.current.show({
+                                                severity: 'success',
+                                                summary: 'Status Updated',
+                                                detail: `Staff member ${staff.isActive ? 'deactivated' : 'activated'} successfully`,
+                                                life: 3000
+                                            });
+                                        }}
+                                        outlined
+                                        size="small"
+                                        severity={staff.isActive ? 'danger' : 'success'}
+                                        className="w-14 h-12 border border-gray-200 rounded-xl flex items-center justify-center p-0"
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+                {displayStaffs.length === 0 && (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                        <i className="pi pi-users text-4xl text-gray-300 mb-3"></i>
+                        <p className="text-gray-500 font-medium">No staff found</p>
+                    </div>
+                )}
             </div>
 
             <Dialog

@@ -406,6 +406,17 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const updateBooking = async (id, data) => {
+        try {
+            const updated = await api.updateBooking(id, data);
+            setBookings(prev => prev.map(b => (b.id === id ? updated : b)));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update booking:', error);
+            throw error;
+        }
+    };
+
     // --- CALCULATIONS ---
     const calculateTotal = (hourlyRate, hours, addOns = {}) => {
         let subtotal = hourlyRate * hours;
@@ -845,6 +856,7 @@ export const DataProvider = ({ children }) => {
                 bookings,
                 addBooking,
                 updateBookingStatus,
+                updateBooking,
                 approveBooking,
                 rejectBooking,
                 createManualBooking,

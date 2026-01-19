@@ -15,15 +15,15 @@ const ManagerDashboard = () => {
     const orgName = currentUser.organizationName || 'My Organization';
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-end">
+        <div className="space-y-6 lg:space-y-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 lg:gap-0">
                 <div>
-                    <h2 className="text-3xl font-bold text-white m-0">Organization Overview</h2>
-                    <p className="text-gray-400 mt-2">Aggregated statistics for: <span className="text-[#eb79b2] font-semibold">{orgName}</span></p>
+                    <h2 className="text-2xl lg:text-3xl font-bold text-white m-0">Organization Overview</h2>
+                    <p className="text-gray-400 mt-1 lg:mt-2 text-sm lg:text-base">Aggregated statistics for: <span className="text-[#eb79b2] font-semibold">{orgName}</span></p>
                 </div>
-                <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Live Status</p>
-                    <p className="text-sm text-white">{new Date().toLocaleTimeString()}</p>
+                <div className="text-left sm:text-right">
+                    <p className="text-[10px] lg:text-xs text-gray-500 uppercase tracking-widest font-bold">Live Status</p>
+                    <p className="text-xs lg:text-sm text-white">{new Date().toLocaleTimeString()}</p>
                 </div>
             </div>
 

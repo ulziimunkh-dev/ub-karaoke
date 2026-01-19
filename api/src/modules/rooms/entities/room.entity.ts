@@ -79,6 +79,9 @@ export class Room {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    @Column({ name: 'isBookingEnabled', default: true })
+    isBookingEnabled: boolean;
+
     @Column({ name: 'sort_order', default: 0 })
     sortOrder: number;
 

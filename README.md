@@ -105,3 +105,19 @@ npm run dev
 - **API Testing**: `npm run test` or `npm run test:e2e` in `api` directory.
 - **Linting**: `npm run lint` in both directories.
 - **Entity Standards**: All core entities use `isActive` (boolean) for status and include `createdBy`/`updatedBy` columns for audit tracking. Hierarchical deactivation is enforced at the service layer (e.g., deactivating an organization hides its venues).
+admin can login via `http://localhost:5173\sysadmin`
+admin credentials: 
+username: sysadmin
+password: sysadmin
+
+manager  can login via `http://localhost:5173\staff\login`
+manager credentials: 
+orgCode: UBK-EXP
+username: manager1
+password: manager
+
+staff can login via `http://localhost:5173\staff\login`
+staff credentials: 
+orgCode: UBK-EXP
+username: staff1
+password: staff

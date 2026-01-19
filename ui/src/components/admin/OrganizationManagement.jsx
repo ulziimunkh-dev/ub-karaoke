@@ -136,18 +136,18 @@ const OrganizationManagement = () => {
                 />
             </div>
 
-            <div className="card shadow-md rounded-xl overflow-hidden bg-[#1a1a24] border border-white/5">
+            <div className="card shadow-md rounded-xl overflow-hidden bg-[#1a1a24] border border-white/5 hidden lg:block">
                 <DataTable value={organizations} responsiveLayout="scroll" className="p-datatable-sm">
                     <Column field="id" header="ID" style={{ width: '80px' }}></Column>
                     <Column field="logoUrl" header="Logo" body={(row) => row.logoUrl ? <img src={row.logoUrl} alt="logo" className="w-10 h-10 object-cover rounded" /> : null} width="6rem"></Column>
                     <Column field="name" header="Name" sortable></Column>
                     <Column field="code" header="Unique Code" sortable body={(row) => <Tag value={row.code} severity="info" />}></Column>
                     <Column header="Plan" body={planTemplate} sortable field="plan.name"></Column>
-                    <Column field="status" header="Plan Status" body={(row) => row.status ? <Tag value={row.status.toUpperCase()} severity={row.status === 'active' ? 'success' : 'warning'} /> : '-'} sortable></Column>
+                    <Column field="status" header="Plan Status" body={(row) => row.status ? <Tag value={row.status.toUpperCase()} severity={row.status === 'active' ? 'success' : 'warning'} className="px-2 py-1" /> : '-'} sortable></Column>
                     <Column field="planStartedAt" header="Plan Start" body={(row) => row.planStartedAt ? new Date(row.planStartedAt).toLocaleDateString() : '-'} sortable></Column>
                     <Column field="planEndsAt" header="Plan End" body={(row) => row.planEndsAt ? new Date(row.planEndsAt).toLocaleDateString() : '-'} sortable></Column>
                     <Column field="isActive" header="Active" body={(row) => (
-                        <Tag value={row.isActive ? 'Yes' : 'No'} severity={row.isActive ? 'success' : 'danger'} />
+                        <Tag value={row.isActive ? 'Yes' : 'No'} severity={row.isActive ? 'success' : 'danger'} className="px-2 py-1" />
                     )} sortable></Column>
                     <Column field="createdAt" header="Created" body={(row) => new Date(row.createdAt).toLocaleDateString()}></Column>
                     <Column
@@ -169,6 +169,77 @@ const OrganizationManagement = () => {
                         )}
                     ></Column>
                 </DataTable>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+                {organizations.map(org => {
+                    const plan = org.plan || plans.find(p => p.id === org.planId);
+                    return (
+                        <div key={org.id} className="bg-[#1a1a24] rounded-2xl p-5 border border-white/5 shadow-lg">
+                            <div className="flex items-center gap-4 mb-4">
+                                {org.logoUrl ? (
+                                    <img src={org.logoUrl} alt="logo" className="w-12 h-12 object-cover rounded-xl border border-white/10" />
+                                ) : (
+                                    <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                        <i className="pi pi-building text-gray-500"></i>
+                                    </div>
+                                )}
+                                <div className="flex-1">
+                                    <h3 className="text-base font-bold text-white m-0">{org.name}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Tag value={org.code} severity="info" className="text-[10px] py-1 px-2" />
+                                        <Tag value={org.isActive ? 'Active' : 'Inactive'} severity={org.isActive ? 'success' : 'danger'} className="text-[10px] py-1 px-2" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Current Plan</p>
+                                    <p className="text-xs text-white font-bold">{plan?.name || 'No Plan'}</p>
+                                </div>
+                                <div className="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Plan Status</p>
+                                    <Tag
+                                        value={org.status?.toUpperCase() || 'UNSET'}
+                                        severity={org.status === 'active' ? 'success' : 'warning'}
+                                        className="text-[10px] scale-90 origin-left"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5 mb-6">
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest m-0">Valid Until</p>
+                                    <p className="text-xs text-secondary font-bold m-0">{org.planEndsAt ? new Date(org.planEndsAt).toLocaleDateString() : 'N/A'}</p>
+                                </div>
+                                <Button
+                                    icon="pi pi-clock"
+                                    onClick={() => openHistory(org)}
+                                    label="History"
+                                    text
+                                    className="text-xs font-bold text-blue-400"
+                                />
+                            </div>
+
+                            <div className="flex gap-2.5">
+                                <Button
+                                    icon="pi pi-pencil"
+                                    onClick={() => openEdit(org)}
+                                    label="Edit"
+                                    className="flex-1 h-12 bg-white/5 text-white border border-white/10 font-bold rounded-xl text-sm flex items-center justify-center gap-2"
+                                />
+                                <Button
+                                    icon={org.isActive ? "pi pi-pause" : "pi pi-play"}
+                                    onClick={() => handleToggleStatus(org)}
+                                    label={org.isActive ? 'Pause' : 'Resume'}
+                                    className={`flex-1 h-12 border-none font-bold rounded-xl text-sm flex items-center justify-center gap-2 ${org.isActive ? 'bg-orange-500/10 text-orange-400' : 'bg-green-500/10 text-green-400'}`}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             <Dialog

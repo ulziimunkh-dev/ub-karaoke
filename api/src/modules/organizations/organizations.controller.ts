@@ -76,6 +76,20 @@ export class OrganizationsController {
         return this.organizationsService.getPlanHistory(+id);
     }
 
+    @Post(':id/extend-plan')
+    @ApiOperation({ summary: 'Extend or change organization plan (Managers & Admins)' })
+    async extendPlan(
+        @Req() req: any,
+        @Param('id') id: string,
+        @Body() extensionData: { planId: number, durationMonths: number }
+    ) {
+        // Manager/Admin can only extend their own org, Sysadmin can extend any
+        if (req.user.role !== 'sysadmin' && req.user.organizationId !== parseInt(id)) {
+            throw new ForbiddenException('Cannot access other organization data');
+        }
+        return this.organizationsService.extendPlan(+id, extensionData, req.user.id);
+    }
+
     @Delete(':id')
     @ApiOperation({ summary: 'Deactivate organization (sysadmin only)' })
     async remove(@Req() req: any, @Param('id') id: string) {

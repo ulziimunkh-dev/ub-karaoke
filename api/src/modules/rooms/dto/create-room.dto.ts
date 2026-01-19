@@ -21,6 +21,10 @@ export class CreateRoomDto {
     @IsOptional()
     isVIP?: boolean;
 
+    @IsBoolean()
+    @IsOptional()
+    isBookingEnabled?: boolean;
+
     @IsString()
     condition: string;
 

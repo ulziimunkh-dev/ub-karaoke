@@ -4,6 +4,7 @@ import { Repository, Like } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Venue } from './entities/venue.entity';
+import { VenueOperatingHours } from './entities/venue-operating-hours.entity';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 
@@ -14,6 +15,8 @@ export class VenuesService {
     constructor(
         @InjectRepository(Venue)
         private venuesRepository: Repository<Venue>,
+        @InjectRepository(VenueOperatingHours)
+        private hoursRepository: Repository<VenueOperatingHours>,
         @Inject(CACHE_MANAGER)
         private cacheManager: Cache,
         private auditService: AuditService,
@@ -35,7 +38,11 @@ export class VenuesService {
             userId: creatorId
         });
 
-        return saved;
+        if (createVenueDto.openingHours) {
+            await this.syncOperatingHours(saved.id, createVenueDto.openingHours);
+        }
+
+        return this.findOne(saved.id);
     }
 
     async findAll(filters?: {
@@ -48,7 +55,8 @@ export class VenuesService {
         const query = this.venuesRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.organization', 'organization')
             .leftJoinAndSelect('venue.rooms', 'room')
-            .leftJoinAndSelect('venue.reviews', 'review');
+            .leftJoinAndSelect('venue.reviews', 'review')
+            .leftJoinAndSelect('venue.operatingHours', 'operatingHours');
 
         if (filters?.district) {
             query.andWhere('venue.district = :district', {
@@ -99,6 +107,7 @@ export class VenuesService {
             .leftJoinAndSelect('venue.organization', 'organization')
             .leftJoinAndSelect('venue.rooms', 'room')
             .leftJoinAndSelect('venue.reviews', 'review')
+            .leftJoinAndSelect('venue.operatingHours', 'operatingHours')
             .leftJoinAndSelect('room.roomType', 'roomType')
             .leftJoinAndSelect('room.roomFeatures', 'roomFeatures')
             .where('venue.id = :id', { id })
@@ -132,7 +141,11 @@ export class VenuesService {
             userId: updaterId
         });
 
-        return updated;
+        if (updateVenueDto.openingHours) {
+            await this.syncOperatingHours(id, updateVenueDto.openingHours);
+        }
+
+        return this.findOne(id);
     }
 
     async updateStatus(id: number, isActive: boolean, updaterId?: number): Promise<Venue> {
@@ -168,5 +181,67 @@ export class VenuesService {
             resourceId: id.toString(),
             details: { name: venue.name }
         });
+    }
+
+    private async syncOperatingHours(venueId: number, openingHours: Record<string, string>) {
+        // Clear existing
+        await this.hoursRepository.delete({ venueId });
+
+        const daysMap: Record<string, any> = {
+            'Monday': 'MONDAY',
+            'Tuesday': 'TUESDAY',
+            'Wednesday': 'WEDNESDAY',
+            'Thursday': 'THURSDAY',
+            'Friday': 'FRIDAY',
+            'Saturday': 'SATURDAY',
+            'Sunday': 'SUNDAY'
+        };
+
+        const hoursToInsert: Partial<VenueOperatingHours>[] = [];
+
+        // Check if "Daily" exists
+        if (openingHours['Daily']) {
+            const [open, close] = openingHours['Daily'].split('-');
+            if (open && close) {
+                Object.values(daysMap).forEach(day => {
+                    hoursToInsert.push({
+                        venueId,
+                        dayOfWeek: day,
+                        openTime: open.trim(),
+                        closeTime: close.trim()
+                    });
+                });
+            }
+        }
+
+        // Iterate specific days (overrides Daily if present)
+        for (const [key, range] of Object.entries(openingHours)) {
+            if (key !== 'Daily' && daysMap[key]) {
+                const [open, close] = range.split('-');
+                if (open && close) {
+                    // Filter out any Daily entry for this day to avoid duplicates/conflict
+                    const existingIdx = hoursToInsert.findIndex(h => h.dayOfWeek === daysMap[key]);
+                    if (existingIdx >= 0) {
+                        hoursToInsert[existingIdx] = {
+                            venueId,
+                            dayOfWeek: daysMap[key],
+                            openTime: open.trim(),
+                            closeTime: close.trim()
+                        };
+                    } else {
+                        hoursToInsert.push({
+                            venueId,
+                            dayOfWeek: daysMap[key],
+                            openTime: open.trim(),
+                            closeTime: close.trim()
+                        });
+                    }
+                }
+            }
+        }
+
+        if (hoursToInsert.length > 0) {
+            await this.hoursRepository.save(hoursToInsert);
+        }
     }
 }

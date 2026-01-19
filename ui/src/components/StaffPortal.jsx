@@ -11,14 +11,16 @@ import { Dropdown } from 'primereact/dropdown';
 import { Toast } from 'primereact/toast';
 import { DataView } from 'primereact/dataview';
 import { Divider } from 'primereact/divider';
+import { Calendar } from 'primereact/calendar';
+import { InputText } from 'primereact/inputtext';
 
 import AuditLogViewer from './staff/AuditLogViewer';
 
 const StaffPortal = () => {
     const {
-        venues, bookings, updateRoomStatus, updateBookingStatus,
+        venues, bookings, updateRoomStatus, updateBookingStatus, updateBooking,
         updateVenue, addOrder, currentUser, logout,
-        activeVenueId, setActiveVenueId
+        activeVenueId, setActiveVenueId, createManualBooking, updateRoom
     } = useData();
     const { t } = useLanguage();
     const navigate = useNavigate();
@@ -28,6 +30,73 @@ const StaffPortal = () => {
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('pos');
     const [activeBooking, setActiveBooking] = useState(null);
+
+    // Manual Booking State
+    const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
+    const [manualBookingData, setManualBookingData] = useState({
+        customerName: '',
+        phoneNumber: '',
+        hours: 2,
+        startTime: ''
+    });
+
+    const handleManualBooking = (room) => {
+        setSelectedRoom(room);
+        setManualBookingData({
+            customerName: '',
+            phoneNumber: '',
+            hours: 2,
+            startTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
+        });
+        setIsManualBookingOpen(true);
+    };
+
+    const submitManualBooking = async () => {
+        if (!manualBookingData.startTime) {
+            toast.current.show({ severity: 'warn', summary: 'Missing Info', detail: 'Please fill in start time.' });
+            return;
+        }
+
+        const finalCustomerName = manualBookingData.customerName.trim() || 'Walk-in Guest';
+
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const bookingPayload = {
+                venueId: selectedVenue.id,
+                roomId: selectedRoom.id,
+                date: today,
+                startTime: manualBookingData.startTime,
+                duration: manualBookingData.hours, // Backend expects 'duration' but mapped to endTime calc usually, let's assume valid dto
+                customerName: finalCustomerName,
+                customerPhone: manualBookingData.phoneNumber,
+                // Add calculation for endTime or let backend handle it if DTO matches
+                // For manual booking DTO usually matches CreateBookingDto which needs date, startTime, endTime
+            };
+
+            // Calculate End Time properly
+            const [h, m] = manualBookingData.startTime.split(':').map(Number);
+            const startDate = new Date();
+            startDate.setHours(h, m, 0, 0);
+
+            const endDate = new Date(startDate);
+            endDate.setHours(h + manualBookingData.hours);
+
+            const endTime = endDate.toTimeString().split(' ')[0]; // HH:MM:SS
+
+            await createManualBooking({
+                ...bookingPayload,
+                endTime, // Overwriting or ensuring end time is set
+                totalPrice: selectedRoom.hourlyRate * manualBookingData.hours // Staff override or auto-calc
+            });
+
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Walk-in booking created.' });
+            setIsManualBookingOpen(false);
+            // Refresh logic usually handled by context socket or poll, assuming useData updates locally
+        } catch (e) {
+            console.error(e);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to create booking.' });
+        }
+    };
 
     // Filter venues for this organization
     const orgVenues = currentUser.role === 'sysadmin' ? venues : venues.filter(v => v.organizationId === currentUser.organizationId);
@@ -110,6 +179,21 @@ const StaffPortal = () => {
         { name: 'French Fries', price: 12000, category: 'Food' },
     ];
 
+    const formatTime = (dateString, timeString) => {
+        if (!dateString) return '--:--';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return timeString || '--:--';
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    };
+
+    const getDuration = (start, end) => {
+        if (!start || !end) return '';
+        const startTime = new Date(start).getTime();
+        const endTime = new Date(end).getTime();
+        const diff = (endTime - startTime) / (1000 * 60 * 60); // Hours
+        return diff > 0 ? `(${diff.toFixed(1).replace(/\.0$/, '')}h)` : '';
+    };
+
     return (
         <div className="staff-portal">
             <Toast ref={toast} />
@@ -119,16 +203,32 @@ const StaffPortal = () => {
                     <h2 className="text-xl font-black text-white m-0 uppercase tracking-tighter">
                         Room Dashboard <span className="text-[#b000ff]">POS</span>
                     </h2>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">
-                        Viewing {selectedVenue?.name}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-gray-500 text-xs font-bold uppercase tracking-widest m-0">
+                            Viewing {selectedVenue?.name}
+                        </p>
+                        <span className="text-gray-700">|</span>
+                        <Button
+                            icon={`pi ${selectedVenue?.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
+                            className={`p-button-rounded p-button-text p-button-sm w-6 h-6 ${selectedVenue?.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
+                            tooltip={selectedVenue?.isBookingEnabled === false ? "Enable Venue (Go Online)" : "Disable Venue (Go Offline)"}
+                            onClick={() => updateVenue(selectedVenue?.id, { isBookingEnabled: selectedVenue?.isBookingEnabled === false })}
+                        />
+                    </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-4">
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest m-0">
+                        Top G: <span className="text-white">{currentUser?.firstName || currentUser?.username || 'Staff'}</span>
+                    </p>
+                    <div className="h-6 w-[1px] bg-white/10"></div>
                     <Button
-                        icon={`pi pi-${selectedVenue?.isBookingEnabled ? 'lock' : 'unlock'}`}
-                        label={selectedVenue?.isBookingEnabled ? 'Disable Online' : 'Enable Online'}
-                        className={`p-button-sm ${selectedVenue?.isBookingEnabled ? 'p-button-outlined p-button-danger' : 'p-button-success'}`}
-                        onClick={() => updateVenue(selectedVenue.id, { isBookingEnabled: !selectedVenue.isBookingEnabled })}
+                        icon="pi pi-power-off"
+                        className="p-button-rounded p-button-danger p-button-text hover:bg-red-500/10"
+                        onClick={() => {
+                            logout();
+                            navigate('/staff/login');
+                        }}
+                        tooltip={`Sign Out (${currentUser?.firstName || 'Staff'})`}
                     />
                 </div>
             </div>
@@ -145,6 +245,22 @@ const StaffPortal = () => {
                             <Tag value={room.status} severity={getStatusSeverity(room.status)} />
                         </div>
 
+                        <div className="flex items-center gap-2 mb-3">
+                            {/* Room Level Online Status Toggle */}
+                            <Button
+                                icon={`pi ${room.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
+                                className={`p-button-rounded p-button-text p-button-sm w-8 h-8 ${room.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
+                                tooltip={room.isBookingEnabled === false ? "Enable Online Booking" : "Disable Online Booking"}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateRoom(selectedVenue.id, room.id, { isBookingEnabled: room.isBookingEnabled === false }); // Toggle
+                                }}
+                            />
+                            <span className="text-[10px] text-gray-500 uppercase font-bold">
+                                {room.isBookingEnabled === false ? 'Offline' : 'Online'}
+                            </span>
+                        </div>
+
                         {getActiveBooking(selectedVenue.id, room.name) ? (
                             <div className="flex flex-col gap-1">
                                 <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Active Booking</span>
@@ -152,7 +268,7 @@ const StaffPortal = () => {
                                     {getActiveBooking(selectedVenue.id, room.name).customerName}
                                 </span>
                                 <span className="text-[10px] text-[#b000ff] font-black uppercase">
-                                    {getActiveBooking(selectedVenue.id, room.name).startTime} (2h)
+                                    {formatTime(getActiveBooking(selectedVenue.id, room.name).startTime)} {getDuration(getActiveBooking(selectedVenue.id, room.name).startTime, getActiveBooking(selectedVenue.id, room.name).endTime)}
                                 </span>
                             </div>
                         ) : (
@@ -196,11 +312,13 @@ const StaffPortal = () => {
                                     <div className="flex gap-4">
                                         <div>
                                             <p className="text-xs text-gray-500 font-bold uppercase m-0">Start</p>
-                                            <p className="text-sm font-bold text-white m-0">{activeBooking.startTime}</p>
+                                            <p className="text-sm font-bold text-white m-0">{formatTime(activeBooking.startTime)}</p>
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 font-bold uppercase m-0">Duration</p>
-                                            <p className="text-sm font-bold text-white m-0">{activeBooking.duration} Hours</p>
+                                            <p className="text-sm font-bold text-white m-0">
+                                                {getDuration(activeBooking.startTime, activeBooking.endTime).replace(/[()]/g, '')}
+                                            </p>
                                         </div>
                                     </div>
                                     <Divider className="border-white/5" />
@@ -215,7 +333,12 @@ const StaffPortal = () => {
                                 <div className="text-center py-8">
                                     <i className="pi pi-calendar-times text-4xl text-gray-700 mb-3" />
                                     <p className="text-gray-500 font-bold uppercase text-xs">No Active Booking Found</p>
-                                    <Button label="Create Manual Walk-in" className="p-button-outlined p-button-sm mt-4" />
+                                    <Button
+                                        label="Create Manual Walk-in"
+                                        icon="pi pi-plus"
+                                        className="p-button-outlined p-button-sm mt-4 hover:bg-[#b000ff]/10 hover:text-[#b000ff] hover:border-[#b000ff]"
+                                        onClick={() => handleManualBooking(selectedRoom)}
+                                    />
                                 </div>
                             )}
                         </div>
@@ -237,7 +360,33 @@ const StaffPortal = () => {
                         {activeBooking?.status === 'CHECKED_IN' ? (
                             <div className="flex flex-col gap-6">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Button label="+ 1 Hour" icon="pi pi-clock" className="p-button-outlined p-button-info p-button-sm" />
+                                    <Button
+                                        label="+ 1 Hour"
+                                        icon="pi pi-clock"
+                                        className="p-button-outlined p-button-info p-button-sm"
+                                        onClick={async () => {
+                                            if (!activeBooking) return;
+                                            try {
+                                                const currentEnd = new Date(activeBooking.endTime);
+                                                currentEnd.setHours(currentEnd.getHours() + 1);
+
+                                                // Calculate new price
+                                                const hourlyRate = Number(selectedRoom.hourlyRate);
+                                                const currentPrice = Number(activeBooking.totalPrice);
+                                                const newPrice = currentPrice + hourlyRate;
+
+                                                await updateBooking(activeBooking.id, {
+                                                    endTime: currentEnd.toISOString(),
+                                                    totalPrice: newPrice
+                                                });
+
+                                                toast.current.show({ severity: 'success', summary: 'Extended', detail: 'Booking extended by 1 hour.' });
+                                            } catch (e) {
+                                                console.error(e);
+                                                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to extend booking.' });
+                                            }
+                                        }}
+                                    />
                                     <Button label="Extra Mic" icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
                                 </div>
 
@@ -267,20 +416,78 @@ const StaffPortal = () => {
                 </div>
             </Dialog>
 
-            <style jsx>{`
-                .staff-portal :global(.p-card) {
-                    border-radius: 20px;
-                }
-                .heartbeat {
-                    animation: heartbeat 2s infinite;
-                }
-                @keyframes heartbeat {
-                    0% { opacity: 0.4; }
-                    50% { opacity: 1; }
-                    100% { opacity: 0.4; }
-                }
-            `}</style>
-        </div>
+            {/* Manual Booking Modal */}
+            <Dialog
+                header="New Walk-in Reservation"
+                visible={isManualBookingOpen}
+                onHide={() => setIsManualBookingOpen(false)}
+                className="w-full md:w-[400px]"
+                breakpoints={{ '960px': '75vw', '641px': '95vw' }}
+                contentClassName="pb-6"
+                dismissableMask
+                draggable={false}
+                resizable={false}
+            >
+                <div className="flex flex-col gap-4 mt-2 h-full overflow-y-auto" style={{ maxHeight: '60vh' }}>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Room</label>
+                        <p className="font-bold text-white text-lg m-0">{selectedRoom?.name}</p>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Guest Name (Optional)</label>
+                        <InputText
+                            value={manualBookingData.customerName}
+                            onChange={(e) => setManualBookingData({ ...manualBookingData, customerName: e.target.value })}
+                            className="w-full"
+                            placeholder="Defaults to 'Walk-in Guest'"
+                            autoFocus
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone (Optional)</label>
+                        <InputText
+                            value={manualBookingData.phoneNumber}
+                            onChange={(e) => setManualBookingData({ ...manualBookingData, phoneNumber: e.target.value })}
+                            className="w-full"
+                            placeholder="e.g. 9911..."
+                            keyfilter="int"
+                            inputMode="numeric"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Start Time</label>
+                            <InputText
+                                type="time"
+                                value={manualBookingData.startTime}
+                                onChange={(e) => setManualBookingData({ ...manualBookingData, startTime: e.target.value })}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration (Hrs)</label>
+                            <InputNumber
+                                value={manualBookingData.hours}
+                                onValueChange={(e) => setManualBookingData({ ...manualBookingData, hours: e.value })}
+                                showButtons
+                                min={1}
+                                max={12}
+                                className="w-full"
+                                inputId="duration-input"
+                            />
+                        </div>
+                    </div>
+                    <Divider />
+                    <Button
+                        label="Create Reservation"
+                        icon="pi pi-check"
+                        className="w-full p-button-success font-bold"
+                        onClick={submitManualBooking}
+                    />
+                </div>
+            </Dialog>
+
+        </div >
     );
 };
 

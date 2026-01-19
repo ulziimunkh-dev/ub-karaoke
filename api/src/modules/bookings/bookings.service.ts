@@ -46,6 +46,8 @@ export class BookingsService {
         const booking = this.bookingsRepository.create({
             ...createBookingDto,
             userId,
+            startTime: new Date(`${createBookingDto.date}T${createBookingDto.startTime}`),
+            endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
             createdBy: userId, // For external bookings, user is the creator
             status: BookingStatus.PENDING, // Default to PENDING
         });
@@ -79,6 +81,8 @@ export class BookingsService {
 
         const booking = this.bookingsRepository.create({
             ...createBookingDto,
+            startTime: new Date(`${createBookingDto.date}T${createBookingDto.startTime}`),
+            endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
             status: BookingStatus.CONFIRMED,
             createdBy: adminId,
         });
@@ -193,12 +197,11 @@ export class BookingsService {
         const query = this.bookingsRepository
             .createQueryBuilder('booking')
             .where('booking.roomId = :roomId', { roomId })
-            .andWhere('booking.date = :date', { date })
             .andWhere('booking.status != :status', { status: 'CANCELLED' }) // Check against CANCELLED enum string
             .andWhere('booking.status != :rejected', { rejected: 'REJECTED' })
             .andWhere(
-                '(booking.startTime < :endTime AND booking.endTime > :startTime)',
-                { startTime, endTime },
+                '(booking.startTime < :fullEndTime AND booking.endTime > :fullStartTime)',
+                { fullStartTime: `${date} ${startTime}`, fullEndTime: `${date} ${endTime}` },
             );
 
         if (excludeId) {

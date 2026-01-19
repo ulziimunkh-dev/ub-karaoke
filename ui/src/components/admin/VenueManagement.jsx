@@ -13,6 +13,7 @@ import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Tag } from 'primereact/tag';
 import { MultiSelect } from 'primereact/multiselect';
+import { getOpeningHoursMap } from '../../utils/time';
 import RoomConfiguration from './RoomConfiguration';
 
 // Import local stock images for the gallery
@@ -115,14 +116,15 @@ const VenueManagement = () => {
     const openEditVenue = (venue) => {
         setEditingVenue(venue);
         // Handle openHours object vs string
-        let hoursStr = venue.openHours;
-        if (venue.openingHours && typeof venue.openingHours === 'object') {
-            const days = Object.keys(venue.openingHours);
-            if (days.length > 0) {
-                hoursStr = venue.openingHours[days[0]].replace('-', ' - ');
-            }
-        } else if (typeof venue.openHours === 'object') {
-            hoursStr = `${venue.openHours.start} - ${venue.openHours.end} `;
+        // Handle openHours data normalization
+        const hoursMap = getOpeningHoursMap(venue.operatingHours || venue.openingHours || venue.openHours);
+        const days = Object.keys(hoursMap);
+        let hoursStr = '10:00 - 04:00';
+
+        if (days.length > 0) {
+            // Prefer 'Daily' or 'Monday' as the representative time
+            const repDay = hoursMap['Daily'] || hoursMap['Monday'] || hoursMap[days[0]];
+            if (repDay) hoursStr = repDay.replace('-', ' - '); // Format for input "10:00 - 04:00"
         }
 
         setVenueForm({
@@ -368,9 +370,9 @@ const VenueManagement = () => {
                 )}
                 {displayVenues.map(venue => {
                     // Safe render openHours
-                    const openHoursDisplay = typeof venue.openHours === 'object'
-                        ? `${venue.openHours.start} - ${venue.openHours.end}`
-                        : venue.openHours;
+                    const hMap = getOpeningHoursMap(venue.operatingHours || venue.openingHours || venue.openHours);
+                    const hDisplay = hMap['Daily'] || hMap['Monday'] || Object.values(hMap)[0] || '10:00 - 04:00';
+                    const openHoursDisplay = hDisplay.replace('-', ' - ');
 
                     return (
                         <div key={venue.id} className="bg-white/5 p-4 sm:p-5 rounded-xl transition-all duration-300 hover:bg-white/[0.08]" style={{ borderLeft: `6px solid ${venue.isActive === false ? '#ef4444' : '#22c55e'}` }}>
@@ -380,7 +382,7 @@ const VenueManagement = () => {
                                         <h3 className={`text-xl sm:text-2xl font-bold m-0 ${venue.isActive === false ? 'text-gray-500' : 'text-white'}`}>
                                             {venue.name}
                                         </h3>
-                                        {venue.isActive === false && <Tag value={t('inactive') || 'Inactive'} severity="danger" className="ml-2" />}
+                                        {venue.isActive === false && <Tag value={t('inactive') || 'Inactive'} severity="danger" className="ml-2 px-2 py-1" />}
                                         <Button
                                             icon="pi pi-pencil"
                                             onClick={() => openEditVenue(venue)}
@@ -394,7 +396,7 @@ const VenueManagement = () => {
                                         <span className="text-xs sm:text-sm font-bold uppercase text-gray-400">{t('rooms')}: {venue.rooms.length}</span>
                                         <div className="flex gap-1 flex-wrap">
                                             {venue.rooms?.slice(0, 5).map(room => (
-                                                <Tag key={room.id} value={room.name} severity={room.isActive === false ? 'danger' : 'info'} style={{ fontSize: '0.7rem' }} />
+                                                <Tag key={room.id} value={room.name} severity={room.isActive === false ? 'danger' : 'info'} style={{ fontSize: '0.7rem' }} className="px-2 py-1" />
                                             ))}
                                             {venue.rooms?.length > 5 && <span className="text-xs text-gray-500">+{venue.rooms.length - 5}</span>}
                                         </div>
@@ -528,7 +530,7 @@ const VenueManagement = () => {
                             <Column header="Features" body={(rowData) => (
                                 <div className="flex flex-wrap gap-1 max-w-[200px]">
                                     {rowData.roomFeatures?.map(f => (
-                                        <Tag key={f.id} value={f.name} severity="info" className="text-[10px]" />
+                                        <Tag key={f.id} value={f.name} severity="info" className="text-[10px] px-2 py-1" />
                                     ))}
                                     {(!rowData.roomFeatures || rowData.roomFeatures.length === 0) && (
                                         <span className="text-xs text-gray-500 italic">No features</span>

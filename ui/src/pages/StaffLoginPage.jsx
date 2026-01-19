@@ -114,10 +114,63 @@ const StaffLoginPage = () => {
                         </div>
                     )}
 
+                    {/* SETUP MODE - MOBILE BOTTOM SHEET */}
+                    {mode === 'setup' && (
+                        <div className="fixed inset-0 z-[100] flex flex-col justify-end lg:hidden animate-[fadeIn_0.2s_ease]">
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMode('login')}></div>
+                            <div className="bg-[#1a1a24] w-full rounded-t-3xl relative p-8 border-t border-white/10 shadow-modal animate-[slideUp_0.3s_ease-out]">
+                                <div className="flex justify-center mb-6">
+                                    <div className="w-16 h-2 bg-white/20 rounded-full"></div>
+                                </div>
+                                <div className="text-center mb-8">
+                                    <h3 className="text-xl font-bold text-white mb-2">Device Configuration</h3>
+                                    <p className="text-gray-400 text-sm">Configure this device for your organization.</p>
+                                </div>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-200 text-sm">
+                                        <p className="font-bold mb-1 text-xs">ℹ️ One-Time Setup</p>
+                                        Enter your Organization Code here. Access to this device will be restricted to this organization.
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Organization Code</label>
+                                        <input
+                                            type="text"
+                                            value={orgCode}
+                                            onChange={(e) => setOrgCode(e.target.value.toUpperCase())}
+                                            placeholder="e.g. UBK-GRP"
+                                            className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center font-mono tracking-wider"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                localStorage.removeItem('device_org_code');
+                                                setOrgCode('');
+                                                setMessage('Configuration cleared');
+                                            }}
+                                            className="flex-1 h-12 rounded-xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            Clear
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="flex-1 h-12 bg-[#b000ff] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] transition-all flex items-center justify-center gap-2"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {mode === 'setup' ? (
-                            // SETUP FORM
-                            <div className="space-y-6">
+                            // SETUP FORM - DESKTOP ONLY (hidden on mobile via the block above taking precedence)
+                            <div className="space-y-6 hidden lg:block">
                                 <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-200 text-sm">
                                     <p className="font-bold mb-1">ℹ️ One-Time Setup</p>
                                     Enter your Organization Code here. Access to this device will be restricted to this organization.
@@ -202,7 +255,7 @@ const StaffLoginPage = () => {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className={`w-full h-12 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                    className={`w-full h-12 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
                                     {isLoading ? 'Processing...' : 'Secure Login'}
                                 </button>
@@ -218,6 +271,12 @@ const StaffLoginPage = () => {
                     </div>
                 </div>
             </div>
+            <style jsx>{`
+                @keyframes slideUp {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 };

@@ -198,6 +198,10 @@ export const api = {
         const response = await apiInstance.patch(`/organizations/${id}/status`, { isActive });
         return response.data;
     },
+    extendOrganizationPlan: async (id, data) => {
+        const response = await apiInstance.post(`/organizations/${id}/extend-plan`, data);
+        return response.data;
+    },
 
     // Staff
     getStaff: async (organizationId) => {
