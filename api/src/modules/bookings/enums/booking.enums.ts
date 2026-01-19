@@ -1,3 +1,9 @@
+export enum BookingSource {
+    ONLINE = 'ONLINE',
+    WALK_IN = 'WALK_IN',
+    PHONE = 'PHONE',
+}
+
 export enum BookingStatus {
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',

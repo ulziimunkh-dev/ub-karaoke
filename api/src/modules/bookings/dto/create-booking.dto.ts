@@ -35,4 +35,8 @@ export class CreateBookingDto {
     @IsString()
     @IsOptional()
     paymentMethod?: string;
+
+    @IsString()
+    @IsOptional()
+    source?: string;
 }

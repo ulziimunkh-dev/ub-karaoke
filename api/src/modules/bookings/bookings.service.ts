@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Booking } from './entities/booking.entity';
-import { BookingStatus } from './enums/booking.enums';
+import { BookingStatus, BookingSource } from './enums/booking.enums';
 import { BookingStatusHistory } from './entities/booking-status-history.entity';
 import { BookingPromotion } from './entities/booking-promotion.entity';
 import { Room } from '../rooms/entities/room.entity';
@@ -50,6 +50,7 @@ export class BookingsService {
             endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
             createdBy: userId, // For external bookings, user is the creator
             status: BookingStatus.PENDING, // Default to PENDING
+            source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
         });
         const savedBooking = await this.bookingsRepository.save(booking);
 
@@ -67,7 +68,7 @@ export class BookingsService {
     }
 
     // Manual booking for Admin/Staff - Auto confirms
-    async createManual(createBookingDto: CreateBookingDto, adminId: number): Promise<Booking> {
+    async createManual(createBookingDto: CreateBookingDto, user: any): Promise<Booking> {
         const conflicts = await this.checkTimeConflicts(
             createBookingDto.roomId,
             createBookingDto.date,
@@ -84,7 +85,10 @@ export class BookingsService {
             startTime: new Date(`${createBookingDto.date}T${createBookingDto.startTime}`),
             endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
             status: BookingStatus.CONFIRMED,
-            createdBy: adminId,
+            source: BookingSource.WALK_IN,
+            createdBy: user.id,
+            updatedBy: user.id,
+            organizationId: user.organizationId,
         });
 
         const savedBooking = await this.bookingsRepository.save(booking);
@@ -94,7 +98,7 @@ export class BookingsService {
             resource: 'Booking',
             resourceId: savedBooking.id.toString(),
             details: { ...createBookingDto },
-            userId: adminId,
+            userId: user.id,
         });
 
         return savedBooking;

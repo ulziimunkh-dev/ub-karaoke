@@ -38,7 +38,7 @@ export class BookingsController {
     // @Roles('manager', 'staff')
     @ApiOperation({ summary: 'Manually create and confirm a booking (Manager/Staff)' })
     createManual(@Body() createBookingDto: CreateBookingDto, @Request() req: any) {
-        return this.bookingsService.createManual(createBookingDto, req.user.userId);
+        return this.bookingsService.createManual(createBookingDto, req.user);
     }
 
     @Patch(':id/approve')

@@ -16,7 +16,7 @@ import { Staff } from '../../staff/entities/staff.entity';
 import { Promotion } from '../../promotions/entities/promotion.entity';
 import { BookingStatusHistory } from './booking-status-history.entity';
 import { BookingPromotion } from './booking-promotion.entity';
-import { BookingStatus, BookingPaymentStatus } from '../enums/booking.enums';
+import { BookingStatus, BookingPaymentStatus, BookingSource } from '../enums/booking.enums';
 
 @Entity('bookings')
 export class Booking {
@@ -48,6 +48,13 @@ export class Booking {
     })
     status: BookingStatus;
 
+    @Column({
+        type: 'enum',
+        enum: BookingSource,
+        default: BookingSource.ONLINE,
+    })
+    source: BookingSource;
+
     @Column({ name: 'customerName' })
     customerName: string;
 
@@ -71,7 +78,7 @@ export class Booking {
     @JoinColumn({ name: 'venueId' })
     venue: Venue;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    @Column({ name: 'organization_id', nullable: true })
     organizationId: number;
 
     @ManyToOne(() => Promotion, { nullable: true })

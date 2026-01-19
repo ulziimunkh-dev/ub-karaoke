@@ -29,10 +29,13 @@ const StaffPortal = () => {
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('pos');
+    const [modalTab, setModalTab] = useState('actions'); // 'actions' | 'schedule'
+    const [scheduleFilter, setScheduleFilter] = useState('today'); // today, tomorrow, yesterday, week, month
     const [activeBooking, setActiveBooking] = useState(null);
 
     // Manual Booking State
     const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New Profile State
     const [manualBookingData, setManualBookingData] = useState({
         customerName: '',
         phoneNumber: '',
@@ -69,8 +72,7 @@ const StaffPortal = () => {
                 duration: manualBookingData.hours, // Backend expects 'duration' but mapped to endTime calc usually, let's assume valid dto
                 customerName: finalCustomerName,
                 customerPhone: manualBookingData.phoneNumber,
-                // Add calculation for endTime or let backend handle it if DTO matches
-                // For manual booking DTO usually matches CreateBookingDto which needs date, startTime, endTime
+                source: 'WALK_IN'
             };
 
             // Calculate End Time properly
@@ -86,7 +88,7 @@ const StaffPortal = () => {
             await createManualBooking({
                 ...bookingPayload,
                 endTime, // Overwriting or ensuring end time is set
-                totalPrice: selectedRoom.hourlyRate * manualBookingData.hours // Staff override or auto-calc
+                totalPrice: (Number(selectedRoom.hourlyRate) || 15000) * Number(manualBookingData.hours)
             });
 
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Walk-in booking created.' });
@@ -94,7 +96,14 @@ const StaffPortal = () => {
             // Refresh logic usually handled by context socket or poll, assuming useData updates locally
         } catch (e) {
             console.error(e);
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to create booking.' });
+            // Extract meaningful error message
+            let errorMessage = 'Failed to create booking.';
+            if (e.response?.data?.message) {
+                errorMessage = Array.isArray(e.response.data.message)
+                    ? e.response.data.message.join(', ')
+                    : e.response.data.message;
+            }
+            toast.current.show({ severity: 'error', summary: 'Error', detail: errorMessage });
         }
     };
 
@@ -108,18 +117,54 @@ const StaffPortal = () => {
         }
     }, [activeVenueId, orgVenues]);
 
-    const getActiveBooking = (venueId, roomName) => {
+    const getActiveBooking = (venueId, roomId) => {
         return bookings.find(b =>
             b.venueId === venueId &&
-            (b.room?.name === roomName || b.roomId === selectedRoom?.id) &&
+            b.roomId === roomId &&
             ['CONFIRMED', 'CHECKED_IN'].includes(b.status)
         );
     };
 
+    const getFilteredBookings = () => {
+        if (!selectedRoom) return [];
+
+        // Strict string conversion for IDs
+        const roomBookings = bookings.filter(b => String(b.roomId) === String(selectedRoom.id));
+
+        // Helper to get local date string YYYY-MM-DD
+        const toLocalYMD = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+
+        const todayStr = toLocalYMD(new Date());
+
+        return roomBookings.filter(b => {
+            if (!b.date && !b.startTime) return false;
+
+            const bDateStr = toLocalYMD(b.date || b.startTime);
+
+            // Calculate Day Diff by parsing UTC strings to avoid timezone shifts
+            const d1 = new Date(bDateStr);
+            const d2 = new Date(todayStr);
+            const diffTime = d1 - d2;
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (scheduleFilter === 'today') return diffDays === 0;
+            if (scheduleFilter === 'tomorrow') return diffDays === 1;
+            if (scheduleFilter === 'yesterday') return diffDays === -1;
+            if (scheduleFilter === 'week') return diffDays >= -7 && diffDays <= 7;
+            if (scheduleFilter === 'month') return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+
+            return false;
+        }).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+    };
+
     const handleRoomClick = (room) => {
-        const booking = getActiveBooking(selectedVenue.id, room.name);
+        const booking = getActiveBooking(selectedVenue.id, room.id);
         setSelectedRoom(room);
         setActiveBooking(booking);
+        setModalTab('actions'); // Reset to actions tab
         setIsActionModalOpen(true);
     };
 
@@ -217,9 +262,22 @@ const StaffPortal = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest m-0">
-                        Top G: <span className="text-white">{currentUser?.firstName || currentUser?.username || 'Staff'}</span>
-                    </p>
+                    <div
+                        className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
+                        onClick={() => setIsProfileModalOpen(true)}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg">
+                            {(currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()}
+                        </div>
+                        <div className="hidden md:block text-right">
+                            <p className="text-white text-xs font-bold m-0 leading-tight">
+                                {currentUser?.firstName || currentUser?.username || 'Staff'}
+                            </p>
+                            <p className="text-[10px] text-gray-500 font-mono m-0 leading-tight uppercase">
+                                {currentUser?.role || 'Staff'}
+                            </p>
+                        </div>
+                    </div>
                     <div className="h-6 w-[1px] bg-white/10"></div>
                     <Button
                         icon="pi pi-power-off"
@@ -261,14 +319,14 @@ const StaffPortal = () => {
                             </span>
                         </div>
 
-                        {getActiveBooking(selectedVenue.id, room.name) ? (
+                        {getActiveBooking(selectedVenue.id, room.id) ? (
                             <div className="flex flex-col gap-1">
                                 <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Active Booking</span>
                                 <span className="text-sm font-bold text-white truncate">
-                                    {getActiveBooking(selectedVenue.id, room.name).customerName}
+                                    {getActiveBooking(selectedVenue.id, room.id).customerName}
                                 </span>
                                 <span className="text-[10px] text-[#b000ff] font-black uppercase">
-                                    {formatTime(getActiveBooking(selectedVenue.id, room.name).startTime)} {getDuration(getActiveBooking(selectedVenue.id, room.name).startTime, getActiveBooking(selectedVenue.id, room.name).endTime)}
+                                    {formatTime(getActiveBooking(selectedVenue.id, room.id).startTime)} {getDuration(getActiveBooking(selectedVenue.id, room.id).startTime, getActiveBooking(selectedVenue.id, room.id).endTime)}
                                 </span>
                             </div>
                         ) : (
@@ -294,126 +352,188 @@ const StaffPortal = () => {
                 onHide={() => setIsActionModalOpen(false)}
                 modal
             >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Session Info */}
-                    <div>
-                        <div className="bg-black/20 p-6 rounded-2xl border border-white/5 mb-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest">Current Status</h4>
-                                <Tag value={selectedRoom?.status} severity={getStatusSeverity(selectedRoom?.status)} />
-                            </div>
+                <div className="flex gap-1 bg-black/20 p-1 rounded-xl mb-6 mx-auto max-w-sm">
+                    {['actions', 'schedule'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setModalTab(tab)}
+                            className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${modalTab === tab ? 'bg-[#b000ff] text-white shadow-lg' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
 
-                            {activeBooking ? (
-                                <div className="space-y-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 font-bold uppercase m-0">Customer</p>
-                                        <p className="text-xl font-black text-white m-0">{activeBooking.customerName}</p>
-                                    </div>
-                                    <div className="flex gap-4">
+                {modalTab === 'actions' ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Session Info */}
+                        <div>
+                            <div className="bg-black/20 p-6 rounded-2xl border border-white/5 mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest">Current Status</h4>
+                                    <Tag value={selectedRoom?.status} severity={getStatusSeverity(selectedRoom?.status)} />
+                                </div>
+
+                                {activeBooking ? (
+                                    <div className="space-y-4">
                                         <div>
-                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Start</p>
-                                            <p className="text-sm font-bold text-white m-0">{formatTime(activeBooking.startTime)}</p>
+                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Customer</p>
+                                            <p className="text-xl font-black text-white m-0">{activeBooking.customerName}</p>
                                         </div>
-                                        <div>
-                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Duration</p>
-                                            <p className="text-sm font-bold text-white m-0">
-                                                {getDuration(activeBooking.startTime, activeBooking.endTime).replace(/[()]/g, '')}
+                                        <div className="flex gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">Start</p>
+                                                <p className="text-sm font-bold text-white m-0">{formatTime(activeBooking.startTime)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">Duration</p>
+                                                <p className="text-sm font-bold text-white m-0">
+                                                    {getDuration(activeBooking.startTime, activeBooking.endTime).replace(/[()]/g, '')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Divider className="border-white/5" />
+                                        <div className="flex justify-between items-end">
+                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Total Bill</p>
+                                            <p className="text-3xl font-black text-green-400 m-0">
+                                                {Number(activeBooking.totalPrice).toLocaleString()}₮
                                             </p>
                                         </div>
                                     </div>
-                                    <Divider className="border-white/5" />
-                                    <div className="flex justify-between items-end">
-                                        <p className="text-xs text-gray-500 font-bold uppercase m-0">Total Bill</p>
-                                        <p className="text-3xl font-black text-green-400 m-0">
-                                            {Number(activeBooking.totalPrice).toLocaleString()}₮
-                                        </p>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <i className="pi pi-calendar-times text-4xl text-gray-700 mb-3" />
+                                        <p className="text-gray-500 font-bold uppercase text-xs">No Active Booking Found</p>
+                                        <Button
+                                            label="Create Manual Walk-in"
+                                            icon="pi pi-plus"
+                                            className="p-button-outlined p-button-sm mt-4 hover:bg-[#b000ff]/10 hover:text-[#b000ff] hover:border-[#b000ff]"
+                                            onClick={() => handleManualBooking(selectedRoom)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                {activeBooking?.status === 'CONFIRMED' && (
+                                    <Button label="CHECK-IN GUEST" icon="pi pi-sign-in" className="p-button-lg p-button-success font-black h-16 shadow-lg shadow-green-500/20" onClick={handleCheckIn} />
+                                )}
+                                {activeBooking?.status === 'CHECKED_IN' && (
+                                    <Button label="COMPLETE & CHECK-OUT" icon="pi pi-sign-out" className="p-button-lg p-button-danger font-black h-16 shadow-lg shadow-red-500/20" onClick={handleCheckOut} />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* POS Actions */}
+                        <div className="bg-[#1e1e2d] p-6 rounded-2xl border border-white/5">
+                            <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest mb-4">Point of Sale (Quick Services)</h4>
+
+                            {activeBooking?.status === 'CHECKED_IN' ? (
+                                <div className="flex flex-col gap-6">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Button
+                                            label="+ 1 Hour"
+                                            icon="pi pi-clock"
+                                            className="p-button-outlined p-button-info p-button-sm"
+                                            onClick={async () => {
+                                                if (!activeBooking) return;
+                                                try {
+                                                    const currentEnd = new Date(activeBooking.endTime);
+                                                    currentEnd.setHours(currentEnd.getHours() + 1);
+
+                                                    // Calculate new price
+                                                    const hourlyRate = Number(selectedRoom.hourlyRate);
+                                                    const currentPrice = Number(activeBooking.totalPrice);
+                                                    const newPrice = currentPrice + hourlyRate;
+
+                                                    await updateBooking(activeBooking.id, {
+                                                        endTime: currentEnd.toISOString(),
+                                                        totalPrice: newPrice
+                                                    });
+
+                                                    toast.current.show({ severity: 'success', summary: 'Extended', detail: 'Booking extended by 1 hour.' });
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to extend booking.' });
+                                                }
+                                            }}
+                                        />
+                                        <Button label="Extra Mic" icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
+                                    </div>
+
+                                    <div>
+                                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">Popular Items</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {posItems.map(item => (
+                                                <button
+                                                    key={item.name}
+                                                    onClick={() => handleQuickOrder(item)}
+                                                    className="bg-black/40 hover:bg-[#b000ff]/20 border border-white/5 hover:border-[#b000ff]/50 p-3 rounded-xl transition-all text-left group"
+                                                >
+                                                    <p className="text-xs font-bold text-white m-0 group-hover:text-[#eb79b2]">{item.name}</p>
+                                                    <p className="text-[10px] text-gray-500 m-0 font-mono mt-1">{item.price.toLocaleString()}₮</p>
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8">
-                                    <i className="pi pi-calendar-times text-4xl text-gray-700 mb-3" />
-                                    <p className="text-gray-500 font-bold uppercase text-xs">No Active Booking Found</p>
-                                    <Button
-                                        label="Create Manual Walk-in"
-                                        icon="pi pi-plus"
-                                        className="p-button-outlined p-button-sm mt-4 hover:bg-[#b000ff]/10 hover:text-[#b000ff] hover:border-[#b000ff]"
-                                        onClick={() => handleManualBooking(selectedRoom)}
-                                    />
+                                <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                                    <i className="pi pi-lock text-4xl text-gray-800 mb-4" />
+                                    <p className="text-gray-600 text-sm font-bold italic">Check-in guest to enable POS services.</p>
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            {activeBooking?.status === 'CONFIRMED' && (
-                                <Button label="CHECK-IN GUEST" icon="pi pi-sign-in" className="p-button-lg p-button-success font-black h-16 shadow-lg shadow-green-500/20" onClick={handleCheckIn} />
-                            )}
-                            {activeBooking?.status === 'CHECKED_IN' && (
-                                <Button label="COMPLETE & CHECK-OUT" icon="pi pi-sign-out" className="p-button-lg p-button-danger font-black h-16 shadow-lg shadow-red-500/20" onClick={handleCheckOut} />
                             )}
                         </div>
                     </div>
+                ) : (
+                    <div className="h-[60vh] flex flex-col">
+                        {/* Filter Pills */}
+                        <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
+                            {['yesterday', 'today', 'tomorrow', 'week', 'month'].map(filter => (
+                                <button
+                                    key={filter}
+                                    onClick={() => setScheduleFilter(filter)}
+                                    className={`px-4 py-2 rounded-full text-xs font-bold uppercase whitespace-nowrap transition-all border ${scheduleFilter === filter ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'}`}
+                                >
+                                    {filter}
+                                </button>
+                            ))}
+                        </div>
 
-                    {/* POS Actions */}
-                    <div className="bg-[#1e1e2d] p-6 rounded-2xl border border-white/5">
-                        <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest mb-4">Point of Sale (Quick Services)</h4>
-
-                        {activeBooking?.status === 'CHECKED_IN' ? (
-                            <div className="flex flex-col gap-6">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Button
-                                        label="+ 1 Hour"
-                                        icon="pi pi-clock"
-                                        className="p-button-outlined p-button-info p-button-sm"
-                                        onClick={async () => {
-                                            if (!activeBooking) return;
-                                            try {
-                                                const currentEnd = new Date(activeBooking.endTime);
-                                                currentEnd.setHours(currentEnd.getHours() + 1);
-
-                                                // Calculate new price
-                                                const hourlyRate = Number(selectedRoom.hourlyRate);
-                                                const currentPrice = Number(activeBooking.totalPrice);
-                                                const newPrice = currentPrice + hourlyRate;
-
-                                                await updateBooking(activeBooking.id, {
-                                                    endTime: currentEnd.toISOString(),
-                                                    totalPrice: newPrice
-                                                });
-
-                                                toast.current.show({ severity: 'success', summary: 'Extended', detail: 'Booking extended by 1 hour.' });
-                                            } catch (e) {
-                                                console.error(e);
-                                                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to extend booking.' });
-                                            }
-                                        }}
-                                    />
-                                    <Button label="Extra Mic" icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
-                                </div>
-
-                                <div>
-                                    <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">Popular Items</p>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        {posItems.map(item => (
-                                            <button
-                                                key={item.name}
-                                                onClick={() => handleQuickOrder(item)}
-                                                className="bg-black/40 hover:bg-[#b000ff]/20 border border-white/5 hover:border-[#b000ff]/50 p-3 rounded-xl transition-all text-left group"
-                                            >
-                                                <p className="text-xs font-bold text-white m-0 group-hover:text-[#eb79b2]">{item.name}</p>
-                                                <p className="text-[10px] text-gray-500 m-0 font-mono mt-1">{item.price.toLocaleString()}₮</p>
-                                            </button>
-                                        ))}
+                        {/* Booking List */}
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                            {getFilteredBookings().length > 0 ? (
+                                getFilteredBookings().map(booking => (
+                                    <div key={booking.id} className="bg-[#1e1e2d] p-4 rounded-xl border border-white/5 flex justify-between items-center group hover:border-white/10 transition-all">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-1 h-12 rounded-full ${booking.status === 'CONFIRMED' ? 'bg-green-500' : booking.status === 'COMPLETED' ? 'bg-gray-500' : 'bg-blue-500'}`} />
+                                            <div>
+                                                <p className="text-white font-bold text-sm m-0">{booking.customerName}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs text-gray-400 font-mono">
+                                                        {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                                                    </span>
+                                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 uppercase font-black">
+                                                        {booking.source || 'ONLINE'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <Tag value={booking.status} severity={getStatusSeverity(booking.status)} className="mb-1" />
+                                            <p className="text-[10px] text-gray-500 m-0 text-white font-mono">{booking.customerPhone || 'No Phone'}</p>
+                                        </div>
                                     </div>
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
+                                    <i className="pi pi-calendar-times text-4xl mb-2" />
+                                    <p className="text-xs font-bold uppercase">No bookings found</p>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                                <i className="pi pi-lock text-4xl text-gray-800 mb-4" />
-                                <p className="text-gray-600 text-sm font-bold italic">Check-in guest to enable POS services.</p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </Dialog>
 
             {/* Manual Booking Modal */}
@@ -487,7 +607,52 @@ const StaffPortal = () => {
                 </div>
             </Dialog>
 
-        </div >
+            {/* Profile Modal */}
+            <Dialog
+                header="Staff Profile"
+                visible={isProfileModalOpen}
+                onHide={() => setIsProfileModalOpen(false)}
+                className="w-full md:w-[350px]"
+                dismissableMask
+                draggable={false}
+                resizable={false}
+            >
+                <div className="flex flex-col items-center gap-4 py-4">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white text-3xl font-black shadow-2xl ring-4 ring-white/10">
+                        {(currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()}
+                    </div>
+                    <div className="text-center">
+                        <h3 className="text-xl font-black text-white m-0 uppercase tracking-tight">
+                            {currentUser?.firstName || 'Staff Member'}
+                        </h3>
+                        <p className="text-sm text-[#b000ff] font-bold uppercase tracking-widest mt-1">
+                            {currentUser?.role || 'Staff'}
+                        </p>
+                    </div>
+                    <div className="w-full bg-[#1e1e2d] rounded-xl p-4 border border-white/5 space-y-3 mt-2">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 font-bold uppercase">Username</span>
+                            <span className="text-sm text-white font-mono">{currentUser?.username}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 font-bold uppercase">Organization</span>
+                            <span className="text-sm text-white font-mono">{selectedVenue?.name?.split(' ')?.[0] || 'UB Karaoke'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 font-bold uppercase">Phone</span>
+                            <span className="text-sm text-white font-mono">{currentUser?.phone || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div className="w-full">
+                        <Button
+                            label="Close"
+                            className="w-full p-button-outlined p-button-secondary p-button-sm"
+                            onClick={() => setIsProfileModalOpen(false)}
+                        />
+                    </div>
+                </div>
+            </Dialog>
+        </div>
     );
 };
 
