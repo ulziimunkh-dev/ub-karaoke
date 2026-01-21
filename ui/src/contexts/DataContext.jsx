@@ -33,6 +33,7 @@ export const DataProvider = ({ children }) => {
     const [promos, setPromos] = useState([]);
     const [activeBooking, setActiveBooking] = useState(null);
     const [isExtending, setIsExtending] = useState(false);
+    const [showResumeModal, setShowResumeModal] = useState(false);
 
 
     // Load initial data
@@ -146,7 +147,7 @@ export const DataProvider = ({ children }) => {
                             const myBookings = await api.getBookings();
                             setBookings(myBookings);
                             // Detect active reservation
-                            const activeRes = myBookings.find(b => b.status === 'RESERVED');
+                            const activeRes = myBookings.find(b => b.status?.toUpperCase() === 'RESERVED');
                             if (activeRes) {
                                 setActiveBooking(activeRes);
                             }
@@ -365,8 +366,9 @@ export const DataProvider = ({ children }) => {
             const newBooking = await api.createBooking(bookingData);
             setBookings(prev => [newBooking, ...prev]);
             // Set as active reservation if it's in RESERVED status
-            if (newBooking.status === 'RESERVED') {
+            if (newBooking.status === 'RESERVED' || newBooking.status === 'reserved') {
                 setActiveBooking(newBooking);
+                setShowResumeModal(true); // Auto-open payment when reserved
             }
             return newBooking;
         } catch (error) {
@@ -937,6 +939,8 @@ export const DataProvider = ({ children }) => {
                 setActiveVenueId,
                 activeBooking,
                 setActiveBooking,
+                showResumeModal,
+                setShowResumeModal,
                 isExtending,
                 login,
                 logout,

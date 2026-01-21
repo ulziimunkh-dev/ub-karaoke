@@ -122,6 +122,22 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     }, [bookingDate, selectedRooms, venue]);
 
 
+    // Resume Logic: If there is an active reservation, jump to payment step
+    useEffect(() => {
+        if (activeBooking && (activeBooking.status === 'RESERVED' || activeBooking.status === 'reserved')) {
+            setStep(3);
+            if (activeBooking.room && selectedRooms.length === 0) {
+                setSelectedRooms([activeBooking.room]);
+            } else if (activeBooking.roomId && selectedRooms.length === 0) {
+                const r = venue.rooms?.find(rm => rm.id === activeBooking.roomId);
+                if (r) setSelectedRooms([r]);
+            } else if (activeBooking.roomIds && selectedRooms.length === 0) {
+                const rms = venue.rooms?.filter(rm => activeBooking.roomIds.includes(rm.id));
+                if (rms?.length > 0) setSelectedRooms(rms);
+            }
+        }
+    }, [activeBooking, venue]);
+
     const toggleRoomSelection = (room) => {
         setSelectedRooms(prev => {
             const isSelected = prev.find(r => r.id === room.id);

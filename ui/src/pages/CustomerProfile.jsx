@@ -3,8 +3,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { Button } from 'primereact/button';
 
+import BookingCountdown from '../components/BookingCountdown';
+
 const CustomerProfile = () => {
-    const { currentUser, bookings, updateBookingStatus, logout, updateProfile } = useData();
+    const {
+        currentUser,
+        bookings,
+        updateBookingStatus,
+        logout,
+        updateProfile,
+        setShowResumeModal,
+        setActiveBooking,
+        extendBookingReservation,
+        isExtending,
+        activeBooking: globalActiveBooking
+    } = useData();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('bookings');
     const [editForm, setEditForm] = useState({
@@ -25,8 +38,8 @@ const CustomerProfile = () => {
     );
 
     const myBookings = bookings.filter(b => b.user === currentUser.name || b.userId === currentUser.id);
-    const activeBookings = myBookings.filter(b => ['Pending', 'Confirmed'].includes(b.status));
-    const historyBookings = myBookings.filter(b => ['Completed', 'Cancelled', 'Refunded'].includes(b.status));
+    const activeBookings = myBookings.filter(b => ['Pending', 'Confirmed', 'RESERVED', 'reserved', 'Reserved'].includes(b.status));
+    const historyBookings = myBookings.filter(b => ['Completed', 'Cancelled', 'Refunded', 'EXPIRED', 'expired'].includes(b.status));
 
     const handleCancel = (id) => {
         if (window.confirm('Are you sure you want to cancel this booking? Cancellation fees may apply.')) {
@@ -124,45 +137,94 @@ const CustomerProfile = () => {
             {/* Content */}
             {activeTab === 'bookings' && (
                 <div className="grid gap-5">
-                    {activeBookings.length === 0 ? <p className="text-gray-500">No upcoming bookings.</p> : activeBookings.map(b => (
-                        <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-green-500">
-                            <div>
-                                <h3 className="text-xl font-bold m-0 mb-1">{b.room?.name || 'Booking'}</h3>
-                                <p className="text-gray-400 my-1">{b.date} at {b.startTime || b.time}</p>
-                                <p className="font-bold my-1">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
-                                <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
+                    {activeBookings.length === 0 ? <p className="text-gray-500">No upcoming bookings.</p> : activeBookings.map(b => {
+                        const isReserved = ['RESERVED', 'reserved', 'Reserved'].includes(b.status);
+                        const venueName = b.room?.venue?.name || b.venue?.name || 'Unknown Venue';
+
+                        return (
+                            <div key={b.id} className={`bg-white/5 p-5 rounded-xl border-l-4 ${isReserved ? 'border-yellow-500 bg-yellow-500/5' : 'border-green-500'} flex flex-col gap-4`}>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="text-xl font-bold m-0">{b.room?.name || 'Room Selection'}</h3>
+                                            <span className="text-sm text-gray-400">• {venueName}</span>
+                                        </div>
+                                        <p className="text-gray-300 my-1 flex items-center gap-2">
+                                            <span>📅 {b.date}</span>
+                                            <span>⏰ {b.startTime || b.time}</span>
+                                            <span>⏳ {b.duration}h</span>
+                                        </p>
+                                        <p className="font-bold my-1 text-[#b000ff]">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
+                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${isReserved ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                                            {b.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col gap-2 min-w-[140px]">
+                                        {isReserved && (
+                                            <Button
+                                                label="Complete Payment"
+                                                icon="pi pi-check-circle"
+                                                className="p-button-sm p-button-warning w-full font-bold"
+                                                onClick={() => {
+                                                    setActiveBooking(b);
+                                                    setShowResumeModal(true);
+                                                }}
+                                            />
+                                        )}
+                                        <Button
+                                            label="Cancel Booking"
+                                            severity="danger"
+                                            outlined
+                                            onClick={() => handleCancel(b.id)}
+                                            className="w-full text-xs"
+                                            size="small"
+                                        />
+                                    </div>
+                                </div>
+
+                                {isReserved && (
+                                    <div className="mt-2 pt-3 border-t border-white/10">
+                                        <div className="text-xs uppercase font-bold text-gray-500 mb-2 tracking-widest">Reservation Status</div>
+                                        <BookingCountdown
+                                            booking={b}
+                                            isExtending={isExtending}
+                                            onExtend={() => extendBookingReservation(b.id)}
+                                            onExpired={() => {
+                                                // Refresh page or list to show expired
+                                                window.location.reload();
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </div>
-                            <Button
-                                label="Cancel Booking"
-                                severity="danger"
-                                outlined
-                                onClick={() => handleCancel(b.id)}
-                                className="text-xs"
-                                size="small"
-                            />
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
             {activeTab === 'history' && (
                 <div className="grid gap-5">
-                    {historyBookings.length === 0 ? <p className="text-gray-500">No booking history.</p> : historyBookings.map(b => (
-                        <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-gray-500">
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.room?.name || 'Booking'}</h3>
-                                <p className="text-gray-600 my-1">{b.date}</p>
-                                <span className="bg-gray-700 text-gray-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
+                    {historyBookings.length === 0 ? <p className="text-gray-500">No booking history.</p> : historyBookings.map(b => {
+                        const isCompleted = ['COMPLETED', 'Completed', 'completed'].includes(b.status);
+                        return (
+                            <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-gray-500">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.room?.name || 'Booking'}</h3>
+                                    <p className="text-gray-600 my-1">{b.date}</p>
+                                    <span className="bg-gray-700 text-gray-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
+                                </div>
+                                {isCompleted && (
+                                    <Button
+                                        label="Write Review"
+                                        outlined
+                                        onClick={() => alert('Review coming soon!')}
+                                        className="text-xs"
+                                        size="small"
+                                    />
+                                )}
                             </div>
-                            <Button
-                                label="Write Review"
-                                outlined
-                                onClick={() => alert('Review coming soon!')}
-                                className="text-xs"
-                                size="small"
-                            />
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
