@@ -5,10 +5,12 @@ export enum BookingSource {
 }
 
 export enum BookingStatus {
+    RESERVED = 'RESERVED',      // New: Temporary hold (15min)
     PENDING = 'PENDING',
     CONFIRMED = 'CONFIRMED',
     CANCELLED = 'CANCELLED',
     REJECTED = 'REJECTED',
+    EXPIRED = 'EXPIRED',        // New: Reservation timeout
     CHECKED_IN = 'CHECKED_IN',
     COMPLETED = 'COMPLETED',
 }

@@ -271,7 +271,7 @@ const StaffLoginPage = () => {
                     </div>
                 </div>
             </div>
-            <style jsx>{`
+            <style>{`
                 @keyframes slideUp {
                     from { transform: translateY(100%); }
                     to { transform: translateY(0); }

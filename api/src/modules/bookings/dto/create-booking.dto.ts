@@ -6,7 +6,12 @@ export class CreateBookingDto {
     userId?: string;
 
     @IsString()
+    @IsOptional()
     roomId: string;
+
+    @IsString({ each: true })
+    @IsOptional()
+    roomIds: string[];
 
     @IsString()
     venueId: string;

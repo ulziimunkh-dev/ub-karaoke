@@ -166,6 +166,18 @@ export const api = {
         const response = await apiInstance.patch(`/bookings/${id}`, data);
         return response.data;
     },
+    confirmBookingPayment: async (id, paymentData) => {
+        const response = await apiInstance.patch(`/bookings/${id}/confirm-payment`, paymentData);
+        return response.data;
+    },
+    extendBookingReservation: async (id) => {
+        const response = await apiInstance.patch(`/bookings/${id}/extend-reservation`);
+        return response.data;
+    },
+    getBookingStatus: async (id) => {
+        const response = await apiInstance.get(`/bookings/${id}/status`);
+        return response.data;
+    },
 
     // Audit
     getAuditLogs: async () => {
@@ -339,6 +351,28 @@ export const api = {
     },
     validatePromotion: async (code) => {
         const response = await apiInstance.post('/promotions/validate', { code });
+        return response.data;
+    },
+
+    // Notifications
+    getUserNotifications: async (limit = 50) => {
+        const response = await apiInstance.get(`/notifications?limit=${limit}`);
+        return response.data;
+    },
+    getUnreadCount: async () => {
+        const response = await apiInstance.get('/notifications/unread-count');
+        return response.data;
+    },
+    markNotificationAsRead: async (id) => {
+        const response = await apiInstance.patch(`/notifications/${id}/read`);
+        return response.data;
+    },
+    markAllNotificationsAsRead: async () => {
+        const response = await apiInstance.post('/notifications/read-all');
+        return response.data;
+    },
+    deleteNotification: async (id) => {
+        const response = await apiInstance.delete(`/notifications/${id}`);
         return response.data;
     },
 };

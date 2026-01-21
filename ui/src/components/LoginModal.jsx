@@ -198,6 +198,13 @@ const LoginModal = ({ onClose }) => {
                                 {step === 1 ? (
                                     <>
                                         <input
+                                            placeholder="Full Name"
+                                            value={formData.name}
+                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                            required
+                                        />
+                                        <input
                                             placeholder="Email or Phone Number"
                                             value={formData.identifier}
                                             onChange={e => setFormData({ ...formData, identifier: e.target.value })}

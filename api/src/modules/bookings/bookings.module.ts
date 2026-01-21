@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { BookingsService } from './bookings.service';
 import { BookingsController } from './bookings.controller';
+import { BookingsCleanupService } from './bookings-cleanup.service';
 import { Booking } from './entities/booking.entity';
 import { BookingStatusHistory } from './entities/booking-status-history.entity';
 import { BookingPromotion } from './entities/booking-promotion.entity';
@@ -25,11 +27,12 @@ import { User } from '../auth/entities/user.entity';
             VenueOperatingHours,
             User
         ]),
+        ScheduleModule.forRoot(),
         PromotionsModule,
         RoomsModule
     ],
     controllers: [BookingsController],
-    providers: [BookingsService],
+    providers: [BookingsService, BookingsCleanupService],
     exports: [BookingsService],
 })
 export class BookingsModule { }

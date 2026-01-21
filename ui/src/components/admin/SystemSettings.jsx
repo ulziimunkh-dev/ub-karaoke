@@ -239,18 +239,18 @@ const SystemSettings = () => {
                 </div>
             </Dialog>
 
-            <style jsx>{`
-                .system-settings :global(.p-card-body) {
+            <style>{`
+                .system-settings .p-card-body {
                     padding: 1.5rem;
                 }
-                .system-settings :global(.p-inputnumber-input),
-                .system-settings :global(.p-inputtext) {
+                .system-settings .p-inputnumber-input,
+                .system-settings .p-inputtext {
                     background: rgba(0,0,0,0.2) !important;
                     border: 1px solid rgba(255,255,255,0.05) !important;
                     color: white !important;
                 }
-                .system-settings :global(.p-inputnumber-input:focus),
-                .system-settings :global(.p-inputtext:focus) {
+                .system-settings .p-inputnumber-input:focus,
+                .system-settings .p-inputtext:focus {
                     border-color: #b000ff !important;
                     box-shadow: 0 0 0 1px rgba(176,0,255,0.2) !important;
                 }

@@ -2,9 +2,10 @@ import {
     Injectable,
     NotFoundException,
     BadRequestException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, In, Between } from 'typeorm';
+import { Repository, Not, In, Between, LessThan, Brackets } from 'typeorm';
 import { Booking } from './entities/booking.entity';
 import { BookingStatus, BookingSource } from './enums/booking.enums';
 import { BookingStatusHistory } from './entities/booking-status-history.entity';
@@ -17,6 +18,8 @@ import { RoomAvailability } from '../rooms/entities/room-availability.entity';
 import { Venue } from '../venues/entities/venue.entity';
 import { VenueOperatingHours, DayOfWeek } from '../venues/entities/venue-operating-hours.entity';
 import { User } from '../auth/entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class BookingsService {
@@ -38,42 +41,16 @@ export class BookingsService {
         @InjectRepository(User)
         private usersRepository: Repository<User>,
         private readonly auditService: AuditService,
+        private readonly notificationsService: NotificationsService,
+        private readonly notificationsGateway: NotificationsGateway,
     ) { }
 
     async create(createBookingDto: CreateBookingDto, userId?: string): Promise<Booking> {
-        // Fetch room and venue for constraints
-        const room = await this.roomsRepository.findOne({
-            where: { id: createBookingDto.roomId },
-            relations: ['venue'],
-        });
-        if (!room) throw new NotFoundException('Room not found');
+        const roomIds = createBookingDto.roomIds || [createBookingDto.roomId];
+        const bookings: Booking[] = [];
+        const groupId = Math.random().toString(36).substring(2, 15);
 
-        const venue = room.venue;
-        const startTime = new Date(`${createBookingDto.date}T${createBookingDto.startTime}`);
-        const endTime = new Date(`${createBookingDto.date}T${createBookingDto.endTime}`);
-        const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-
-        if (durationHours < Number(venue.minBookingHours || 1)) {
-            throw new BadRequestException(`Minimum booking duration is ${venue.minBookingHours || 1} hours`);
-        }
-        if (durationHours > Number(venue.maxBookingHours || 6)) {
-            throw new BadRequestException(`Maximum booking duration is ${venue.maxBookingHours || 6} hours`);
-        }
-
-        const conflicts = await this.checkTimeConflicts(
-            createBookingDto.roomId,
-            createBookingDto.date,
-            createBookingDto.startTime,
-            createBookingDto.endTime,
-        );
-
-        if (conflicts.length > 0) {
-            throw new BadRequestException(
-                'Room is already booked for the selected time',
-            );
-        }
-
-        // Loyalty Logic: REDEMPTION
+        // Loyalty Logic: REDEMPTION (Apply once for the whole group)
         let loyaltyDiscount = 0;
         let pointsUsed = 0;
 
@@ -104,43 +81,114 @@ export class BookingsService {
             pointsUsed = createBookingDto.pointsToUse;
         }
 
-        const finalPrice = createBookingDto.totalPrice - loyaltyDiscount;
+        // Distribute discount across rooms (simple division for now)
+        const discountPerRoom = loyaltyDiscount / roomIds.length;
+        const pointsPerRoom = Math.round(pointsUsed / roomIds.length);
 
-        const booking = this.bookingsRepository.create({
-            ...createBookingDto,
-            userId,
-            totalPrice: finalPrice, // Update price with discount
-            loyaltyPointsUsed: pointsUsed,
-            loyaltyDiscount: loyaltyDiscount,
-            startTime: new Date(`${createBookingDto.date}T${createBookingDto.startTime}`),
-            endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
-            createdBy: userId, // For external bookings, user is the creator
-            status: BookingStatus.PENDING, // Default to PENDING
-            source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
-            organizationId: venue.organizationId,
-        });
-        const savedBooking = await this.bookingsRepository.save(booking);
-
-        await this.logStatusChange(
-            savedBooking.id,
-            BookingStatus.PENDING,
-            BookingStatus.PENDING,
-            userId,
-            venue.organizationId,
-        );
-
-        if (userId) {
-            await this.auditService.log({
-                action: 'BOOKING_CREATED',
-                resource: 'Booking',
-                resourceId: savedBooking.id,
-                userId: userId || undefined,
-                staffId: undefined, // Create is usually by customer here, or if admin uses it, we should handle it
-                details: { ...createBookingDto },
+        for (const roomId of roomIds) {
+            // ... (rest of the loop)
+            const room = await this.roomsRepository.findOne({
+                where: { id: roomId },
+                relations: ['venue'],
             });
+            if (!room) throw new NotFoundException(`Room ${roomId} not found`);
+
+            const venue = room.venue;
+            const startDate = createBookingDto.date;
+            const startTime = new Date(`${startDate}T${createBookingDto.startTime}`);
+            let endTime = new Date(`${startDate}T${createBookingDto.endTime}`);
+
+            // Handle overnight bookings
+            if (endTime <= startTime) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+
+            const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
+            if (durationHours < Number(venue.minBookingHours || 1)) {
+                throw new BadRequestException(`Minimum booking duration is ${venue.minBookingHours || 1} hours`);
+            }
+            if (durationHours > Number(venue.maxBookingHours || 6)) {
+                throw new BadRequestException(`Maximum booking duration is ${venue.maxBookingHours || 6} hours`);
+            }
+
+            const conflicts = await this.checkTimeConflicts(
+                roomId,
+                startTime,
+                endTime,
+            );
+
+            if (conflicts.length > 0) {
+                throw new BadRequestException(
+                    `Room ${room.name} is already booked for the selected time`,
+                );
+            }
+
+            // Per room price - if totalPrice in DTO is total for ALL rooms, we should divide it.
+            // But usually the client calculates per room. Let's assume DTO.totalPrice is per room if roomId is present,
+            // or total if roomIds is used.
+            // Actually, my BookingModal sends a single totalPrice.
+            const basePricePerRoom = createBookingDto.totalPrice / roomIds.length;
+            const finalPricePerRoom = basePricePerRoom - discountPerRoom;
+
+            const booking = this.bookingsRepository.create({
+                ...createBookingDto,
+                roomId,
+                userId,
+                groupId,
+                totalPrice: finalPricePerRoom,
+                loyaltyPointsUsed: pointsPerRoom,
+                loyaltyDiscount: discountPerRoom,
+                startTime,
+                endTime,
+                createdBy: userId,
+                status: BookingStatus.RESERVED,
+                reservedAt: new Date(),
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+                source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
+                organizationId: venue.organizationId,
+            });
+
+            const savedBooking = await this.bookingsRepository.save(booking);
+            bookings.push(savedBooking);
+
+            await this.logStatusChange(
+                savedBooking.id,
+                BookingStatus.RESERVED,
+                BookingStatus.RESERVED,
+                userId,
+                venue.organizationId,
+            );
+
+            // Send reserved notification for each room
+            if (userId) {
+                await this.notificationsService.sendBookingNotification(
+                    savedBooking.id,
+                    'reserved',
+                    userId,
+                    venue.organizationId
+                );
+            }
+
+            if (userId) {
+                await this.auditService.log({
+                    action: 'BOOKING_CREATED',
+                    resource: 'Booking',
+                    resourceId: savedBooking.id,
+                    userId: userId || undefined,
+                    staffId: undefined,
+                    details: { ...createBookingDto, roomId },
+                });
+            }
         }
 
-        return savedBooking;
+        // Emit WebSocket events for the group (using first booking as reference)
+        if (userId) {
+            this.notificationsGateway.emitToUser(userId, 'booking:reserved', bookings[0]);
+        }
+        this.notificationsGateway.emitToOrganization(bookings[0].organizationId, 'booking:new_reservation', bookings[0]);
+
+        return bookings[0];
     }
 
     // Manual booking for Admin/Staff - Auto confirms
@@ -152,8 +200,15 @@ export class BookingsService {
         if (!room) throw new NotFoundException('Room not found');
 
         const venue = room.venue;
-        const startTime = new Date(`${createBookingDto.date}T${createBookingDto.startTime}`);
-        const endTime = new Date(`${createBookingDto.date}T${createBookingDto.endTime}`);
+        const startDate = createBookingDto.date;
+        const startTime = new Date(`${startDate}T${createBookingDto.startTime}`);
+        let endTime = new Date(`${startDate}T${createBookingDto.endTime}`);
+
+        // Handle overnight bookings
+        if (endTime <= startTime) {
+            endTime.setDate(endTime.getDate() + 1);
+        }
+
         const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
 
         if (durationHours < Number(venue.minBookingHours || 1)) {
@@ -165,9 +220,8 @@ export class BookingsService {
 
         const conflicts = await this.checkTimeConflicts(
             createBookingDto.roomId,
-            createBookingDto.date,
-            createBookingDto.startTime,
-            createBookingDto.endTime,
+            startTime,
+            endTime,
         );
 
         if (conflicts.length > 0) {
@@ -176,8 +230,8 @@ export class BookingsService {
 
         const booking = this.bookingsRepository.create({
             ...createBookingDto,
-            startTime: new Date(`${createBookingDto.date}T${createBookingDto.startTime}`),
-            endTime: new Date(`${createBookingDto.date}T${createBookingDto.endTime}`),
+            startTime,
+            endTime,
             status: BookingStatus.CONFIRMED,
             source: BookingSource.WALK_IN,
             createdBy: user.id,
@@ -230,6 +284,22 @@ export class BookingsService {
             userId: undefined,
             staffId: adminId,
         });
+
+        // Send notifications
+        if (booking.userId) {
+            await this.notificationsService.sendBookingNotification(
+                id,
+                'approved',
+                booking.userId,
+                booking.organizationId
+            );
+
+            this.notificationsGateway.emitToUser(booking.userId, 'booking:approved', saved);
+        }
+
+        // Notify organization
+        this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:status_updated', saved);
+
         return saved;
     }
 
@@ -255,6 +325,22 @@ export class BookingsService {
             userId: undefined,
             staffId: adminId,
         });
+
+        // Send notifications
+        if (booking.userId) {
+            await this.notificationsService.sendBookingNotification(
+                id,
+                'rejected',
+                booking.userId,
+                booking.organizationId
+            );
+
+            this.notificationsGateway.emitToUser(booking.userId, 'booking:rejected', saved);
+        }
+
+        // Notify organization
+        this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:status_updated', saved);
+
         return saved;
     }
 
@@ -352,9 +438,8 @@ export class BookingsService {
 
     private async checkTimeConflicts(
         roomId: string,
-        date: string,
-        startTime: string,
-        endTime: string,
+        startMoment: Date,
+        endMoment: Date,
         excludeId?: string,
     ): Promise<Booking[]> {
         const room = await this.roomsRepository.findOne({ where: { id: roomId } });
@@ -368,8 +453,6 @@ export class BookingsService {
             bufferMinutes = room.specs.cleaning;
         }
 
-        const startMoment = new Date(`${date}T${startTime}`);
-        const endMoment = new Date(`${date}T${endTime}`);
 
         // A conflict occurs if:
         // NewBooking.Start < ExistingBooking.End + Buffer
@@ -379,7 +462,19 @@ export class BookingsService {
         const query = this.bookingsRepository
             .createQueryBuilder('booking')
             .where('booking.roomId = :roomId', { roomId })
-            .andWhere('booking.status NOT IN (:...statuses)', { statuses: ['CANCELLED', 'REJECTED'] })
+            .andWhere('booking.status NOT IN (:...statuses)', {
+                statuses: [
+                    BookingStatus.CANCELLED,
+                    BookingStatus.REJECTED,
+                    BookingStatus.EXPIRED
+                ]
+            })
+            .andWhere(
+                new Brackets(qb => {
+                    qb.where('booking.status != :reserved', { reserved: BookingStatus.RESERVED })
+                        .orWhere('booking.expiresAt > :now', { now: new Date() })
+                })
+            )
             .andWhere(
                 // Use logic that accounts for the buffer between bookings
                 // (ExistingStart - Buffer) < RequestedEnd AND (ExistingEnd + Buffer) > RequestedStart
@@ -573,5 +668,176 @@ export class BookingsService {
 
             return { time, maxHours };
         });
+    }
+
+    /**
+     * Confirm payment for a RESERVED booking
+     */
+    async confirmPayment(bookingId: string, paymentData: any): Promise<Booking> {
+        const booking = await this.findOne(bookingId);
+
+        if (booking.status !== BookingStatus.RESERVED) {
+            throw new BadRequestException('Booking is not in RESERVED status');
+        }
+
+        if (booking.expiresAt && new Date() > booking.expiresAt) {
+            throw new BadRequestException('Booking reservation has expired');
+        }
+
+        booking.status = BookingStatus.CONFIRMED;
+        booking.paymentCompletedAt = new Date();
+        booking.expiresAt = null as any; // Clear expiration
+
+        const saved = await this.bookingsRepository.save(booking);
+
+        await this.logStatusChange(
+            bookingId,
+            BookingStatus.RESERVED,
+            BookingStatus.CONFIRMED,
+            booking.userId,
+            booking.organizationId
+        );
+
+        // Send notifications
+        if (this.notificationsService && booking.userId) {
+            await this.notificationsService.sendBookingNotification(
+                bookingId,
+                'approved',
+                booking.userId,
+                booking.organizationId
+            );
+        }
+
+        if (this.notificationsGateway && booking.userId) {
+            this.notificationsGateway.emitToUser(booking.userId, 'booking:confirmed', saved);
+        }
+
+        return saved;
+    }
+
+    /**
+     * Extend reservation time by 5 minutes (max 3 extensions)
+     */
+    async extendReservation(bookingId: string, userId: string): Promise<Booking> {
+        const booking = await this.findOne(bookingId);
+
+        if (booking.status !== BookingStatus.RESERVED) {
+            throw new BadRequestException('Can only extend RESERVED bookings');
+        }
+
+        if (booking.userId !== userId) {
+            throw new ForbiddenException('Not authorized');
+        }
+
+        const now = new Date();
+        if (booking.expiresAt && now > booking.expiresAt) {
+            throw new BadRequestException('Reservation already expired');
+        }
+
+        // Track extensions (limit to 3 extensions)
+        const extensionCount = booking.extensionCount || 0;
+        if (extensionCount >= 3) {
+            throw new BadRequestException('Maximum extensions reached');
+        }
+
+        booking.expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // +5 more minutes
+        booking.extensionCount = extensionCount + 1;
+
+        const saved = await this.bookingsRepository.save(booking);
+
+        // Emit real-time update
+        if (this.notificationsGateway && booking.userId) {
+            this.notificationsGateway.emitToUser(booking.userId, 'booking:extended', saved);
+        }
+
+        return saved;
+    }
+
+    /**
+     * Auto-expire bookings past their expiration time
+     * Called by cron job every minute
+     */
+    async expireReservations(): Promise<number> {
+        const now = new Date();
+
+        const expiredBookings = await this.bookingsRepository.find({
+            where: {
+                status: BookingStatus.RESERVED,
+                expiresAt: LessThan(now),
+            },
+        });
+
+        for (const booking of expiredBookings) {
+            booking.status = BookingStatus.EXPIRED;
+            await this.bookingsRepository.save(booking);
+
+            await this.logStatusChange(
+                booking.id,
+                BookingStatus.RESERVED,
+                BookingStatus.EXPIRED,
+                undefined, // SYSTEM
+                booking.organizationId
+            );
+
+            // Send notification
+            if (this.notificationsService && booking.userId) {
+                await this.notificationsService.sendBookingNotification(
+                    booking.id,
+                    'expired',
+                    booking.userId,
+                    booking.organizationId
+                );
+            }
+
+            // Emit real-time update
+            if (this.notificationsGateway && booking.userId) {
+                this.notificationsGateway.emitToUser(booking.userId, 'booking:expired', booking);
+            }
+        }
+
+        return expiredBookings.length;
+    }
+
+    /**
+     * Send expiration reminders (5 minutes before expiration)
+     */
+    async sendExpirationReminders(): Promise<number> {
+        const now = new Date();
+        const fiveMinutesLater = new Date(now.getTime() + 5 * 60 * 1000);
+        const oneMinuteLater = new Date(now.getTime() + 1 * 60 * 1000);
+
+        // Find bookings expiring in the next minute that have 5 minutes remaining
+        const expiringBooks = await this.bookingsRepository
+            .createQueryBuilder('booking')
+            .where('booking.status = :status', { status: BookingStatus.RESERVED })
+            .andWhere('booking.expiresAt BETWEEN :now AND :oneMin', { now, oneMin: oneMinuteLater })
+            .andWhere('booking.expiresAt <= :fiveMin', { fiveMin: fiveMinutesLater })
+            .getMany();
+
+        for (const booking of expiringBooks) {
+            const minutesRemaining = Math.floor((booking.expiresAt.getTime() - now.getTime()) / (60 * 1000));
+
+            if (minutesRemaining === 5 || minutesRemaining === 1) {
+                // Send notification
+                if (this.notificationsService && booking.userId) {
+                    await this.notificationsService.sendBookingNotification(
+                        booking.id,
+                        'reminder',
+                        booking.userId,
+                        booking.organizationId
+                    );
+                }
+
+                // Emit real-time update
+                if (this.notificationsGateway && booking.userId) {
+                    this.notificationsGateway.emitToUser(booking.userId, 'booking:reminder', {
+                        ...booking,
+                        minutesRemaining
+                    });
+                }
+            }
+        }
+
+        return expiringBooks.length;
     }
 }

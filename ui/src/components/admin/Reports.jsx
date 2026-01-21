@@ -149,8 +149,8 @@ const Reports = () => {
                 </Card>
             </div>
 
-            <style jsx>{`
-                .reports-page :global(.p-card-body) {
+            <style>{`
+                .reports-page .p-card-body {
                     padding: 1.5rem;
                 }
             `}</style>

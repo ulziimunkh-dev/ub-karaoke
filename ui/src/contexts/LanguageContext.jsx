@@ -246,7 +246,7 @@ const dictionaries = {
         roomImage: "Өрөөний зураг",
         selectStartTime: "Эхлэх цагаа сонгоно уу",
         venueClosed: "Энэ цагт хаалттай байна",
-        workingHours: "Ажиллах цаг",
+        workingHours: "Цагийн хуваарь",
         openNow: "ОДОО НЭЭЛТТЭЙ",
         reviewsCount: "Үнэлгээ",
         fullSchedule: "Долоо хоногийн хуваарь",

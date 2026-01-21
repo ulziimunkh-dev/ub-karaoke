@@ -276,22 +276,22 @@ const Finance = () => {
                 </div>
             </Dialog>
 
-            <style jsx>{`
-                .custom-tabview :global(.p-tabview-nav) {
+            <style>{`
+                .custom-tabview .p-tabview-nav {
                     background: transparent;
                     border: none;
                 }
-                .custom-tabview :global(.p-tabview-panels) {
+                .custom-tabview .p-tabview-panels {
                     background: transparent;
                     padding: 0;
                 }
-                .custom-tabview :global(.p-tabview-nav li .p-tabview-nav-link) {
+                .custom-tabview .p-tabview-nav li .p-tabview-nav-link {
                     background: transparent;
                     border: none;
                     color: #666;
                     font-weight: bold;
                 }
-                .custom-tabview :global(.p-tabview-nav li.p-highlight .p-tabview-nav-link) {
+                .custom-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
                     color: #b000ff;
                     border-bottom: 2px solid #b000ff;
                 }

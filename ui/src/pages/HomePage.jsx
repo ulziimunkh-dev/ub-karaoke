@@ -83,30 +83,34 @@ const HomePage = () => {
     const handleConfirmBooking = async (venueId, data) => {
         console.log("Booking Request:", venueId, data);
 
-        // Loop through all selected rooms and create a booking for each
-        for (const room of data.rooms) {
-            // Calculate endTime based on startTime and duration
-            const [startH, startM] = data.time.split(':').map(Number);
-            const endDate = new Date(`${data.date}T${data.time}`);
-            endDate.setHours(endDate.getHours() + Number(data.hours));
-            const endH = endDate.getHours();
-            const endM = endDate.getMinutes();
-            const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+        const [startH, startM] = data.time.split(':').map(Number);
+        const endDate = new Date(`${data.date}T${data.time}`);
+        endDate.setHours(endDate.getHours() + Number(data.hours));
+        const endH = endDate.getHours();
+        const endM = endDate.getMinutes();
+        const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
 
-            const booking = {
-                venueId,
-                roomId: room.id, // API expects roomId
-                customerName: currentUser ? currentUser.name : "Guest User",
-                userId: currentUser ? currentUser.id : null,
-                date: data.date,
-                startTime: data.time,
-                endTime: endTime,
-                duration: Number(data.hours),
-                totalPrice: ((Number(room.hourlyRate) || Number(room.pricePerHour) || 0) * Number(data.hours)) + (data.addOns.birthday ? 50000 / data.rooms.length : 0) + (data.addOns.decoration ? 30000 / data.rooms.length : 0),
-                customerPhone: currentUser?.phone || '99999999'
-            };
-            await addBooking(booking);
-        }
+        // Calculate total price for all rooms
+        let totalPrice = 0;
+        // The data.rooms here is an array of IDs from BookingModal, 
+        // but we need the room objects to get prices if we calculate it here.
+        // Actually, BookingModal already calculates totalCost. 
+        // Let's pass it in the data.
+
+        const booking = {
+            venueId,
+            roomIds: data.rooms,
+            customerName: currentUser ? currentUser.displayName || currentUser.name : "Guest User",
+            userId: currentUser ? currentUser.id : null,
+            date: data.date,
+            startTime: data.time,
+            endTime: endTime,
+            duration: Number(data.hours),
+            totalPrice: data.totalPrice, // We'll add this to the call in BookingModal
+            customerPhone: currentUser?.phone || '99999999'
+        };
+
+        return await addBooking(booking);
     };
 
     return (

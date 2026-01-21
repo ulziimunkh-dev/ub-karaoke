@@ -14,14 +14,16 @@ import { Dialog } from 'primereact/dialog';
 import { Galleria } from 'primereact/galleria';
 import { Divider } from 'primereact/divider';
 import { api } from '../utils/api';
+import BookingCountdown from './BookingCountdown';
 
 const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const { t } = useLanguage();
     const [step, setStep] = useState(1); // 1: Room Selection, 2: Details, 3: Payment, 4: Success
     const [selectedRooms, setSelectedRooms] = useState([]);
-    const { currentUser } = useData();
+    const { currentUser, activeBooking, setActiveBooking, isExtending, extendBookingReservation } = useData();
     const [showLogin, setShowLogin] = useState(false);
     const [previewRoom, setPreviewRoom] = useState(null);
+
 
     // Default Date: Today
     const [bookingDate, setBookingDate] = useState(new Date());
@@ -153,9 +155,9 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         }
     }, [bookingData.time, availableSlots, isFixedDuration, maxAllowedDuration]);
 
-    const handleDetailsSubmit = (e) => {
+    const handleDetailsSubmit = async (e) => {
         e.preventDefault();
-        setStep(3);
+        await handlePayment();
     };
 
     const [isBooking, setIsBooking] = useState(false);
@@ -175,12 +177,14 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         setIsBooking(true);
         setBookingError(null);
         try {
-            await onConfirmBooking(venue.id, {
+            const reservation = await onConfirmBooking(venue.id, {
                 ...bookingData,
                 date: bookingDate.toISOString().split('T')[0],
-                rooms: selectedRooms
+                rooms: selectedRooms.map(r => r.id),
+                totalPrice: totalCost
             });
-            setStep(4);
+            setActiveBooking(reservation);
+            setStep(3);
         } catch (error) {
             console.error('Booking failed:', error);
             setBookingError(error.response?.data?.message || error.message || t('bookingFailed'));
@@ -188,6 +192,29 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
             setIsBooking(false);
         }
     };
+
+    const handleConfirmPayment = async () => {
+        if (!activeBooking) return;
+
+        setIsBooking(true);
+        setBookingError(null);
+        try {
+            const confirmed = await api.confirmBookingPayment(activeBooking.id, {
+                paymentMethod: 'transfer',
+                amount: totalCost,
+                confirmedAt: new Date().toISOString()
+            });
+            setActiveBooking(confirmed);
+            setStep(4);
+        } catch (error) {
+            console.error('Payment confirmation failed:', error);
+            setBookingError(error.response?.data?.message || error.message || "Payment confirmation failed");
+        } finally {
+            setIsBooking(false);
+        }
+    };
+
+
 
     // Dynamic Price Calculation
     const getHourlyPrice = (room, dateObj) => {
@@ -627,6 +654,18 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                         {step === 3 && (
                             <div className="text-center py-4">
                                 <h3 className="text-xl font-bold mb-6">{t('confirmPayment')}</h3>
+
+                                {activeBooking && (
+                                    <BookingCountdown
+                                        booking={activeBooking}
+                                        onExpired={() => {
+                                            setBookingError("Reservation expired. Please try again.");
+                                        }}
+                                        onExtend={() => extendBookingReservation(activeBooking.id)}
+                                        isExtending={isExtending}
+                                    />
+                                )}
+
                                 <div className="bg-white/5 p-6 rounded-xl border border-white/10 mb-6">
                                     <p className="mb-3 text-gray-300">{t('transferInstruction')}</p>
                                     <h2 className="m-0 text-3xl font-bold text-primary mb-6 drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
@@ -636,6 +675,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         <p className="my-1.5"><span className="text-text-muted mr-2">{t('bankName')}:</span> <span className="font-bold text-white">KHAN BANK</span></p>
                                         <p className="my-1.5"><span className="text-text-muted mr-2">{t('accountNumber')}:</span> <span className="font-bold text-secondary">5070******</span></p>
                                         <p className="my-1.5"><span className="text-text-muted mr-2">{t('accountName')}:</span> <span className="font-bold text-white">UB KARAOKE LLC</span></p>
+                                        <p className="my-1.5"><span className="text-text-muted mr-2">{t('referenceNumber')}:</span> <span className="font-bold text-secondary">{activeBooking?.id?.substring(0, 8).toUpperCase()}</span></p>
                                     </div>
                                     <p className="mt-4 text-xs text-text-muted">{t('clickConfirm')}</p>
                                 </div>
@@ -656,8 +696,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         {t('back')}
                                     </button>
                                     <button
-                                        onClick={handlePayment}
-                                        disabled={isBooking}
+                                        onClick={handleConfirmPayment}
+                                        disabled={isBooking || (activeBooking && new Date() > new Date(activeBooking.expiresAt))}
                                         className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
                                     >
                                         {isBooking ? (
@@ -814,16 +854,16 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                     )}
                 </Dialog>
 
-                <style jsx>{`
+                <style>{`
                 @keyframes slideUp {
                     from { transform: translateY(100%); }
                     to { transform: translateY(0); }
                 }
-                :global(.p-dialog .p-dialog-header) {
+                .p-dialog .p-dialog-header {
                     background: #1a1a24 !important;
                     color: white !important;
                 }
-                :global(.p-dialog .p-dialog-content) {
+                .p-dialog .p-dialog-content {
                     background: #1a1a24 !important;
                     color: white !important;
                 }

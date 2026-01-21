@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
 import LoginModal from './LoginModal';
+import NotificationBell from './NotificationBell';
 
 const Header = () => {
     const { t, language, toggleLanguage } = useLanguage();
@@ -37,6 +38,7 @@ const Header = () => {
 
                     {currentUser ? (
                         <div className="flex items-center gap-4">
+                            <NotificationBell />
                             <Link to="/user/profile" className="text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
                                 Hi, {currentUser.name}
                             </Link>

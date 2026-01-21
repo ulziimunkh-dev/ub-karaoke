@@ -57,6 +57,43 @@ export class BookingsController {
         return this.bookingsService.reject(id, req.user.id);
     }
 
+    @Patch(':id/confirm-payment')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Confirm payment for RESERVED booking' })
+    confirmPayment(
+        @Param('id') id: string,
+        @Body() paymentData: any,
+        @Request() req: any
+    ) {
+        return this.bookingsService.confirmPayment(id, paymentData);
+    }
+
+    @Patch(':id/extend-reservation')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Extend reservation by 5 minutes' })
+    extendReservation(@Param('id') id: string, @Request() req: any) {
+        return this.bookingsService.extendReservation(id, req.user.id);
+    }
+
+    @Get(':id/status')
+    @ApiOperation({ summary: 'Get booking status with expiration info' })
+    async getBookingStatus(@Param('id') id: string) {
+        const booking = await this.bookingsService.findOne(id);
+        const now = new Date();
+
+        return {
+            id: booking.id,
+            status: booking.status,
+            expiresAt: booking.expiresAt,
+            isExpired: booking.expiresAt && now > booking.expiresAt,
+            remainingSeconds: booking.expiresAt
+                ? Math.max(0, Math.floor((booking.expiresAt.getTime() - now.getTime()) / 1000))
+                : null,
+        };
+    }
+
     @Get()
     @ApiOperation({ summary: 'Get all bookings with optional filters' })
     @ApiQuery({ name: 'userId', required: false })

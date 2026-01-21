@@ -76,6 +76,22 @@ export class Booking {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @Column({ name: 'reserved_at', type: 'timestamp', nullable: true })
+    reservedAt: Date;
+
+    @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
+    expiresAt: Date;
+
+    @Column({ name: 'payment_completed_at', type: 'timestamp', nullable: true })
+    paymentCompletedAt: Date;
+
+    @Column({ name: 'extension_count', type: 'int', default: 0 })
+    extensionCount: number;
+
+    @Column({ name: 'group_id', nullable: true })
+    groupId: string;
+
+
     @ManyToOne(() => Room, (room) => room.bookings)
     @JoinColumn({ name: 'roomId' })
     room: Room;

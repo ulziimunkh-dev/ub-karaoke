@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Notification, NotificationType, NotificationStatus } from './entities/notification.entity';
 
 @Injectable()
@@ -51,5 +51,81 @@ export class NotificationsService {
         // logging it might be tricky without userId. 
         // For the purpose of this task, I'll allow creating explicit notifications via 'create' method
         // which can be called by other modules.
+    }
+
+    async sendBookingNotification(
+        bookingId: string,
+        type: 'created' | 'reserved' | 'approved' | 'rejected' | 'checked_in' | 'completed' | 'expired' | 'reminder',
+        userId?: string,
+        organizationId?: string
+    ) {
+        const messages = {
+            created: 'Your booking has been created and is pending approval',
+            reserved: 'Your time slot has been reserved. Complete payment within 15 minutes.',
+            approved: 'Your booking has been approved!',
+            rejected: 'Your booking has been rejected',
+            checked_in: 'You have been checked in. Enjoy your session!',
+            completed: 'Your booking is complete. Thank you!',
+            expired: 'Your booking reservation has expired',
+            reminder: 'Your reservation expires soon. Complete payment now!'
+        };
+
+        const message = messages[type];
+
+        if (userId) {
+            // Create in-app notification for user
+            await this.create({
+                userId,
+                bookingId,
+                type: NotificationType.PUSH,
+                status: NotificationStatus.SENT,
+                message,
+                organizationId
+            });
+
+            this.logger.log(`[NOTIFICATION] Booking ${type}: ${message} (User: ${userId})`);
+        }
+    }
+
+    async getUserNotifications(userId: string, limit: number = 20) {
+        return this.notificationsRepository.find({
+            where: { userId },
+            order: { createdAt: 'DESC' },
+            take: limit,
+            relations: ['booking']
+        });
+    }
+
+    async getUnreadCount(userId: string): Promise<number> {
+        return this.notificationsRepository.count({
+            where: {
+                userId,
+                readAt: IsNull()
+            }
+        });
+    }
+
+    async markAsRead(notificationId: string, userId: string) {
+        const notification = await this.notificationsRepository.findOne({
+            where: { id: notificationId, userId }
+        });
+
+        if (notification && !notification.readAt) {
+            notification.readAt = new Date();
+            await this.notificationsRepository.save(notification);
+        }
+
+        return notification;
+    }
+
+    async markAllAsRead(userId: string) {
+        await this.notificationsRepository.update(
+            { userId, readAt: IsNull() },
+            { readAt: new Date() }
+        );
+    }
+
+    async deleteNotification(notificationId: string, userId: string) {
+        await this.notificationsRepository.delete({ id: notificationId, userId });
     }
 }

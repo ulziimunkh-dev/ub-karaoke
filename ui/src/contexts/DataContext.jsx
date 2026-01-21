@@ -31,6 +31,9 @@ export const DataProvider = ({ children }) => {
         depositFixed: 50000
     });
     const [promos, setPromos] = useState([]);
+    const [activeBooking, setActiveBooking] = useState(null);
+    const [isExtending, setIsExtending] = useState(false);
+
 
     // Load initial data
     // Load initial data
@@ -142,6 +145,11 @@ export const DataProvider = ({ children }) => {
                         try {
                             const myBookings = await api.getBookings();
                             setBookings(myBookings);
+                            // Detect active reservation
+                            const activeRes = myBookings.find(b => b.status === 'RESERVED');
+                            if (activeRes) {
+                                setActiveBooking(activeRes);
+                            }
                         } catch (error) {
                             console.error('Failed to load customer bookings:', error);
                         }
@@ -356,6 +364,10 @@ export const DataProvider = ({ children }) => {
         try {
             const newBooking = await api.createBooking(bookingData);
             setBookings(prev => [newBooking, ...prev]);
+            // Set as active reservation if it's in RESERVED status
+            if (newBooking.status === 'RESERVED') {
+                setActiveBooking(newBooking);
+            }
             return newBooking;
         } catch (error) {
             console.error('Failed to create booking:', error);
@@ -363,15 +375,37 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const extendBookingReservation = async (bookingId) => {
+        if (isExtending) return;
+        setIsExtending(true);
+        try {
+            const updated = await api.extendBookingReservation(bookingId);
+            setActiveBooking(updated);
+            // Also update in the bookings list if present
+            setBookings(prev => prev.map(b => b.id === bookingId ? updated : b));
+            return updated;
+        } catch (error) {
+            console.error('Extension failed:', error);
+            throw error;
+        } finally {
+            setIsExtending(false);
+        }
+    };
+
+
     const updateBookingStatus = async (id, status) => {
         try {
             await api.updateBooking(id, { status });
             setBookings(prev => prev.map(b => (b.id === id ? { ...b, status } : b)));
+            if (activeBooking && activeBooking.id === id && status !== 'RESERVED') {
+                setActiveBooking(null);
+            }
         } catch (error) {
             console.error('Failed to update booking status:', error);
             throw error;
         }
     };
+
 
     const approveBooking = async (id) => {
         try {
@@ -394,6 +428,21 @@ export const DataProvider = ({ children }) => {
             throw error;
         }
     };
+
+    const confirmBookingPayment = async (id, paymentData) => {
+        try {
+            const updated = await api.confirmBookingPayment(id, paymentData);
+            setBookings(prev => prev.map(b => (b.id === id ? updated : b)));
+            if (activeBooking && activeBooking.id === id) {
+                setActiveBooking(null);
+            }
+            return updated;
+        } catch (error) {
+            console.error('Failed to confirm booking payment:', error);
+            throw error;
+        }
+    };
+
 
     const createManualBooking = async (bookingData) => {
         try {
@@ -886,6 +935,9 @@ export const DataProvider = ({ children }) => {
                 updateOrganizationStatus,
                 activeVenueId,
                 setActiveVenueId,
+                activeBooking,
+                setActiveBooking,
+                isExtending,
                 login,
                 logout,
                 registerCustomer,
@@ -908,6 +960,8 @@ export const DataProvider = ({ children }) => {
                 updateBooking,
                 approveBooking,
                 rejectBooking,
+                confirmBookingPayment,
+                extendBookingReservation,
                 createManualBooking,
                 processRefund,
                 calculateTotal,

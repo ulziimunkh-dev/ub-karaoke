@@ -166,17 +166,17 @@ const PlanManagement = () => {
                 </form>
             </Dialog>
 
-            <style jsx>{`
-                :global(.p-datatable) {
+            <style>{`
+                .p-datatable {
                     background: transparent !important;
                 }
-                :global(.p-datatable .p-datatable-tbody > tr) {
+                .p-datatable .p-datatable-tbody > tr {
                     background: transparent !important;
                     color: white !important;
                     transition: all 0.2s;
                     border-bottom: 1px solid rgba(255,255,255,0.03) !important;
                 }
-                :global(.p-datatable .p-datatable-tbody > tr:hover) {
+                .p-datatable .p-datatable-tbody > tr:hover {
                     background: rgba(255,255,255,0.02) !important;
                 }
             `}</style>

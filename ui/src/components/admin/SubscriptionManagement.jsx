@@ -78,7 +78,7 @@ const SubscriptionManagement = () => {
     if (loading) return <div className="p-6 text-center"><i className="pi pi-spin pi-spinner text-4xl text-primary"></i></div>;
 
     return (
-        <div className="p-6">
+        <div className="p-6 subscription-management">
             <Toast ref={toast} />
 
             <div className="mb-8">
@@ -263,17 +263,17 @@ const SubscriptionManagement = () => {
                 </div>
             </Dialog>
 
-            <style jsx>{`
-                :global(.p-card) {
+            <style>{`
+                .subscription-management .p-card {
                     background: transparent !important;
                     box-shadow: none !important;
                 }
-                :global(.payment-dialog .p-dialog-header) {
+                .payment-dialog .p-dialog-header {
                     background: #1a1a24 !important;
                     color: white !important;
                     border-bottom: 1px solid rgba(255,255,255,0.05) !important;
                 }
-                :global(.payment-dialog .p-dialog-content) {
+                .payment-dialog .p-dialog-content {
                     background: #1a1a24 !important;
                     padding: 0 !important;
                 }
