@@ -127,11 +127,23 @@ export const api = {
         const response = await apiInstance.post('/rooms/reorder', orders);
         return response.data;
     },
+    addRoomPricing: async (roomId, pricingData) => {
+        const response = await apiInstance.post(`/rooms/${roomId}/pricing`, pricingData);
+        return response.data;
+    },
+    removeRoomPricing: async (pricingId) => {
+        const response = await apiInstance.delete(`/rooms/pricing/${pricingId}`);
+        return response.data;
+    },
 
     // Bookings
     getBookings: async (filters = {}) => {
         const params = new URLSearchParams(filters).toString();
         const response = await apiInstance.get(`/bookings?${params}`);
+        return response.data;
+    },
+    getBookingsAvailability: async (roomId, date) => {
+        const response = await apiInstance.get(`/bookings/availability?roomId=${roomId}&date=${date}`);
         return response.data;
     },
     createBooking: async (data) => {

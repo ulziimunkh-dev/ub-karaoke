@@ -22,7 +22,7 @@ export class VenuesService {
         private auditService: AuditService,
     ) { }
 
-    async create(createVenueDto: CreateVenueDto, creatorId?: number): Promise<Venue> {
+    async create(createVenueDto: CreateVenueDto, creatorId?: string): Promise<Venue> {
         const venue = this.venuesRepository.create({
             ...createVenueDto,
             createdBy: creatorId,
@@ -33,9 +33,9 @@ export class VenuesService {
         await this.auditService.log({
             action: 'VENUE_CREATED',
             resource: 'Venue',
-            resourceId: saved.id.toString(),
+            resourceId: saved.id,
             details: { name: saved.name },
-            userId: creatorId
+            staffId: creatorId
         });
 
         if (createVenueDto.openingHours) {
@@ -49,14 +49,15 @@ export class VenuesService {
         district?: string;
         priceRange?: string;
         search?: string;
-        organizationId?: number;
+        organizationId?: string;
         includeInactive?: boolean;
     }): Promise<Venue[]> {
         const query = this.venuesRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.organization', 'organization')
             .leftJoinAndSelect('venue.rooms', 'room')
             .leftJoinAndSelect('venue.reviews', 'review')
-            .leftJoinAndSelect('venue.operatingHours', 'operatingHours');
+            .leftJoinAndSelect('venue.operatingHours', 'operatingHours')
+            .leftJoinAndSelect('room.pricing', 'pricing');
 
         if (filters?.district) {
             query.andWhere('venue.district = :district', {
@@ -95,7 +96,7 @@ export class VenuesService {
         return venues;
     }
 
-    async findOne(id: number): Promise<Venue> {
+    async findOne(id: string): Promise<Venue> {
         const cacheKey = `venue:${id}`;
         const cached = await this.cacheManager.get<Venue>(cacheKey);
 
@@ -110,6 +111,7 @@ export class VenuesService {
             .leftJoinAndSelect('venue.operatingHours', 'operatingHours')
             .leftJoinAndSelect('room.roomType', 'roomType')
             .leftJoinAndSelect('room.roomFeatures', 'roomFeatures')
+            .leftJoinAndSelect('room.pricing', 'pricing')
             .where('venue.id = :id', { id })
             .orderBy('room.sortOrder', 'ASC')
             .addOrderBy('room.name', 'ASC')
@@ -123,7 +125,7 @@ export class VenuesService {
         return venue;
     }
 
-    async update(id: number, updateVenueDto: UpdateVenueDto, updaterId?: number): Promise<Venue> {
+    async update(id: string, updateVenueDto: UpdateVenueDto, updaterId?: string): Promise<Venue> {
         const venue = await this.findOne(id);
         Object.assign(venue, updateVenueDto);
         if (updaterId) {
@@ -136,9 +138,9 @@ export class VenuesService {
         await this.auditService.log({
             action: 'VENUE_UPDATED',
             resource: 'Venue',
-            resourceId: id.toString(),
+            resourceId: id,
             details: updateVenueDto,
-            userId: updaterId
+            staffId: updaterId
         });
 
         if (updateVenueDto.openingHours) {
@@ -148,7 +150,7 @@ export class VenuesService {
         return this.findOne(id);
     }
 
-    async updateStatus(id: number, isActive: boolean, updaterId?: number): Promise<Venue> {
+    async updateStatus(id: string, isActive: boolean, updaterId?: string): Promise<Venue> {
         const venue = await this.findOne(id);
         venue.isActive = isActive;
         if (updaterId) {
@@ -161,15 +163,15 @@ export class VenuesService {
         await this.auditService.log({
             action: 'VENUE_STATUS_UPDATED',
             resource: 'Venue',
-            resourceId: id.toString(),
+            resourceId: id,
             details: { isActive },
-            userId: updaterId
+            staffId: updaterId
         });
 
         return updated;
     }
 
-    async remove(id: number): Promise<void> {
+    async remove(id: string): Promise<void> {
         const venue = await this.findOne(id);
         await this.venuesRepository.remove(venue);
         await this.cacheManager.del(`venue:${id}`);
@@ -178,12 +180,12 @@ export class VenuesService {
         await this.auditService.log({
             action: 'VENUE_DELETED',
             resource: 'Venue',
-            resourceId: id.toString(),
+            resourceId: id,
             details: { name: venue.name }
         });
     }
 
-    private async syncOperatingHours(venueId: number, openingHours: Record<string, string>) {
+    private async syncOperatingHours(venueId: string, openingHours: Record<string, string>) {
         // Clear existing
         await this.hoursRepository.delete({ venueId });
 

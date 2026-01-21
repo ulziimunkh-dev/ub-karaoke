@@ -19,8 +19,8 @@ export enum PaymentMethod {
 
 @Entity('payments')
 export class Payment {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     amount: number;
@@ -50,14 +50,14 @@ export class Payment {
     booking: Booking;
 
     @Column({ name: 'bookingId', nullable: true })
-    bookingId: number;
+    bookingId: string;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
@@ -66,10 +66,10 @@ export class Payment {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @OneToMany(() => PaymentTransaction, (transaction) => transaction.payment)
     transactions: PaymentTransaction[];

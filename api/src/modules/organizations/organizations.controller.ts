@@ -35,10 +35,10 @@ export class OrganizationsController {
     @ApiOperation({ summary: 'Get organization details' })
     async findOne(@Req() req: any, @Param('id') id: string) {
         // Sysadmin can view any org, others can only view their own
-        if (req.user.role !== 'sysadmin' && req.user.organizationId !== parseInt(id)) {
+        if (req.user.role !== 'sysadmin' && req.user.organizationId !== id) {
             throw new ForbiddenException('Cannot access other organization data');
         }
-        return this.organizationsService.findOne(+id);
+        return this.organizationsService.findOne(id);
     }
 
     @Patch(':id')
@@ -51,7 +51,7 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can update organizations');
         }
-        return this.organizationsService.update(+id, updateOrganizationDto, req.user.id);
+        return this.organizationsService.update(id, updateOrganizationDto, req.user.id);
     }
 
     @Patch(':id/status')
@@ -64,7 +64,7 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can update organization status');
         }
-        return this.organizationsService.updateStatus(+id, isActive, req.user.id);
+        return this.organizationsService.updateStatus(id, isActive, req.user.id);
     }
 
     @Get(':id/plan-history')
@@ -73,7 +73,7 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can view plan history');
         }
-        return this.organizationsService.getPlanHistory(+id);
+        return this.organizationsService.getPlanHistory(id);
     }
 
     @Post(':id/extend-plan')
@@ -81,13 +81,13 @@ export class OrganizationsController {
     async extendPlan(
         @Req() req: any,
         @Param('id') id: string,
-        @Body() extensionData: { planId: number, durationMonths: number }
+        @Body() extensionData: { planId: string, durationMonths: number }
     ) {
         // Manager/Admin can only extend their own org, Sysadmin can extend any
-        if (req.user.role !== 'sysadmin' && req.user.organizationId !== parseInt(id)) {
+        if (req.user.role !== 'sysadmin' && req.user.organizationId !== id) {
             throw new ForbiddenException('Cannot access other organization data');
         }
-        return this.organizationsService.extendPlan(+id, extensionData, req.user.id);
+        return this.organizationsService.extendPlan(id, extensionData, req.user.id);
     }
 
     @Delete(':id')
@@ -96,6 +96,6 @@ export class OrganizationsController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can deactivate organizations');
         }
-        return this.organizationsService.deactivate(+id, req.user.id);
+        return this.organizationsService.deactivate(id, req.user.id);
     }
 }

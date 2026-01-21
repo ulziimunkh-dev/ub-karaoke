@@ -85,14 +85,22 @@ const HomePage = () => {
 
         // Loop through all selected rooms and create a booking for each
         for (const room of data.rooms) {
+            // Calculate endTime based on startTime and duration
+            const [startH, startM] = data.time.split(':').map(Number);
+            const endDate = new Date(`${data.date}T${data.time}`);
+            endDate.setHours(endDate.getHours() + Number(data.hours));
+            const endH = endDate.getHours();
+            const endM = endDate.getMinutes();
+            const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+
             const booking = {
                 venueId,
                 roomId: room.id, // API expects roomId
-                roomName: room.name,
                 customerName: currentUser ? currentUser.name : "Guest User",
                 userId: currentUser ? currentUser.id : null,
                 date: data.date,
                 startTime: data.time,
+                endTime: endTime,
                 duration: Number(data.hours),
                 totalPrice: ((Number(room.hourlyRate) || Number(room.pricePerHour) || 0) * Number(data.hours)) + (data.addOns.birthday ? 50000 / data.rooms.length : 0) + (data.addOns.decoration ? 30000 / data.rooms.length : 0),
                 customerPhone: currentUser?.phone || '99999999'

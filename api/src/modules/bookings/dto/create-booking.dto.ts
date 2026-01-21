@@ -1,15 +1,15 @@
 import { IsNumber, IsString, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateBookingDto {
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    userId?: number;
+    userId?: string;
 
-    @IsNumber()
-    roomId: number;
+    @IsString()
+    roomId: string;
 
-    @IsNumber()
-    venueId: number;
+    @IsString()
+    venueId: string;
 
     @IsDateString()
     date: string;
@@ -39,4 +39,8 @@ export class CreateBookingDto {
     @IsString()
     @IsOptional()
     source?: string;
+
+    @IsNumber()
+    @IsOptional()
+    pointsToUse?: number;
 }

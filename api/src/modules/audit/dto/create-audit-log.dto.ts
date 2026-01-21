@@ -3,5 +3,6 @@ export class CreateAuditLogDto {
     resource: string;
     resourceId?: string;
     details?: any;
-    userId?: number;
+    userId?: string;
+    staffId?: string;
 }

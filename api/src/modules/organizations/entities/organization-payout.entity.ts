@@ -12,11 +12,11 @@ export enum PayoutStatus {
 
 @Entity('organization_payouts')
 export class OrganizationPayout {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'organization_id' })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
@@ -58,8 +58,8 @@ export class OrganizationPayout {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

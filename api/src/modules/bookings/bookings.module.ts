@@ -8,10 +8,23 @@ import { BookingPromotion } from './entities/booking-promotion.entity';
 import { PromotionsModule } from '../promotions/promotions.module';
 import { RoomsModule } from '../rooms/rooms.module';
 import { Room } from '../rooms/entities/room.entity';
+import { RoomAvailability } from '../rooms/entities/room-availability.entity';
+import { Venue } from '../venues/entities/venue.entity';
+import { VenueOperatingHours } from '../venues/entities/venue-operating-hours.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Booking, BookingStatusHistory, BookingPromotion, Room]),
+        TypeOrmModule.forFeature([
+            Booking,
+            BookingStatusHistory,
+            BookingPromotion,
+            Room,
+            RoomAvailability,
+            Venue,
+            VenueOperatingHours,
+            User
+        ]),
         PromotionsModule,
         RoomsModule
     ],

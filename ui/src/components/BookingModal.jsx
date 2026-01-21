@@ -13,6 +13,7 @@ import { Tag } from 'primereact/tag';
 import { Dialog } from 'primereact/dialog';
 import { Galleria } from 'primereact/galleria';
 import { Divider } from 'primereact/divider';
+import { api } from '../utils/api';
 
 const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const { t } = useLanguage();
@@ -31,9 +32,12 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
     const [bookingData, setBookingData] = useState({
         time: '',
-        hours: 2,
+        hours: Number(venue.minBookingHours) || 2,
         addOns: { birthday: false, decoration: false }
     });
+
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
 
     if (!venue) return null;
 
@@ -66,11 +70,54 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     };
 
     useEffect(() => {
-        const slots = getBookingTimeSlots();
-        if (slots.length > 0 && !bookingData.time) {
-            setBookingData(prev => ({ ...prev, time: slots[0].value }));
-        }
-    }, [venue]);
+        const fetchAvailability = async () => {
+            if (!bookingDate || selectedRooms.length === 0) {
+                setAvailableSlots([]);
+                return;
+            }
+            setLoadingSlots(true);
+            try {
+                // Adjust for local date string to avoid timezone offset issues
+                const year = bookingDate.getFullYear();
+                const month = (bookingDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = bookingDate.getDate().toString().padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+
+                const slotsPerRoom = await Promise.all(
+                    selectedRooms.map(room => api.getBookingsAvailability(room.id, dateStr))
+                );
+
+                if (slotsPerRoom.length > 0) {
+                    // Intersect times and take MIN of maxHours
+                    const allTimes = slotsPerRoom[0].map(s => s.time);
+                    const intersection = allTimes.filter(t =>
+                        slotsPerRoom.every(roomSlots => roomSlots.some(rs => rs.time === t))
+                    );
+
+                    const formattedSlots = intersection.map(t => {
+                        const minMaxHours = Math.min(...slotsPerRoom.map(roomSlots =>
+                            roomSlots.find(rs => rs.time === t).maxHours
+                        ));
+                        return { label: t, value: t, maxHours: minMaxHours };
+                    });
+
+                    setAvailableSlots(formattedSlots);
+
+                    if (formattedSlots.length > 0 && (!bookingData.time || !formattedSlots.find(s => s.value === bookingData.time))) {
+                        setBookingData(prev => ({ ...prev, time: formattedSlots[0].value }));
+                    }
+                } else {
+                    setAvailableSlots([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch availability:', error);
+            } finally {
+                setLoadingSlots(false);
+            }
+        };
+
+        fetchAvailability();
+    }, [bookingDate, selectedRooms, venue]);
 
 
     const toggleRoomSelection = (room) => {
@@ -91,14 +138,30 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     };
 
     // Calculate max allowed duration based on currently selected time
-    const maxAllowedDuration = 6;
+    const selectedSlot = availableSlots.find(s => s.value === bookingData.time);
+    const maxVenueHours = Number(venue.maxBookingHours || 6);
+    const minVenueHours = Number(venue.minBookingHours || 1);
+    const isFixedDuration = minVenueHours === maxVenueHours;
+
+    const maxAllowedDuration = selectedSlot ? Math.min(selectedSlot.maxHours, maxVenueHours) : maxVenueHours;
+
+    useEffect(() => {
+        if (isFixedDuration && bookingData.hours !== minVenueHours) {
+            setBookingData(prev => ({ ...prev, hours: minVenueHours }));
+        } else if (bookingData.hours > maxAllowedDuration) {
+            setBookingData(prev => ({ ...prev, hours: Math.max(minVenueHours, Math.floor(maxAllowedDuration)) }));
+        }
+    }, [bookingData.time, availableSlots, isFixedDuration, maxAllowedDuration]);
 
     const handleDetailsSubmit = (e) => {
         e.preventDefault();
         setStep(3);
     };
 
-    const handlePayment = () => {
+    const [isBooking, setIsBooking] = useState(false);
+    const [bookingError, setBookingError] = useState(null);
+
+    const handlePayment = async () => {
         if (!currentUser) {
             setShowLogin(true);
             return;
@@ -109,15 +172,98 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
             return;
         }
 
-        setTimeout(() => {
-            onConfirmBooking(venue.id, {
+        setIsBooking(true);
+        setBookingError(null);
+        try {
+            await onConfirmBooking(venue.id, {
                 ...bookingData,
                 date: bookingDate.toISOString().split('T')[0],
                 rooms: selectedRooms
             });
             setStep(4);
-        }, 1000);
+        } catch (error) {
+            console.error('Booking failed:', error);
+            setBookingError(error.response?.data?.message || error.message || t('bookingFailed'));
+        } finally {
+            setIsBooking(false);
+        }
     };
+
+    // Dynamic Price Calculation
+    const getHourlyPrice = (room, dateObj) => {
+        // 1. Determine Day Type
+        const day = dateObj.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+        let currentDayType = 'WEEKDAY';
+        if (day === 5 || day === 6 || day === 0) currentDayType = 'WEEKEND'; // Fri, Sat, Sun
+
+        // 2. Format Time "HH:mm:ss"
+        const hours = dateObj.getHours().toString().padStart(2, '0');
+        const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+        const currentTimeStr = `${hours}:${minutes}:00`;
+
+        // 3. Find matching rules
+        if (room.pricing && room.pricing.length > 0) {
+            // Filter rules that match the current slot
+            const matchingRules = room.pricing.filter(p => {
+                // A. Check Specific Date Range first
+                if (p.startDateTime && p.endDateTime) {
+                    const start = new Date(p.startDateTime);
+                    const end = new Date(p.endDateTime);
+                    // Match if the slot start falls within the range
+                    return dateObj >= start && dateObj < end;
+                }
+
+                // B. Check Recurring Day Rule
+                if (p.dayType === currentDayType || p.dayType === 'DAILY' || p.dayType === 'HOLIDAY') {
+                    const start = p.startTime;
+                    const end = p.endTime;
+
+                    if (start < end) {
+                        return currentTimeStr >= start && currentTimeStr < end;
+                    } else {
+                        // Overnight range (e.g. 22:00 to 02:00)
+                        return currentTimeStr >= start || currentTimeStr < end;
+                    }
+                }
+                return false;
+            });
+
+            if (matchingRules.length > 0) {
+                // Pick the rule with HIGHEST priority
+                matchingRules.sort((a, b) => (Number(b.priority) || 0) - (Number(a.priority) || 0));
+                return Number(matchingRules[0].pricePerHour);
+            }
+        }
+
+        // Default
+        return Number(room.hourlyRate || room.pricePerHour || 0);
+    };
+
+    const calculateTotalCost = () => {
+        let total = 0;
+        const startHourStr = bookingData.time; // "HH:mm"
+        if (!startHourStr) return 0;
+
+        const [startH] = startHourStr.split(':').map(Number);
+
+        selectedRooms.forEach(room => {
+            for (let i = 0; i < bookingData.hours; i++) {
+                // Calculate date/time for this specific hour slot
+                const slotDate = new Date(bookingDate);
+                slotDate.setHours(startH + i, 0, 0, 0);
+
+                total += getHourlyPrice(room, slotDate);
+            }
+        });
+
+        // Add-ons
+        if (bookingData.addOns.birthday) total += 50000;
+        if (bookingData.addOns.decoration) total += 30000;
+
+        return total;
+    };
+
+    const totalCost = calculateTotalCost();
 
     return (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex flex-col lg:justify-center lg:items-center justify-end z-[60] p-0 lg:p-4 animate-[fadeIn_0.2s_ease]">
@@ -398,13 +544,36 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             <label className="font-bold text-sm text-text-muted">{t('date')}</label>
                                             <Calendar value={bookingDate} onChange={(e) => setBookingDate(e.value)} minDate={new Date()} maxDate={maxDate} showIcon className="w-full" />
                                         </div>
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-2 relative">
                                             <label className="font-bold text-sm text-text-muted">{t('time')}</label>
-                                            <Dropdown value={bookingData.time} options={getBookingTimeSlots()} onChange={(e) => setBookingData({ ...bookingData, time: e.value })} placeholder={t('selectStartTime')} className="w-full" />
+                                            <Dropdown
+                                                value={bookingData.time}
+                                                options={availableSlots}
+                                                onChange={(e) => setBookingData({ ...bookingData, time: e.value })}
+                                                placeholder={loadingSlots ? t('loading') || 'Loading...' : t('selectStartTime')}
+                                                className="w-full"
+                                                disabled={loadingSlots || availableSlots.length === 0}
+                                            />
+                                            {loadingSlots && (
+                                                <i className="pi pi-spin pi-spinner absolute right-10 top-[38px] text-primary"></i>
+                                            )}
+                                            {!loadingSlots && availableSlots.length === 0 && selectedRooms.length > 0 && (
+                                                <span className="text-[10px] text-red-400 mt-1">{t('noAvailableSlots') || 'No available slots for selected date/rooms'}</span>
+                                            )}
                                         </div>
                                         <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
                                             <label className="font-bold text-sm text-text-muted">{t('duration')} (Hours)</label>
-                                            <InputNumber value={bookingData.hours} onValueChange={(e) => setBookingData({ ...bookingData, hours: e.value })} min={1} max={maxAllowedDuration} showButtons className="w-full" />
+                                            <InputNumber
+                                                value={bookingData.hours}
+                                                onValueChange={(e) => setBookingData({ ...bookingData, hours: e.value })}
+                                                min={minVenueHours}
+                                                max={maxAllowedDuration}
+                                                step={minVenueHours === maxVenueHours ? 0 : (Number(venue.minBookingHours) || 1)}
+                                                disabled={isFixedDuration}
+                                                showButtons={!isFixedDuration}
+                                                className="w-full"
+                                            />
+                                            {isFixedDuration && <span className="text-[10px] text-text-muted">{t('fixedDurationNote') || 'Fixed duration policy applies'}</span>}
                                         </div>
                                     </div>
 
@@ -431,11 +600,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                     <div className="flex justify-between items-center mb-6 p-4 bg-surface rounded-xl border border-white/5">
                                         <span className="text-xl font-semibold">{t('total')}:</span>
                                         <span className="text-2xl font-bold text-primary drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
-                                            {(
-                                                (selectedRooms.reduce((sum, r) => sum + (Number(r.hourlyRate) || Number(r.pricePerHour) || 0), 0) * Number(bookingData.hours)) +
-                                                (bookingData.addOns.birthday ? 50000 : 0) +
-                                                (bookingData.addOns.decoration ? 30000 : 0)
-                                            ).toLocaleString()}₮
+                                            {totalCost.toLocaleString()}₮
                                         </span>
                                     </div>
 
@@ -465,11 +630,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                 <div className="bg-white/5 p-6 rounded-xl border border-white/10 mb-6">
                                     <p className="mb-3 text-gray-300">{t('transferInstruction')}</p>
                                     <h2 className="m-0 text-3xl font-bold text-primary mb-6 drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
-                                        {(
-                                            (selectedRooms.reduce((sum, r) => sum + (Number(r.hourlyRate) || Number(r.pricePerHour) || 0), 0) * Number(bookingData.hours)) +
-                                            (bookingData.addOns.birthday ? 50000 : 0) +
-                                            (bookingData.addOns.decoration ? 30000 : 0)
-                                        ).toLocaleString()}₮
+                                        {totalCost.toLocaleString()}₮
                                     </h2>
                                     <div className="p-4 bg-black/30 rounded-lg text-left inline-block border border-white/5 w-full max-w-sm">
                                         <p className="my-1.5"><span className="text-text-muted mr-2">{t('bankName')}:</span> <span className="font-bold text-white">KHAN BANK</span></p>
@@ -478,19 +639,33 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                     </div>
                                     <p className="mt-4 text-xs text-text-muted">{t('clickConfirm')}</p>
                                 </div>
+
+                                {bookingError && (
+                                    <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm flex items-center gap-2">
+                                        <i className="pi pi-exclamation-circle"></i>
+                                        {bookingError}
+                                    </div>
+                                )}
+
                                 <div className="flex justify-center gap-3 mt-6">
                                     <button
                                         onClick={() => setStep(2)}
-                                        className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2"
+                                        disabled={isBooking}
+                                        className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
                                         {t('back')}
                                     </button>
                                     <button
                                         onClick={handlePayment}
-                                        className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2"
+                                        disabled={isBooking}
+                                        className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
                                     >
-                                        <i className="pi pi-check"></i>
-                                        {t('confirmTransfer')}
+                                        {isBooking ? (
+                                            <i className="pi pi-spin pi-spinner"></i>
+                                        ) : (
+                                            <i className="pi pi-check"></i>
+                                        )}
+                                        {isBooking ? t('processing') || 'Processing...' : t('confirmTransfer')}
                                     </button>
                                 </div>
                             </div>
@@ -657,8 +832,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                     color: white !important;
                 }
             `}</style>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

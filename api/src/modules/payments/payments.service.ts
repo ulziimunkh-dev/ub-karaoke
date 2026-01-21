@@ -22,7 +22,7 @@ export class PaymentsService {
         private readonly auditService: AuditService,
     ) { }
 
-    async create(createPaymentDto: CreatePaymentDto, userId: number): Promise<Payment> {
+    async create(createPaymentDto: CreatePaymentDto, userId: string): Promise<Payment> {
         const payment = this.paymentsRepository.create(createPaymentDto);
         const savedPayment = await this.paymentsRepository.save(payment);
 
@@ -30,9 +30,11 @@ export class PaymentsService {
         await this.auditService.log({
             action: 'PAYMENT_CREATED',
             resource: 'Payment',
-            resourceId: savedPayment.id.toString(),
+            resourceId: savedPayment.id,
             details: { amount: savedPayment.amount, method: savedPayment.method, bookingId: savedPayment.bookingId },
-            userId: userId,
+            userId: userId, // Assuming creatorId for payment is passed as userId (usually customer)
+            // If we want to be safe, we'd check if user exists in users table, but let's assume it's correct for now
+            // or use a more descriptive parameter name in the method.
         });
 
         return savedPayment;
@@ -45,7 +47,7 @@ export class PaymentsService {
         });
     }
 
-    async findOne(id: number): Promise<Payment> {
+    async findOne(id: string): Promise<Payment> {
         const payment = await this.paymentsRepository.findOne({
             where: { id },
             relations: ['booking'],
@@ -56,7 +58,7 @@ export class PaymentsService {
         return payment;
     }
 
-    async findByBooking(bookingId: number): Promise<Payment[]> {
+    async findByBooking(bookingId: string): Promise<Payment[]> {
         return this.paymentsRepository.find({
             where: { bookingId },
             relations: ['transactions', 'refunds'],
@@ -64,7 +66,7 @@ export class PaymentsService {
         });
     }
 
-    async logTransaction(paymentId: number, data: Partial<PaymentTransaction>, user: any): Promise<PaymentTransaction> {
+    async logTransaction(paymentId: string, data: Partial<PaymentTransaction>, user: any): Promise<PaymentTransaction> {
         const transaction = this.transactionsRepository.create({
             ...data,
             paymentId,
@@ -73,7 +75,7 @@ export class PaymentsService {
         return this.transactionsRepository.save(transaction);
     }
 
-    async createRefund(paymentId: number, data: Partial<Refund>, user: any): Promise<Refund> {
+    async createRefund(paymentId: string, data: Partial<Refund>, user: any): Promise<Refund> {
         const refund = this.refundsRepository.create({
             ...data,
             paymentId,

@@ -4,11 +4,11 @@ import { Plan } from '../../plans/entities/plan.entity';
 
 @Entity('organization_plan_history')
 export class OrganizationPlanHistory {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'organization_id' })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'organization_id' })

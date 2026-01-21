@@ -150,7 +150,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
                     <div className="text-right">
                         <div className="text-gray-500 text-xs font-bold uppercase tracking-wider">{t('from')}</div>
                         <div className="text-highlight text-xl leading-none">
-                            {minPrice ? minPrice.toLocaleString() : venue.priceRange}₮
+                            {minPrice ? minPrice.toLocaleString() + '₮' : venue.priceRange}
                             <span className="text-[10px] ml-0.5 font-bold opacity-80 text-gray-500">{t('perHourShort')}</span>
                         </div>
                     </div>

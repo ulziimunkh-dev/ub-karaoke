@@ -22,7 +22,7 @@ const Reports = () => {
 
     // 2. Top Rooms
     const roomStats = bookings.reduce((acc, b) => {
-        const roomName = b.roomName || b.room?.name || 'Unknown Room';
+        const roomName = b.room?.name || 'Unknown Room';
         if (!acc[roomName]) acc[roomName] = { revenue: 0, count: 0 };
         acc[roomName].count += 1;
         if (['CONFIRMED', 'PAID', 'COMPLETED'].includes(b.status.toUpperCase())) {

@@ -35,7 +35,7 @@ export class OrganizationsService {
         private plansService: PlansService,
     ) { }
 
-    async create(createOrganizationDto: CreateOrganizationDto, createdByStaffId: number) {
+    async create(createOrganizationDto: CreateOrganizationDto, createdByStaffId: string) {
         // Check if code already exists
         const existing = await this.organizationsRepository.findOne({
             where: { code: createOrganizationDto.code }
@@ -87,8 +87,9 @@ export class OrganizationsService {
         await this.auditService.log({
             action: 'ORGANIZATION_CREATED',
             resource: 'Organization',
-            resourceId: saved.id.toString(),
-            details: { code: saved.code, name: saved.name, planId: createOrganizationDto.planId }
+            resourceId: saved.id,
+            details: { code: saved.code, name: saved.name, planId: createOrganizationDto.planId },
+            staffId: createdByStaffId
         });
 
         return saved;
@@ -107,7 +108,7 @@ export class OrganizationsService {
         return this.organizationsRepository.find(query);
     }
 
-    async findOne(id: number) {
+    async findOne(id: string) {
         const organization = await this.organizationsRepository.findOne({
             where: { id },
             relations: ['staff', 'venues', 'plan']
@@ -120,7 +121,7 @@ export class OrganizationsService {
         return organization;
     }
 
-    async update(id: number, updateDto: Partial<CreateOrganizationDto>, updatedByStaffId?: number) {
+    async update(id: string, updateDto: Partial<CreateOrganizationDto>, updatedByStaffId?: string) {
         const organization = await this.findOne(id);
         const oldPlanId = organization.plan?.id;
 
@@ -192,14 +193,15 @@ export class OrganizationsService {
         await this.auditService.log({
             action: 'ORGANIZATION_UPDATED',
             resource: 'Organization',
-            resourceId: id.toString(),
-            details: updateDto
+            resourceId: id,
+            details: updateDto,
+            staffId: updatedByStaffId
         });
 
         return updated;
     }
 
-    async updateStatus(id: number, isActive: boolean, updatedByStaffId?: number) {
+    async updateStatus(id: string, isActive: boolean, updatedByStaffId?: string) {
         const organization = await this.findOne(id);
         organization.isActive = isActive;
         if (updatedByStaffId) {
@@ -213,26 +215,27 @@ export class OrganizationsService {
         await this.auditService.log({
             action: 'ORGANIZATION_STATUS_UPDATED',
             resource: 'Organization',
-            resourceId: id.toString(),
+            resourceId: id,
             details: { isActive },
-            userId: updatedByStaffId
+            userId: undefined,
+            staffId: updatedByStaffId
         });
 
         return updated;
     }
 
-    async deactivate(id: number, updatedByStaffId?: number) {
+    async deactivate(id: string, updatedByStaffId?: string) {
         return this.updateStatus(id, false, updatedByStaffId);
     }
 
-    async getPlanHistory(organizationId: number) {
+    async getPlanHistory(organizationId: string) {
         return this.planHistoryRepository.find({
             where: { organizationId },
             order: { startDate: 'DESC' }
         });
     }
 
-    async addPayoutAccount(organizationId: number, accountData: Partial<OrganizationPayoutAccount>, userId: number) {
+    async addPayoutAccount(organizationId: string, accountData: Partial<OrganizationPayoutAccount>, userId: string) {
         const organization = await this.findOne(organizationId);
 
         // If this is the first account or marked as default, make it default
@@ -257,7 +260,7 @@ export class OrganizationsService {
         return this.payoutAccountsRepository.save(account);
     }
 
-    async updatePayoutAccount(id: string, updateData: Partial<OrganizationPayoutAccount>, userId: number) {
+    async updatePayoutAccount(id: string, updateData: Partial<OrganizationPayoutAccount>, userId: string) {
         const account = await this.payoutAccountsRepository.findOne({ where: { id } });
         if (!account) {
             throw new NotFoundException('Payout account not found');
@@ -276,7 +279,7 @@ export class OrganizationsService {
         return this.payoutAccountsRepository.save(account);
     }
 
-    async getPayoutAccounts(organizationId: number) {
+    async getPayoutAccounts(organizationId: string) {
         return this.payoutAccountsRepository.find({
             where: { organizationId },
             order: { isDefault: 'DESC', createdAt: 'DESC' }
@@ -291,7 +294,7 @@ export class OrganizationsService {
         return this.payoutAccountsRepository.remove(account);
     }
 
-    async recordEarning(data: Partial<OrganizationEarning>, userId?: number) {
+    async recordEarning(data: Partial<OrganizationEarning>, userId?: string) {
         const earning = this.earningsRepository.create({
             ...data,
             createdBy: userId,
@@ -299,7 +302,7 @@ export class OrganizationsService {
         return this.earningsRepository.save(earning);
     }
 
-    async getEarnings(organizationId: number, filters?: { status?: string; startDate?: Date; endDate?: Date }) {
+    async getEarnings(organizationId: string, filters?: { status?: string; startDate?: Date; endDate?: Date }) {
         const query = this.earningsRepository.createQueryBuilder('earning')
             .where('earning.organizationId = :organizationId', { organizationId });
 
@@ -318,7 +321,7 @@ export class OrganizationsService {
         return query.orderBy('earning.createdAt', 'DESC').getMany();
     }
 
-    async updateEarningStatus(id: number, status: string, userId?: number) {
+    async updateEarningStatus(id: string, status: string, userId?: string) {
         const earning = await this.earningsRepository.findOne({ where: { id } });
         if (!earning) {
             throw new NotFoundException('Earning record not found');
@@ -331,7 +334,7 @@ export class OrganizationsService {
         return this.earningsRepository.save(earning);
     }
 
-    async getTotalEarnings(organizationId: number, status?: string) {
+    async getTotalEarnings(organizationId: string, status?: string) {
         const query = this.earningsRepository.createQueryBuilder('earning')
             .select('SUM(earning.netAmount)', 'total')
             .where('earning.organizationId = :organizationId', { organizationId });
@@ -344,7 +347,7 @@ export class OrganizationsService {
         return parseFloat(result?.total || '0');
     }
 
-    async createPayout(organizationId: number, data: Partial<OrganizationPayout>, earningIds: number[], userId?: number) {
+    async createPayout(organizationId: string, data: Partial<OrganizationPayout>, earningIds: string[], userId?: string) {
         const organization = await this.findOne(organizationId);
 
         // Calculate total from earnings
@@ -378,7 +381,7 @@ export class OrganizationsService {
         return savedPayout;
     }
 
-    async getPayouts(organizationId: number, filters?: { status?: string }) {
+    async getPayouts(organizationId: string, filters?: { status?: string }) {
         const query = this.payoutsRepository.createQueryBuilder('payout')
             .leftJoinAndSelect('payout.payoutAccount', 'account')
             .leftJoinAndSelect('payout.items', 'items')
@@ -391,7 +394,7 @@ export class OrganizationsService {
         return query.orderBy('payout.createdAt', 'DESC').getMany();
     }
 
-    async updatePayoutStatus(id: number, status: string, userId?: number) {
+    async updatePayoutStatus(id: string, status: string, userId?: string) {
         const payout = await this.payoutsRepository.findOne({ where: { id } });
         if (!payout) {
             throw new NotFoundException('Payout not found');
@@ -407,9 +410,9 @@ export class OrganizationsService {
         return this.payoutsRepository.save(payout);
     }
 
-    async extendPlan(organizationId: number, data: { planId: number, durationMonths: number }, userId: number) {
+    async extendPlan(organizationId: string, data: { planId: string, durationMonths: number }, userId: string) {
         const organization = await this.findOne(organizationId);
-        const plan = await this.plansService.findOne(data.planId.toString());
+        const plan = await this.plansService.findOne(data.planId);
 
         // If it's a new plan, replace the old one. If it's the same, just extend.
         const isSamePlan = organization.plan?.id === plan.id;
@@ -471,9 +474,10 @@ export class OrganizationsService {
         await this.auditService.log({
             action: 'PLAN_EXTENDED',
             resource: 'Organization',
-            resourceId: organizationId.toString(),
+            resourceId: organizationId,
             details: { ...data, newEndDate },
-            userId
+            userId: undefined,
+            staffId: userId
         });
 
         return saved;

@@ -12,14 +12,14 @@ import { Organization } from '../../organizations/entities/organization.entity';
 
 @Entity('reviews')
 export class Review {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'venueId' })
-    venueId: number;
+    venueId: string;
 
     @Column({ name: 'userId', nullable: true })
-    userId: number;
+    userId: string;
 
     @Column({ name: 'userName' })
     userName: string;
@@ -40,17 +40,17 @@ export class Review {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Venue, (venue) => venue.reviews)
     @JoinColumn({ name: 'venueId' })

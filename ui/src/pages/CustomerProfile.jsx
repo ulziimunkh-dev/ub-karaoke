@@ -127,9 +127,9 @@ const CustomerProfile = () => {
                     {activeBookings.length === 0 ? <p className="text-gray-500">No upcoming bookings.</p> : activeBookings.map(b => (
                         <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-green-500">
                             <div>
-                                <h3 className="text-xl font-bold m-0 mb-1">{b.roomName}</h3>
-                                <p className="text-gray-400 my-1">{b.date} at {b.time}</p>
-                                <p className="font-bold my-1">{b.total.toLocaleString()}₮</p>
+                                <h3 className="text-xl font-bold m-0 mb-1">{b.room?.name || 'Booking'}</h3>
+                                <p className="text-gray-400 my-1">{b.date} at {b.startTime || b.time}</p>
+                                <p className="font-bold my-1">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
                                 <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
                             </div>
                             <Button
@@ -150,7 +150,7 @@ const CustomerProfile = () => {
                     {historyBookings.length === 0 ? <p className="text-gray-500">No booking history.</p> : historyBookings.map(b => (
                         <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-gray-500">
                             <div>
-                                <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.roomName}</h3>
+                                <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.room?.name || 'Booking'}</h3>
                                 <p className="text-gray-600 my-1">{b.date}</p>
                                 <span className="bg-gray-700 text-gray-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
                             </div>

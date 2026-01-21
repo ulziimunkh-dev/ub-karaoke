@@ -17,18 +17,18 @@ export enum NotificationStatus {
 
 @Entity('notifications')
 export class Notification {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'userId' })
-    userId: number;
+    userId: string;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'userId' })
     user: User;
 
     @Column({ name: 'bookingId', nullable: true })
-    bookingId: number;
+    bookingId: string;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'bookingId' })
@@ -51,14 +51,14 @@ export class Notification {
     message: string;
 
     @Column({ type: 'timestamp', nullable: true })
-    sentAt: Date;
+    readAt: Date;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

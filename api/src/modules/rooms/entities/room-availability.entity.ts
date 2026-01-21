@@ -1,18 +1,26 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Room } from './room.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
+import { Venue } from '../../venues/entities/venue.entity';
 
 @Entity('room_availability')
 export class RoomAvailability {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'roomId' })
-    roomId: number;
+    roomId: string;
 
     @ManyToOne(() => Room)
     @JoinColumn({ name: 'roomId' })
     room: Room;
+
+    @Column({ name: 'venueId', nullable: true })
+    venueId: string;
+
+    @ManyToOne(() => Venue)
+    @JoinColumn({ name: 'venueId' })
+    venue: Venue;
 
     @Column({ type: 'date' })
     date: string;
@@ -31,7 +39,7 @@ export class RoomAvailability {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
@@ -40,8 +48,8 @@ export class RoomAvailability {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

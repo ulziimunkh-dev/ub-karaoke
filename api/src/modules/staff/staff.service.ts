@@ -14,7 +14,7 @@ export class StaffService {
         private auditService: AuditService,
     ) { }
 
-    async create(createStaffDto: CreateStaffDto, createdByRole: string, createdByOrgId: number, createdByStaffId?: number) {
+    async create(createStaffDto: CreateStaffDto, createdByRole: string, createdByOrgId: string, createdByStaffId?: string) {
         // Check if email or username already exists
         const existing = await this.staffRepository.findOne({
             where: [
@@ -31,7 +31,7 @@ export class StaffService {
         const hashedPassword = await bcrypt.hash(createStaffDto.password, 10);
 
         // Determine organizationId
-        let organizationId: number | undefined = createStaffDto.organizationId;
+        let organizationId: string | undefined = createStaffDto.organizationId;
         if (createStaffDto.role === 'sysadmin') {
             organizationId = undefined; // Sysadmin has no organization
         } else if (!organizationId && createdByRole !== 'sysadmin') {
@@ -51,14 +51,15 @@ export class StaffService {
         await this.auditService.log({
             action: 'STAFF_CREATED',
             resource: 'Staff',
-            resourceId: saved.id.toString(),
-            details: { username: saved.username, role: saved.role }
+            resourceId: saved.id,
+            details: { username: saved.username, role: saved.role },
+            staffId: createdByStaffId
         });
 
         return this.findOne(saved.id);
     }
 
-    async findAll(organizationId?: number) {
+    async findAll(organizationId?: string) {
         return await this.staffRepository.find({
             where: organizationId ? { organizationId } : {},
             select: {
@@ -83,7 +84,7 @@ export class StaffService {
         });
     }
 
-    async findOne(id: number) {
+    async findOne(id: string) {
         const staff = await this.staffRepository.findOne({
             where: { id },
             relations: ['organization']
@@ -97,7 +98,7 @@ export class StaffService {
         return result;
     }
 
-    async update(id: number, updateDto: Partial<CreateStaffDto>, updaterRole: string, updatedByStaffId?: number) {
+    async update(id: string, updateDto: Partial<CreateStaffDto>, updaterRole: string, updatedByStaffId?: string) {
         const staff = await this.staffRepository.findOne({ where: { id } });
 
         if (!staff) {
@@ -122,7 +123,7 @@ export class StaffService {
         return this.findOne(updated.id);
     }
 
-    async deactivate(id: number) {
+    async deactivate(id: string) {
         const staff = await this.staffRepository.findOne({ where: { id } });
         if (!staff) {
             throw new NotFoundException('Staff not found');

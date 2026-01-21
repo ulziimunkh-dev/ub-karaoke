@@ -5,18 +5,18 @@ import { Organization } from '../../organizations/entities/organization.entity';
 
 @Entity('booking_promotions')
 export class BookingPromotion {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'bookingId' })
-    bookingId: number;
+    bookingId: string;
 
     @ManyToOne(() => Booking, (booking) => booking.promotions)
     @JoinColumn({ name: 'bookingId' })
     booking: Booking;
 
     @Column({ name: 'promotionId' })
-    promotionId: number;
+    promotionId: string;
 
     @ManyToOne(() => Promotion)
     @JoinColumn({ name: 'promotionId' })
@@ -27,7 +27,7 @@ export class BookingPromotion {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

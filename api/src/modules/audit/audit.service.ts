@@ -31,7 +31,7 @@ export class AuditService {
         });
     }
 
-    async findByUser(userId: number): Promise<AuditLog[]> {
+    async findByUser(userId: string): Promise<AuditLog[]> {
         return this.auditRepository.find({
             where: { userId },
             order: { createdAt: 'DESC' },

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Room } from './room.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
@@ -11,25 +11,25 @@ export enum DayType {
 
 @Entity('room_pricing')
 export class RoomPricing {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'organization_id' })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'venue_id' })
-    venueId: number;
+    venueId: string;
 
     @ManyToOne(() => Venue)
     @JoinColumn({ name: 'venue_id' })
     venue: Venue;
 
     @Column({ name: 'room_id', nullable: true })
-    roomId: number | null;
+    roomId: string | null;
 
     @ManyToOne(() => Room, (room) => room.pricing, { nullable: true })
     @JoinColumn({ name: 'room_id' })
@@ -51,6 +51,12 @@ export class RoomPricing {
     @Column('numeric', { name: 'price_per_hour', precision: 12, scale: 2 })
     pricePerHour: number;
 
+    @Column({ name: 'start_datetime', type: 'timestamp', nullable: true })
+    startDateTime: Date;
+
+    @Column({ name: 'end_datetime', type: 'timestamp', nullable: true })
+    endDateTime: Date;
+
     @Column({ default: 1 })
     priority: number;
 
@@ -60,9 +66,12 @@ export class RoomPricing {
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 
+    @DeleteDateColumn({ name: 'deleted_at' })
+    deletedAt: Date;
+
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

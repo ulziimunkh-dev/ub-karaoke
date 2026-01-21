@@ -3,14 +3,15 @@ import { Booking } from './booking.entity';
 import { BookingStatus } from '../enums/booking.enums';
 import { Organization } from '../../organizations/entities/organization.entity';
 import { User } from '../../auth/entities/user.entity';
+import { Staff } from '../../staff/entities/staff.entity';
 
 @Entity('booking_status_history')
 export class BookingStatusHistory {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'bookingId' })
-    bookingId: number;
+    bookingId: string;
 
     @ManyToOne(() => Booking, (booking) => booking.statusHistory, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'bookingId' })
@@ -29,11 +30,18 @@ export class BookingStatusHistory {
     newStatus: BookingStatus;
 
     @Column({ name: 'changedBy', nullable: true })
-    changedBy: number;
+    changedBy: string;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'changedBy' })
     user: User;
+
+    @Column({ name: 'changedByStaffId', nullable: true })
+    changedByStaffId: string;
+
+    @ManyToOne(() => Staff, { nullable: true })
+    @JoinColumn({ name: 'changedByStaffId' })
+    staff: Staff;
 
     @CreateDateColumn({ name: 'changedAt' })
     changedAt: Date;
@@ -43,5 +51,5 @@ export class BookingStatusHistory {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 }

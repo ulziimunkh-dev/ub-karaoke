@@ -1,8 +1,8 @@
 import { IsNumber, IsString, IsBoolean, IsArray, IsOptional, IsObject } from 'class-validator';
 
 export class CreateRoomDto {
-    @IsNumber()
-    venueId: number;
+    @IsString()
+    venueId: string;
 
     @IsString()
     name: string;
@@ -61,13 +61,13 @@ export class CreateRoomDto {
     @IsOptional()
     view360Url?: string;
 
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    roomTypeId?: number;
+    roomTypeId?: string;
 
     @IsArray()
     @IsOptional()
-    roomFeatureIds?: number[];
+    roomFeatureIds?: string[];
 
     @IsNumber()
     @IsOptional()

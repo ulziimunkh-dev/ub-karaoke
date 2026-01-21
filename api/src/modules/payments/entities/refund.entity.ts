@@ -10,11 +10,11 @@ export enum RefundStatus {
 
 @Entity('refunds')
 export class Refund {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'paymentId' })
-    paymentId: number;
+    paymentId: string;
 
     @ManyToOne(() => Payment, (payment) => payment.refunds)
     @JoinColumn({ name: 'paymentId' })
@@ -38,7 +38,7 @@ export class Refund {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

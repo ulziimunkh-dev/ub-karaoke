@@ -12,25 +12,25 @@ export enum EarningStatus {
 
 @Entity('organization_earnings')
 export class OrganizationEarning {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'organization_id' })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'booking_id', nullable: true })
-    bookingId: number;
+    bookingId: string;
 
     @ManyToOne(() => Booking, { nullable: true })
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
 
     @Column({ name: 'payment_transaction_id', nullable: true })
-    paymentTransactionId: number;
+    paymentTransactionId: string;
 
     @ManyToOne(() => PaymentTransaction, { nullable: true })
     @JoinColumn({ name: 'payment_transaction_id' })
@@ -62,8 +62,8 @@ export class OrganizationEarning {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

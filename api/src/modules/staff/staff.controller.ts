@@ -25,15 +25,15 @@ export class StaffController {
     async findAll(@Req() req: any, @Query('organizationId') organizationId?: string) {
         // Sysadmin sees all (can filter), others see only their org
         const orgId = req.user.role === 'sysadmin'
-            ? (organizationId ? Number(organizationId) : undefined)
-            : (req.user.organizationId ? Number(req.user.organizationId) : undefined);
+            ? organizationId
+            : req.user.organizationId;
         return this.staffService.findAll(orgId);
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Get staff details' })
     async findOne(@Param('id') id: string) {
-        return this.staffService.findOne(+id);
+        return this.staffService.findOne(id);
     }
 
     @Patch(':id')
@@ -46,7 +46,7 @@ export class StaffController {
         if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only managers and sysadmin can update staff');
         }
-        return this.staffService.update(+id, updateStaffDto, req.user.role);
+        return this.staffService.update(id, updateStaffDto, req.user.role);
     }
 
     @Delete(':id')
@@ -55,6 +55,6 @@ export class StaffController {
         if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only managers and sysadmin can deactivate staff');
         }
-        return this.staffService.deactivate(+id);
+        return this.staffService.deactivate(id);
     }
 }

@@ -17,7 +17,7 @@ export class FinanceController {
             throw new ForbiddenException('Not associated with an organization');
         }
         const orgId = req.user.role === 'sysadmin' && filters.organizationId
-            ? parseInt(filters.organizationId)
+            ? filters.organizationId
             : req.user.organizationId;
 
         return this.organizationsService.getEarnings(orgId, filters);
@@ -30,7 +30,7 @@ export class FinanceController {
             throw new ForbiddenException('Not associated with an organization');
         }
         const orgId = req.user.role === 'sysadmin' && filtersOrgId
-            ? parseInt(filtersOrgId)
+            ? filtersOrgId
             : req.user.organizationId;
 
         const total = await this.organizationsService.getTotalEarnings(orgId, status);
@@ -44,7 +44,7 @@ export class FinanceController {
             throw new ForbiddenException('Not associated with an organization');
         }
         const orgId = req.user.role === 'sysadmin' && filters.organizationId
-            ? parseInt(filters.organizationId)
+            ? filters.organizationId
             : req.user.organizationId;
 
         return this.organizationsService.getPayouts(orgId, filters);
@@ -52,7 +52,7 @@ export class FinanceController {
 
     @Post('payout-request')
     @ApiOperation({ summary: 'Request a payout' })
-    async requestPayout(@Req() req: any, @Body() data: { earningIds: number[], payoutAccountId: string }) {
+    async requestPayout(@Req() req: any, @Body() data: { earningIds: string[], payoutAccountId: string }) {
         if (!req.user.organizationId) {
             throw new ForbiddenException('Only organization members can request payouts');
         }
@@ -69,7 +69,7 @@ export class FinanceController {
             throw new ForbiddenException('Not associated with an organization');
         }
         const orgId = req.user.role === 'sysadmin' && filtersOrgId
-            ? parseInt(filtersOrgId)
+            ? filtersOrgId
             : req.user.organizationId;
 
         return this.organizationsService.getPayoutAccounts(orgId);
@@ -104,6 +104,6 @@ export class FinanceController {
         if (req.user.role !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can update payout status');
         }
-        return this.organizationsService.updatePayoutStatus(+id, status, req.user.id);
+        return this.organizationsService.updatePayoutStatus(id, status, req.user.id);
     }
 }

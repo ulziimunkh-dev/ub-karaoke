@@ -19,11 +19,11 @@ import { RoomImage } from './room-image.entity';
 
 @Entity('rooms')
 export class Room {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'venueId' })
-    venueId: number;
+    venueId: string;
 
     @Column()
     name: string;
@@ -92,10 +92,10 @@ export class Room {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @ManyToOne(() => Venue, (venue) => venue.rooms)
     @JoinColumn({ name: 'venueId' })
@@ -106,7 +106,7 @@ export class Room {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @OneToMany(() => Booking, (booking) => booking.room)
     bookings: Booking[];
@@ -116,7 +116,7 @@ export class Room {
     roomType: RoomType;
 
     @Column({ nullable: true })
-    roomTypeId: number;
+    roomTypeId: string;
 
     @ManyToMany(() => RoomFeature, (feature) => feature.rooms)
     @JoinTable({

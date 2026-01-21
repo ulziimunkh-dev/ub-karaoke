@@ -13,7 +13,7 @@ export class AccountsService {
         private ledgerRepository: Repository<LedgerEntry>,
     ) { }
 
-    async create(createAccountDto: any, userId?: number) {
+    async create(createAccountDto: any, userId?: string) {
         const account = this.accountsRepository.create({
             ...createAccountDto,
             createdBy: userId,
@@ -21,7 +21,7 @@ export class AccountsService {
         return this.accountsRepository.save(account);
     }
 
-    async findAll(filters?: { ownerType?: string; ownerId?: number; type?: string; isActive?: boolean }) {
+    async findAll(filters?: { ownerType?: string; ownerId?: string; type?: string; isActive?: boolean }) {
         const where: any = {};
 
         if (filters?.ownerType) {
@@ -46,7 +46,7 @@ export class AccountsService {
         });
     }
 
-    async findOne(id: number) {
+    async findOne(id: string) {
         const account = await this.accountsRepository.findOne({ where: { id } });
         if (!account) {
             throw new NotFoundException(`Account #${id} not found`);
@@ -62,7 +62,7 @@ export class AccountsService {
         return account;
     }
 
-    async update(id: number, updateAccountDto: any, userId?: number) {
+    async update(id: string, updateAccountDto: any, userId?: string) {
         const account = await this.findOne(id);
         Object.assign(account, updateAccountDto);
         if (userId) {
@@ -71,12 +71,12 @@ export class AccountsService {
         return this.accountsRepository.save(account);
     }
 
-    async remove(id: number) {
+    async remove(id: string) {
         const account = await this.findOne(id);
         return this.accountsRepository.remove(account);
     }
 
-    async postJournalEntry(entries: Array<{ accountId: number; debit?: number; credit?: number; referenceType?: string; referenceId?: number }>) {
+    async postJournalEntry(entries: Array<{ accountId: string; debit?: number; credit?: number; referenceType?: string; referenceId?: string }>) {
         // Validate balanced entry
         const totalDebits = entries.reduce((sum, e) => sum + (e.debit || 0), 0);
         const totalCredits = entries.reduce((sum, e) => sum + (e.credit || 0), 0);
@@ -98,7 +98,7 @@ export class AccountsService {
         return this.ledgerRepository.save(ledgerEntries);
     }
 
-    async getLedgerEntries(filters?: { accountId?: number; referenceType?: string; referenceId?: number }) {
+    async getLedgerEntries(filters?: { accountId?: string; referenceType?: string; referenceId?: string }) {
         const where: any = {};
 
         if (filters?.accountId) {
@@ -120,7 +120,7 @@ export class AccountsService {
         });
     }
 
-    async getAccountBalance(accountId: number) {
+    async getAccountBalance(accountId: string) {
         const entries = await this.ledgerRepository.find({ where: { accountId } });
         const balance = entries.reduce((sum, entry) => {
             return sum + parseFloat(entry.debit.toString()) - parseFloat(entry.credit.toString());

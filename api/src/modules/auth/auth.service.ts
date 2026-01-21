@@ -60,7 +60,7 @@ export class AuthService {
         await this.auditService.log({
             action: 'USER_REGISTERED',
             resource: 'User',
-            resourceId: savedUser.id.toString(),
+            resourceId: savedUser.id,
             userId: savedUser.id,
             details: { email: savedUser.email, phone: savedUser.phone }
         });
@@ -160,7 +160,8 @@ export class AuthService {
         await this.auditService.log({
             action: 'LOGIN_SUCCESS',
             resource: 'Auth',
-            userId: user.id,
+            userId: userType === 'customer' ? user.id : undefined,
+            staffId: userType === 'staff' ? user.id : undefined,
             details: { method: 'password', identifier, userType, orgCode }
         });
 
@@ -173,7 +174,7 @@ export class AuthService {
     }
 
 
-    async validateUser(userId: number): Promise<User> {
+    async validateUser(userId: string): Promise<User> {
         const user = await this.usersRepository.findOne({
             where: { id: userId },
         });
@@ -195,7 +196,7 @@ export class AuthService {
         return this.jwtService.sign(payload);
     }
 
-    async findById(id: number): Promise<User | null> {
+    async findById(id: string): Promise<User | null> {
         return this.usersRepository.findOne({ where: { id } });
     }
 }

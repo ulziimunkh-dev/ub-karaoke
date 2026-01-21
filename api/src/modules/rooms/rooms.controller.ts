@@ -47,7 +47,7 @@ export class RoomsController {
         @Query('organizationId') organizationId?: string,
         @Query('includeInactive') includeInactive?: string,
     ) {
-        let orgId = organizationId ? +organizationId : undefined;
+        let orgId = organizationId;
 
         if (req.user && (req.user.role === 'manager' || req.user.role === 'staff')) {
             orgId = req.user.organizationId;
@@ -56,8 +56,8 @@ export class RoomsController {
         const shouldIncludeInactive = includeInactive === 'true' && req.user && (req.user.role === 'sysadmin' || req.user.role === 'manager' || req.user.role === 'staff');
 
         return this.roomsService.findAll({
-            venueId: venueId ? +venueId : undefined,
-            isVIP: isVIP ? isVIP === 'true' : undefined,
+            venueId,
+            isVIP: isVIP === 'true',
             minCapacity: minCapacity ? +minCapacity : undefined,
             organizationId: orgId,
             includeInactive: shouldIncludeInactive
@@ -69,7 +69,7 @@ export class RoomsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     findOne(@Param('id') id: string, @Req() req: any) {
-        return this.roomsService.findOne(+id, req.user);
+        return this.roomsService.findOne(id, req.user);
     }
 
     @Patch(':id')
@@ -77,7 +77,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto, @Req() req: any) {
-        return this.roomsService.update(+id, updateRoomDto, req.user?.id);
+        return this.roomsService.update(id, updateRoomDto, req.user?.id);
     }
 
     @PatchMethod(':id/status')
@@ -85,7 +85,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean, @Req() req: any) {
-        return this.roomsService.updateStatus(+id, isActive, req.user);
+        return this.roomsService.updateStatus(id, isActive, req.user);
     }
 
     @Delete(':id')
@@ -93,7 +93,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string, @Req() req: any) {
-        return this.roomsService.remove(+id, req.user);
+        return this.roomsService.remove(id, req.user);
     }
 
     @Post(':id/pricing')
@@ -101,7 +101,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     addPricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
-        return this.roomsService.addPricing(+id, pricingData, req.user);
+        return this.roomsService.addPricing(id, pricingData, req.user);
     }
 
     @Delete('pricing/:pricingId')
@@ -109,7 +109,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     removePricing(@Param('pricingId') pricingId: string, @Req() req: any) {
-        return this.roomsService.removePricing(+pricingId, req.user);
+        return this.roomsService.removePricing(pricingId, req.user);
     }
 
     @Post(':id/images')
@@ -117,7 +117,7 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     addImage(@Param('id') id: string, @Body() imageData: any, @Req() req: any) {
-        return this.roomsService.addImage(+id, imageData, req.user);
+        return this.roomsService.addImage(id, imageData, req.user);
     }
 
     @Delete('images/:imageId')
@@ -125,14 +125,14 @@ export class RoomsController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     removeImage(@Param('imageId') imageId: string, @Req() req: any) {
-        return this.roomsService.removeImage(+imageId, req.user);
+        return this.roomsService.removeImage(imageId, req.user);
     }
 
     @Post('reorder')
     @ApiOperation({ summary: 'Update sort orders for multiple rooms' })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    updateSortOrders(@Body() orders: { roomId: number, sortOrder: number }[], @Req() req: any) {
+    updateSortOrders(@Body() orders: { roomId: string, sortOrder: number }[], @Req() req: any) {
         return this.roomsService.updateSortOrders(orders, req.user);
     }
 }

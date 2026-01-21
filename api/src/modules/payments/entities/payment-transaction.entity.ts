@@ -16,11 +16,11 @@ export enum TransactionStatus {
 
 @Entity('payment_transactions')
 export class PaymentTransaction {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'paymentId' })
-    paymentId: number;
+    paymentId: string;
 
     @ManyToOne(() => Payment, (payment) => payment.transactions)
     @JoinColumn({ name: 'paymentId' })
@@ -53,7 +53,7 @@ export class PaymentTransaction {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

@@ -51,7 +51,7 @@ export class VenuesController {
         @Query('organizationId') organizationId?: string,
         @Query('includeInactive') includeInactive?: string,
     ) {
-        let orgId = organizationId ? +organizationId : undefined;
+        let orgId = organizationId;
 
         // If manager or staff, force their organizationId
         if (req.user && (req.user.role === 'manager' || req.user.role === 'staff')) {
@@ -73,7 +73,7 @@ export class VenuesController {
     @Get(':id')
     @ApiOperation({ summary: 'Get a specific venue by ID' })
     findOne(@Param('id') id: string) {
-        return this.venuesService.findOne(+id);
+        return this.venuesService.findOne(id);
     }
 
     @Patch(':id')
@@ -81,7 +81,7 @@ export class VenuesController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     update(@Param('id') id: string, @Body() updateVenueDto: UpdateVenueDto, @Req() req: any) {
-        return this.venuesService.update(+id, updateVenueDto, req.user?.id);
+        return this.venuesService.update(id, updateVenueDto, req.user?.id);
     }
 
     @PatchMethod(':id/status')
@@ -89,7 +89,7 @@ export class VenuesController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean, @Req() req: any) {
-        return this.venuesService.updateStatus(+id, isActive, req.user?.id);
+        return this.venuesService.updateStatus(id, isActive, req.user?.id);
     }
 
     @Delete(':id')
@@ -97,7 +97,7 @@ export class VenuesController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
-        return this.venuesService.remove(+id);
+        return this.venuesService.remove(id);
     }
 
     @Post(':id/pricing')
@@ -105,6 +105,6 @@ export class VenuesController {
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
     addVenuePricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
-        return this.roomsService.addVenuePricing(+id, pricingData, req.user);
+        return this.roomsService.addVenuePricing(id, pricingData, req.user);
     }
 }

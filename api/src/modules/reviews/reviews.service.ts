@@ -15,7 +15,7 @@ export class ReviewsService {
         private venuesRepository: Repository<Venue>,
     ) { }
 
-    async create(createReviewDto: CreateReviewDto, creatorId?: number): Promise<Review> {
+    async create(createReviewDto: CreateReviewDto, creatorId?: string): Promise<Review> {
         const review = this.reviewsRepository.create({
             ...createReviewDto,
             createdBy: creatorId,
@@ -28,7 +28,7 @@ export class ReviewsService {
         return saved;
     }
 
-    async findAll(venueId?: number): Promise<Review[]> {
+    async findAll(venueId?: string): Promise<Review[]> {
         if (venueId) {
             return this.reviewsRepository.find({
                 where: { venueId },
@@ -38,7 +38,7 @@ export class ReviewsService {
         return this.reviewsRepository.find({ order: { createdAt: 'DESC' } });
     }
 
-    async findOne(id: number): Promise<Review> {
+    async findOne(id: string): Promise<Review> {
         const review = await this.reviewsRepository.findOne({
             where: { id },
             relations: ['venue'],
@@ -51,7 +51,7 @@ export class ReviewsService {
         return review;
     }
 
-    async update(id: number, updateReviewDto: UpdateReviewDto, updaterId?: number): Promise<Review> {
+    async update(id: string, updateReviewDto: UpdateReviewDto, updaterId?: string): Promise<Review> {
         const review = await this.findOne(id);
         Object.assign(review, updateReviewDto);
         if (updaterId) {
@@ -67,14 +67,14 @@ export class ReviewsService {
         return updated;
     }
 
-    async remove(id: number): Promise<void> {
+    async remove(id: string): Promise<void> {
         const review = await this.findOne(id);
         const venueId = review.venueId;
         await this.reviewsRepository.remove(review);
         await this.updateVenueRating(venueId);
     }
 
-    private async updateVenueRating(venueId: number): Promise<void> {
+    private async updateVenueRating(venueId: string): Promise<void> {
         const reviews = await this.reviewsRepository.find({ where: { venueId } });
 
         const totalReviews = reviews.length;

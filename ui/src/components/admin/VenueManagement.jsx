@@ -13,6 +13,7 @@ import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Tag } from 'primereact/tag';
 import { MultiSelect } from 'primereact/multiselect';
+import { Calendar } from 'primereact/calendar';
 import { getOpeningHoursMap } from '../../utils/time';
 import RoomConfiguration from './RoomConfiguration';
 
@@ -54,7 +55,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, currentUser, organizations, roomTypes, roomFeatures } = useData();
+    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -93,6 +94,57 @@ const VenueManagement = () => {
     });
 
     const selectedVenue = venues?.find(v => v.id === selectedVenueId); // Safe access
+
+    // Pricing Form State
+    const [pricingForm, setPricingForm] = useState({
+        dayType: 'WEEKEND',
+        startTime: '18:00',
+        endTime: '02:00',
+        pricePerHour: 50000,
+        isSpecificDate: false,
+        dateRange: null, // [start, end]
+        priority: 20
+    });
+
+    const handleAddPricing = async (roomId) => {
+        if (!pricingForm.pricePerHour) return;
+
+        const payload = {
+            ...pricingForm,
+            pricePerHour: Number(pricingForm.pricePerHour),
+            priority: Number(pricingForm.priority)
+        };
+
+        // Transform form data to entity structure
+        if (pricingForm.isSpecificDate && pricingForm.dateRange && pricingForm.dateRange[0]) {
+            // Specific Date Mode
+            payload.dayType = 'HOLIDAY'; // Placeholder or a new 'SPECIFIC' type if needed.
+            payload.startDateTime = pricingForm.dateRange[0];
+            payload.endDateTime = pricingForm.dateRange[1] || pricingForm.dateRange[0];
+        } else {
+            // Recurring Mode - clear specific dates
+            payload.startDateTime = null;
+            payload.endDateTime = null;
+        }
+
+        try {
+            await addRoomPricing(roomId, payload);
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule added' });
+            setPricingForm(prev => ({ ...prev, isSpecificDate: false, dateRange: null }));
+        } catch (e) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add rule' });
+        }
+    };
+
+    const handleDeletePricing = async (pricingId) => {
+        try {
+            await removeRoomPricing(pricingId);
+            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule removed' });
+        } catch (e) {
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to remove rule' });
+        }
+    };
+
 
     // --- VENUE HANDLERS ---
     const openAddVenue = () => {
@@ -238,12 +290,19 @@ const VenueManagement = () => {
         e.preventDefault();
         if (!selectedVenue) return;
 
+        // Ensure numeric fields are numbers for API validation
+        const payload = {
+            ...roomForm,
+            hourlyRate: Number(roomForm.hourlyRate),
+            capacity: Number(roomForm.capacity)
+        };
+
         if (editingRoom) {
-            updateRoom(selectedVenue.id, editingRoom.id, roomForm);
+            updateRoom(selectedVenue.id, editingRoom.id, payload);
             setEditingRoom(null); // Reset to add mode
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room updated' });
         } else {
-            addRoom(selectedVenue.id, roomForm);
+            addRoom(selectedVenue.id, payload);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room added' });
         }
         // Reset form keeping defaults or clear?
@@ -463,7 +522,18 @@ const VenueManagement = () => {
                         </div>
                         <div className="flex flex-col gap-2">
                             <label className="font-bold text-sm text-text-muted">Price</label>
-                            <Dropdown value={venueForm.priceRange} options={['$', '$$', '$$$', '$$$$']} onChange={e => setVenueForm({ ...venueForm, priceRange: e.value })} />
+                            <Dropdown
+                                value={venueForm.priceRange}
+                                options={[
+                                    { label: 'Budget ($)', value: '$' },
+                                    { label: 'Standard ($$)', value: '$$' },
+                                    { label: 'Premium ($$$)', value: '$$$' },
+                                    { label: 'Luxury ($$$$)', value: '$$$$' }
+                                ]}
+                                optionLabel="label"
+                                optionValue="value"
+                                onChange={e => setVenueForm({ ...venueForm, priceRange: e.value })}
+                            />
                         </div>
                     </div>
 
@@ -598,6 +668,155 @@ const VenueManagement = () => {
                                     onSelect={(url) => setRoomForm({ ...roomForm, images: [url] })}
                                 />
                             </div>
+
+                            {/* Dynamic Pricing Rules Section (Only when editing and room exists) */}
+                            {editingRoom && selectedVenue?.rooms?.find(r => r.id === editingRoom.id) && (
+                                <div className="sm:col-span-2 mt-6 border-t border-white/10 pt-4">
+                                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                                        <span>💰</span> Dynamic Pricing Rules
+                                    </h4>
+
+                                    {/* List Existing Rules - Responsive Card/Table */}
+                                    <div className="bg-[#151521] rounded-lg border border-white/10 overflow-hidden mb-4">
+                                        {/* Desktop Table - Hidden on small screens */}
+                                        <div className="hidden md:block">
+                                            <DataTable
+                                                value={selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []}
+                                                emptyMessage="No special pricing rules."
+                                                size="small"
+                                                className="text-sm"
+                                            >
+                                                <Column field="priority" header="Pri" style={{ width: '50px' }} />
+                                                <Column field="dayType" header="Type" body={(rowData) => rowData.startDateTime ? '📅 Specific' : rowData.dayType} />
+                                                <Column header="Period" body={(rowData) => {
+                                                    if (rowData.startDateTime) {
+                                                        const start = new Date(rowData.startDateTime);
+                                                        const end = new Date(rowData.endDateTime);
+                                                        return `${start.toLocaleDateString()} ${start.getHours()}:00 - ${end.toLocaleDateString()} ${end.getHours()}:00`;
+                                                    }
+                                                    return `${rowData.startTime?.slice(0, 5)} - ${rowData.endTime?.slice(0, 5)}`;
+                                                }} />
+                                                <Column field="pricePerHour" header="Price" body={(rowData) => `${Number(rowData.pricePerHour).toLocaleString()}₮`} />
+                                                <Column body={(rowData) => (
+                                                    <Button icon="pi pi-trash" className="p-button-danger p-button-text p-button-sm" onClick={() => handleDeletePricing(rowData.id)} />
+                                                )} style={{ width: '50px' }} />
+                                            </DataTable>
+                                        </div>
+
+                                        {/* Mobile Cards - Shown only on small screens */}
+                                        <div className="md:hidden flex flex-col gap-2 p-2">
+                                            {(selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []).map(rule => (
+                                                <div key={rule.id} className="bg-white/5 p-3 rounded-lg border border-white/5 flex justify-between items-center">
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <Tag value={rule.priority} severity="warning" className="text-[10px] px-1 py-0" />
+                                                            <span className="font-bold text-sm text-white">
+                                                                {rule.startDateTime ? '📅 Specific Date' : rule.dayType}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs text-text-muted">
+                                                            {rule.startDateTime
+                                                                ? `${new Date(rule.startDateTime).toLocaleDateString()} ${new Date(rule.startDateTime).getHours()}:00`
+                                                                : `${rule.startTime?.slice(0, 5)} - ${rule.endTime?.slice(0, 5)}`
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-[#eb79b2] text-sm">{Number(rule.pricePerHour).toLocaleString()}₮</div>
+                                                        <Button icon="pi pi-trash" className="p-button-danger p-button-text h-8 w-8" onClick={() => handleDeletePricing(rule.id)} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {(!selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing?.length) && (
+                                                <p className="text-center text-text-muted text-xs py-2">No pricing rules</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Add New Rule Form */}
+                                    <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+
+                                        {/* Mode Toggle */}
+                                        <div className="flex gap-2 mb-3 border-b border-white/10 pb-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: false, priority: 20 }))}
+                                                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${!pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white' : 'text-text-muted hover:text-white'}`}
+                                            >
+                                                Recurring Rule
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: true, priority: 100 }))}
+                                                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white' : 'text-text-muted hover:text-white'}`}
+                                            >
+                                                Specific Date
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-12 gap-2 items-end">
+                                            {!pricingForm.isSpecificDate ? (
+                                                <>
+                                                    <div className="col-span-6 md:col-span-4">
+                                                        <label className="text-xs text-text-muted block mb-1">Day Type</label>
+                                                        <Dropdown
+                                                            value={pricingForm.dayType}
+                                                            options={[{ label: 'Weekday (Mon-Thu)', value: 'WEEKDAY' }, { label: 'Weekend (Fri-Sun)', value: 'WEEKEND' }, { label: 'Holiday', value: 'HOLIDAY' }, { label: 'Daily (All)', value: 'DAILY' }]}
+                                                            onChange={(e) => setPricingForm({ ...pricingForm, dayType: e.value })}
+                                                            className="w-full p-inputtext-sm text-xs"
+                                                        />
+                                                    </div>
+                                                    <div className="col-span-6 md:col-span-4">
+                                                        <label className="text-xs text-text-muted block mb-1">Time Range</label>
+                                                        <div className="flex items-center gap-1">
+                                                            <InputText type="time" value={pricingForm.startTime} onChange={(e) => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="w-full text-xs p-1" />
+                                                            <span className="text-white">-</span>
+                                                            <InputText type="time" value={pricingForm.endTime} onChange={(e) => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="w-full text-xs p-1" />
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="col-span-12 md:col-span-8">
+                                                    <label className="text-xs text-text-muted block mb-1">Date Range (Start - End)</label>
+                                                    <Calendar
+                                                        value={pricingForm.dateRange}
+                                                        onChange={(e) => setPricingForm({ ...pricingForm, dateRange: e.value })}
+                                                        selectionMode="range"
+                                                        readOnlyInput
+                                                        hideOnDateTimeSelect
+                                                        showTime
+                                                        hourFormat="24"
+                                                        className="w-full p-inputtext-sm text-xs"
+                                                        placeholder="Select start and end time..."
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <div className="col-span-6 md:col-span-2">
+                                                <label className="text-xs text-text-muted block mb-1">Price (₮)</label>
+                                                <InputNumber
+                                                    value={pricingForm.pricePerHour}
+                                                    onValueChange={(e) => setPricingForm({ ...pricingForm, pricePerHour: e.value })}
+                                                    mode="currency" currency="MNT" locale="mn-MN"
+                                                    className="w-full p-inputtext-sm text-xs"
+                                                />
+                                            </div>
+                                            <div className="col-span-6 md:col-span-1">
+                                                <label className="text-xs text-text-muted block mb-1">Priority</label>
+                                                <InputNumber
+                                                    value={pricingForm.priority}
+                                                    onValueChange={(e) => setPricingForm({ ...pricingForm, priority: e.value })}
+                                                    min={1} max={999}
+                                                    className="w-full p-inputtext-sm text-xs"
+                                                />
+                                            </div>
+                                            <div className="col-span-12 md:col-span-1">
+                                                <Button icon="pi pi-plus" className="w-full p-button-sm p-button-outlined h-8" onClick={() => handleAddPricing(editingRoom.id)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-2">
                                 {editingRoom && (
                                     <Button

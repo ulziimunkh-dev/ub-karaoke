@@ -18,13 +18,12 @@ export class PaymentsController {
         return this.paymentsService.findAll();
     }
 
-    @Get(':id')
     findOne(@Param('id') id: string) {
-        return this.paymentsService.findOne(+id);
+        return this.paymentsService.findOne(id);
     }
 
     @Get('booking/:bookingId')
     findByBooking(@Param('bookingId') bookingId: string) {
-        return this.paymentsService.findByBooking(+bookingId);
+        return this.paymentsService.findByBooking(bookingId);
     }
 }

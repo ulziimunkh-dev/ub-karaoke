@@ -13,11 +13,11 @@ export enum DayOfWeek {
 
 @Entity('venue_operating_hours')
 export class VenueOperatingHours {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'venue_id' })
-    venueId: number;
+    venueId: string;
 
     @ManyToOne(() => Venue, (venue) => venue.operatingHours)
     @JoinColumn({ name: 'venue_id' })
@@ -36,9 +36,9 @@ export class VenueOperatingHours {
     @Column({ type: 'time', name: 'close_time' })
     closeTime: string;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
     updatedAt: Date;
 }

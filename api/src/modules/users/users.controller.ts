@@ -47,8 +47,9 @@ export class UsersController {
         await this.auditService.log({
             action: 'USER_CREATED',
             resource: 'User',
-            resourceId: savedUser.id.toString(),
-            userId: req.user.id,
+            resourceId: savedUser.id,
+            userId: undefined,
+            staffId: req.user.id,
             details: { username: savedUser.username, role: savedUser.role }
         });
 
@@ -90,7 +91,7 @@ export class UsersController {
         await this.auditService.log({
             action: 'USER_PROFILE_UPDATED',
             resource: 'User',
-            resourceId: userId.toString(),
+            resourceId: userId,
             userId: userId,
             details: { updatedFields: Object.keys(safeUpdates) }
         });
@@ -111,7 +112,7 @@ export class UsersController {
             throw new ForbiddenException('Only admins can update roles');
         }
 
-        const user = await this.usersRepository.findOne({ where: { id: parseInt(id) } });
+        const user = await this.usersRepository.findOne({ where: { id } });
         if (!user) throw new NotFoundException('User not found');
 
         const oldRole = user.role;
@@ -123,7 +124,8 @@ export class UsersController {
             action: 'USER_ROLE_UPDATED',
             resource: 'User',
             resourceId: id,
-            userId: req.user.id,
+            userId: undefined,
+            staffId: req.user.id,
             details: { oldRole, newRole: body.role }
         });
 
@@ -139,7 +141,7 @@ export class UsersController {
             throw new ForbiddenException('Only admins can change user status');
         }
 
-        const user = await this.usersRepository.findOne({ where: { id: parseInt(id) } });
+        const user = await this.usersRepository.findOne({ where: { id } });
         if (!user) throw new NotFoundException('User not found');
 
         user.isActive = body.isActive;
@@ -150,7 +152,8 @@ export class UsersController {
             action: 'USER_STATUS_UPDATED',
             resource: 'User',
             resourceId: id,
-            userId: req.user.id,
+            userId: undefined,
+            staffId: req.user.id,
             details: { isActive: body.isActive }
         });
 

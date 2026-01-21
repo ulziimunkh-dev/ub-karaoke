@@ -8,8 +8,8 @@ export enum DiscountType {
 
 @Entity('promotions')
 export class Promotion {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ unique: true })
     code: string;
@@ -37,10 +37,10 @@ export class Promotion {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @Column({ name: 'venueId', nullable: true })
-    venueId: number;
+    venueId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
@@ -49,8 +49,8 @@ export class Promotion {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

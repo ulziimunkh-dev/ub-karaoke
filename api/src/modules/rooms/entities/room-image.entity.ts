@@ -4,11 +4,11 @@ import { Organization } from '../../organizations/entities/organization.entity';
 
 @Entity('room_images')
 export class RoomImage {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'roomId' })
-    roomId: number;
+    roomId: string;
 
     @ManyToOne(() => Room, (room) => room.imagesList)
     @JoinColumn({ name: 'roomId' })
@@ -25,7 +25,7 @@ export class RoomImage {
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

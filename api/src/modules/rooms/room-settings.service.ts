@@ -18,12 +18,12 @@ export class RoomSettingsService {
         return this.roomTypesRepository.find();
     }
 
-    async createType(data: { name: string, description?: string }, actorId?: number) {
+    async createType(data: { name: string, description?: string }, actorId?: string) {
         const type = this.roomTypesRepository.create({ ...data, createdBy: actorId });
         return this.roomTypesRepository.save(type);
     }
 
-    async updateType(id: number, data: { name?: string, description?: string }, actorId?: number) {
+    async updateType(id: string, data: { name?: string, description?: string }, actorId?: string) {
         const type = await this.roomTypesRepository.findOne({ where: { id } });
         if (!type) throw new NotFoundException('Room type not found');
 
@@ -34,7 +34,7 @@ export class RoomSettingsService {
         return this.roomTypesRepository.save(type);
     }
 
-    async deleteType(id: number) {
+    async deleteType(id: string) {
         return this.roomTypesRepository.delete(id);
     }
 
@@ -43,12 +43,12 @@ export class RoomSettingsService {
         return this.roomFeaturesRepository.find();
     }
 
-    async createFeature(data: { name: string, icon?: string }, actorId?: number) {
+    async createFeature(data: { name: string, icon?: string }, actorId?: string) {
         const feature = this.roomFeaturesRepository.create({ ...data, createdBy: actorId });
         return this.roomFeaturesRepository.save(feature);
     }
 
-    async updateFeature(id: number, data: { name?: string, icon?: string }, actorId?: number) {
+    async updateFeature(id: string, data: { name?: string, icon?: string }, actorId?: string) {
         const feature = await this.roomFeaturesRepository.findOne({ where: { id } });
         if (!feature) throw new NotFoundException('Room feature not found');
 
@@ -59,7 +59,7 @@ export class RoomSettingsService {
         return this.roomFeaturesRepository.save(feature);
     }
 
-    async deleteFeature(id: number) {
+    async deleteFeature(id: string) {
         return this.roomFeaturesRepository.delete(id);
     }
 }

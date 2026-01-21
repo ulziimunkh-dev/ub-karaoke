@@ -550,6 +550,55 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const addRoomPricing = async (roomId, pricingData) => {
+        try {
+            const newPricing = await api.addRoomPricing(roomId, pricingData);
+            setVenues(prev => prev.map(v => {
+                const roomIndex = v.rooms?.findIndex(r => r.id === roomId);
+                if (roomIndex !== -1) {
+                    const updatedRooms = [...v.rooms];
+                    updatedRooms[roomIndex] = {
+                        ...updatedRooms[roomIndex],
+                        pricing: [...(updatedRooms[roomIndex].pricing || []), newPricing]
+                    };
+                    return { ...v, rooms: updatedRooms };
+                }
+                return v;
+            }));
+            return newPricing;
+        } catch (error) {
+            console.error('Failed to add room pricing:', error);
+            throw error;
+        }
+    };
+
+    const removeRoomPricing = async (pricingId) => {
+        try {
+            await api.removeRoomPricing(pricingId);
+            setVenues(prev => prev.map(v => {
+                // Find venue containing this pricing? Hard to know venueId directly without generic search
+                // But we iterate all venues/rooms to find where to remove
+                const roomWithPricing = v.rooms?.find(r => r.pricing?.some(p => p.id === pricingId));
+                if (roomWithPricing) {
+                    const updatedRooms = v.rooms.map(r => {
+                        if (r.id === roomWithPricing.id) {
+                            return {
+                                ...r,
+                                pricing: r.pricing.filter(p => p.id !== pricingId)
+                            };
+                        }
+                        return r;
+                    });
+                    return { ...v, rooms: updatedRooms };
+                }
+                return v;
+            }));
+        } catch (error) {
+            console.error('Failed to remove room pricing:', error);
+            throw error;
+        }
+    };
+
     const processRefund = bookingId => {
         updateBookingStatus(bookingId, 'Refunded');
     };
@@ -886,6 +935,8 @@ export const DataProvider = ({ children }) => {
                 addRoomFeature,
                 updateRoomFeature,
                 deleteRoomFeature,
+                addRoomPricing,
+                removeRoomPricing,
             }}
         >
             {children}

@@ -25,7 +25,7 @@ export class RoomsService {
         private featuresRepository: Repository<RoomFeature>,
     ) { }
 
-    async create(createRoomDto: CreateRoomDto, creatorId?: number): Promise<Room> {
+    async create(createRoomDto: CreateRoomDto, creatorId?: string): Promise<Room> {
         const { roomFeatureIds, ...roomData } = createRoomDto;
         const room = this.roomsRepository.create({
             ...roomData,
@@ -40,10 +40,10 @@ export class RoomsService {
     }
 
     async findAll(filters?: {
-        venueId?: number;
+        venueId?: string;
         isVIP?: boolean;
         minCapacity?: number;
-        organizationId?: number;
+        organizationId?: string;
         includeInactive?: boolean;
     }): Promise<Room[]> {
         const query = this.roomsRepository.createQueryBuilder('room')
@@ -83,7 +83,7 @@ export class RoomsService {
         return query.getMany();
     }
 
-    async findOne(id: number, user: any) {
+    async findOne(id: string, user: any) {
         // If system admin or checking existence, bypass org check 
         // But here we generally want to verify ownership if user is staff/admin
         const where: any = { id };
@@ -103,7 +103,7 @@ export class RoomsService {
         return room;
     }
 
-    async update(id: number, updateRoomDto: UpdateRoomDto, user: any) {
+    async update(id: string, updateRoomDto: UpdateRoomDto, user: any) {
         // Ensure ownership
         const room = await this.findOne(id, user);
 
@@ -128,7 +128,7 @@ export class RoomsService {
         return this.roomsRepository.save(room);
     }
 
-    async updateStatus(id: number, isActive: boolean, user: any): Promise<Room> {
+    async updateStatus(id: string, isActive: boolean, user: any): Promise<Room> {
         const room = await this.findOne(id, user);
         room.isActive = isActive;
         if (user?.id) {
@@ -137,12 +137,12 @@ export class RoomsService {
         return this.roomsRepository.save(room);
     }
 
-    async remove(id: number, user: any): Promise<void> {
+    async remove(id: string, user: any): Promise<void> {
         const room = await this.findOne(id, user);
         await this.roomsRepository.remove(room);
     }
 
-    async addPricing(roomId: number, pricingData: Partial<RoomPricing>, user: any) {
+    async addPricing(roomId: string, pricingData: Partial<RoomPricing>, user: any) {
         const room = await this.findOne(roomId, user);
         const pricing = this.pricingRepository.create({
             ...pricingData,
@@ -154,7 +154,7 @@ export class RoomsService {
         return this.pricingRepository.save(pricing);
     }
 
-    async addVenuePricing(venueId: number, pricingData: Partial<RoomPricing>, user: any) {
+    async addVenuePricing(venueId: string, pricingData: Partial<RoomPricing>, user: any) {
         // Here you would normally verify venue ownership
         const pricing = this.pricingRepository.create({
             ...pricingData,
@@ -166,7 +166,7 @@ export class RoomsService {
         return this.pricingRepository.save(pricing);
     }
 
-    async removePricing(id: number, user: any) {
+    async removePricing(id: string, user: any) {
         const pricing = await this.pricingRepository.findOne({ where: { id } });
         if (pricing) {
             // Verify ownership via room or direct relation if practical, 
@@ -178,7 +178,7 @@ export class RoomsService {
         }
     }
 
-    async addImage(roomId: number, imageData: Partial<RoomImage>, user: any) {
+    async addImage(roomId: string, imageData: Partial<RoomImage>, user: any) {
         const room = await this.findOne(roomId, user);
         const image = this.imagesRepository.create({
             ...imageData,
@@ -188,7 +188,7 @@ export class RoomsService {
         return this.imagesRepository.save(image);
     }
 
-    async removeImage(id: number, user: any) {
+    async removeImage(id: string, user: any) {
         const image = await this.imagesRepository.findOne({ where: { id } });
         if (image) {
             if (user && user.role !== 'sysadmin' && image.organizationId !== user.organizationId) {
@@ -198,7 +198,7 @@ export class RoomsService {
         }
     }
 
-    async setAvailability(roomId: number, date: string, startTime: string, endTime: string, isAvailable: boolean, user: any) {
+    async setAvailability(roomId: string, date: string, startTime: string, endTime: string, isAvailable: boolean, user: any) {
         const room = await this.findOne(roomId, user);
 
         // Check if override exists
@@ -208,10 +208,12 @@ export class RoomsService {
 
         if (availability) {
             availability.isAvailable = isAvailable;
+            availability.venueId = room.venueId;
             availability.updatedBy = user.id;
         } else {
             availability = this.availabilityRepository.create({
                 roomId,
+                venueId: room.venueId,
                 date,
                 startTime,
                 endTime,
@@ -224,7 +226,7 @@ export class RoomsService {
         return this.availabilityRepository.save(availability);
     }
 
-    async updateSortOrders(orders: { roomId: number, sortOrder: number }[], user: any) {
+    async updateSortOrders(orders: { roomId: string, sortOrder: number }[], user: any) {
         // Simple sequential update for now
         const updates = orders.map(async (item) => {
             const room = await this.findOne(item.roomId, user);

@@ -10,7 +10,7 @@ export class PromotionsService {
         private promotionsRepository: Repository<Promotion>,
     ) { }
 
-    async create(createPromotionDto: any, userId: number) {
+    async create(createPromotionDto: any, userId: string) {
         const { organizationId, ...rest } = createPromotionDto;
         const promotion = this.promotionsRepository.create({
             ...rest,
@@ -20,14 +20,14 @@ export class PromotionsService {
         return this.promotionsRepository.save(promotion);
     }
 
-    async findAll(organizationId: number) {
+    async findAll(organizationId: string) {
         return this.promotionsRepository.find({
             where: { organizationId },
             order: { createdAt: 'DESC' },
         });
     }
 
-    async findOne(id: number) {
+    async findOne(id: string) {
         const promotion = await this.promotionsRepository.findOne({ where: { id } });
         if (!promotion) {
             throw new NotFoundException(`Promotion #${id} not found`);
@@ -35,7 +35,7 @@ export class PromotionsService {
         return promotion;
     }
 
-    async validateCode(code: string, organizationId: number) {
+    async validateCode(code: string, organizationId: string) {
         const promotion = await this.promotionsRepository.findOne({
             where: { code, organizationId, isActive: true },
         });
@@ -52,7 +52,7 @@ export class PromotionsService {
         return promotion;
     }
 
-    async remove(id: number) {
+    async remove(id: string) {
         const promotion = await this.findOne(id);
         return this.promotionsRepository.remove(promotion);
     }

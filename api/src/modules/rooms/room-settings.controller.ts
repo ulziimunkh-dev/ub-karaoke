@@ -18,14 +18,13 @@ export class RoomSettingsController {
         return this.settingsService.createType(body, req.user.id);
     }
 
-    @Put('types/:id')
     updateType(@Request() req: any, @Param('id') id: string, @Body() body: { name?: string, description?: string }) {
-        return this.settingsService.updateType(parseInt(id), body, req.user.id);
+        return this.settingsService.updateType(id, body, req.user.id);
     }
 
     @Delete('types/:id')
     deleteType(@Request() req: any, @Param('id') id: string) {
-        return this.settingsService.deleteType(parseInt(id));
+        return this.settingsService.deleteType(id);
     }
 
     // --- FEATURES ---
@@ -41,11 +40,11 @@ export class RoomSettingsController {
 
     @Put('features/:id')
     updateFeature(@Request() req: any, @Param('id') id: string, @Body() body: { name?: string, icon?: string }) {
-        return this.settingsService.updateFeature(parseInt(id), body, req.user.id);
+        return this.settingsService.updateFeature(id, body, req.user.id);
     }
 
     @Delete('features/:id')
     deleteFeature(@Request() req: any, @Param('id') id: string) {
-        return this.settingsService.deleteFeature(parseInt(id));
+        return this.settingsService.deleteFeature(id);
     }
 }

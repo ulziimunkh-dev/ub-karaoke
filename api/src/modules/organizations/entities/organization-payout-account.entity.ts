@@ -18,7 +18,7 @@ export class OrganizationPayoutAccount {
     id: string;
 
     @Column({ name: 'organization_id' })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization, (org) => org.payoutAccounts)
     @JoinColumn({ name: 'organization_id' })
@@ -56,8 +56,8 @@ export class OrganizationPayoutAccount {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

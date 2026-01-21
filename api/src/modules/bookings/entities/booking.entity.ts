@@ -20,26 +20,32 @@ import { BookingStatus, BookingPaymentStatus, BookingSource } from '../enums/boo
 
 @Entity('bookings')
 export class Booking {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'userId', nullable: true })
-    userId: number;
+    userId: string;
 
     @Column({ name: 'roomId' })
-    roomId: number;
+    roomId: string;
 
     @Column({ name: 'venueId' })
-    venueId: number;
+    venueId: string;
 
-    @Column({ name: 'startTime', type: 'timestamp' })
+    @Column({ name: 'startTime', type: 'timestamp', nullable: true })
     startTime: Date;
 
-    @Column({ name: 'endTime', type: 'timestamp' })
+    @Column({ name: 'endTime', type: 'timestamp', nullable: true })
     endTime: Date;
 
     @Column({ name: 'totalPrice', type: 'decimal', precision: 10, scale: 2 })
     totalPrice: number;
+
+    @Column({ name: 'loyalty_points_used', type: 'int', default: 0 })
+    loyaltyPointsUsed: number;
+
+    @Column({ name: 'loyalty_discount', type: 'decimal', precision: 10, scale: 2, default: 0 })
+    loyaltyDiscount: number;
 
     @Column({
         type: 'enum',
@@ -79,24 +85,24 @@ export class Booking {
     venue: Venue;
 
     @Column({ name: 'organization_id', nullable: true })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Promotion, { nullable: true })
     @JoinColumn({ name: 'appliedPromotionId' })
     promotion: Promotion;
 
     @Column({ name: 'appliedPromotionId', nullable: true })
-    appliedPromotionId: number;
+    appliedPromotionId: string;
 
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'userId' })
     user: User;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @OneToMany(() => BookingStatusHistory, (history) => history.booking)
     statusHistory: BookingStatusHistory[];

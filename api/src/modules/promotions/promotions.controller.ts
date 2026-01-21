@@ -40,6 +40,6 @@ export class PromotionsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Delete a promotion' })
     remove(@Param('id') id: string) {
-        return this.promotionsService.remove(+id);
+        return this.promotionsService.remove(id);
     }
 }

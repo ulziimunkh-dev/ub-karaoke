@@ -5,7 +5,11 @@
 ### 1.1 User Authentication & Profile
 - **Login/Register**: Users must be able to create accounts and log in securely. Supports **OTP (One-Time Password)** login via email/phone for customers.
 - **Profile Management**: Users can update their profile information (name, phone, email).
-- **Loyalty Program**: Customers earn points based on their bookings.
+- **Loyalty Program**:
+    - **Earning**: Customers earn **1 Point for every 10,000 MNT** spent on completed bookings.
+    - **Redemption**: Points can be redeemed at a rate of **1 Point = 100 MNT**.
+    - **Usage Limit**: Points can cover up to **50%** of the total booking value.
+    - **Expiration**: Points expire after 12 months of inactivity.
 - **Deferred Login**: Customers can browse venues and rooms without logging in, only requiring authentication at the final booking step.
 
 ### 1.2 Venue Discovery
@@ -29,16 +33,26 @@
 - **Promo Code Management**: Admins can create and manage promotional codes (percentage or fixed discounts) with validity periods.
 - **Booking Tracking**: Real-time tracking of bookings for staff to manage venue operations.
 - **Finance & Payouts**: Management of venue earnings and withdrawal/payout requests for organization owners.
+- **Financial Accounting**: Implementation of a **Double-Entry Ledger System** (Assets, Liabilities, Equity, Revenue, Expense) to track all financial transactions with full audit capability.
 
-### 1.5 Reviews & Ratings
-- **Submit Reviews**: Customers can rate and review venues after their visit.
+### 1.5 Payments & Transactions
+- **Payment Gateway**: Integration with **QPay** and card payments for secure transaction processing.
+- **Refunds**: Staff can process partial or full refunds with reason tracking.
+- **Transaction Logs**: detailed history of all payment attempts and gateway responses.
+
+### 1.6 Notifications
+- **System Alerts**: Automated Email/SMS notifications for booking confirmations, cancellations, and status updates.
+- **Staff Alerts**: Real-time notifications for new bookings or check-in requests.
+
+### 1.7 Reviews & Ratings
+- **Submit Reviews**: Only **logged-in customers** with a valid booking history can rate and review venues.
 - **View Feedback**: Reviews are displayed on venue pages to help other users.
 
 ## 2. Non-Functional Requirements
 
 - **Performance**: The UI should be responsive, with fast loading times for venue listings and search results.
 - **Usability**: The application must be fully responsive and provide a consistent user experience across desktop and mobile devices. Modern UI components from **PrimeReact** are used to ensure high usability and accessibility.
-- **Scalability**: The backend architecture (NestJS + Redis) should support a growing number of users and venues.
+- **Scalability**: The backend architecture (NestJS + Redis) should support a growing number of users and venues. **All database primary keys use UUIDs** to ensure global uniqueness and prevent enumeration attacks.
 - **Reliability**: Secure handling of bookings and user data is critical.
 - **Data Integrity & Auditing**: All system entities must maintain strictly standardized audit trails (`createdBy`, `updatedBy`) and use unified boolean flags (`isActive`) for status management to ensure data consistency and simplified hierarchical filtering.
 

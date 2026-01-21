@@ -10,11 +10,11 @@ export enum ReferenceType {
 
 @Entity('ledger_entries')
 export class LedgerEntry {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'account_id' })
-    accountId: number;
+    accountId: string;
 
     @ManyToOne(() => Account)
     @JoinColumn({ name: 'account_id' })
@@ -29,7 +29,7 @@ export class LedgerEntry {
     referenceType: ReferenceType;
 
     @Column({ name: 'reference_id', nullable: true })
-    referenceId: number;
+    referenceId: string;
 
     @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
     debit: number;

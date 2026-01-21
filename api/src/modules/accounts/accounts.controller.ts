@@ -29,7 +29,7 @@ export class AccountsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get an account by ID' })
     findOne(@Param('id') id: string) {
-        return this.accountsService.findOne(+id);
+        return this.accountsService.findOne(id);
     }
 
     @Patch(':id')
@@ -37,7 +37,7 @@ export class AccountsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Update an account' })
     update(@Param('id') id: string, @Body() updateAccountDto: any, @Req() req: any) {
-        return this.accountsService.update(+id, updateAccountDto, req.user.id);
+        return this.accountsService.update(id, updateAccountDto, req.user.id);
     }
 
     @Delete(':id')
@@ -45,6 +45,6 @@ export class AccountsController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Delete an account' })
     remove(@Param('id') id: string) {
-        return this.accountsService.remove(+id);
+        return this.accountsService.remove(id);
     }
 }

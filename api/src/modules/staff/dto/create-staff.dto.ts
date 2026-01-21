@@ -28,5 +28,6 @@ export class CreateStaffDto {
     role: StaffRole;
 
     @IsOptional()
-    organizationId?: number;
+    @IsString()
+    organizationId?: string;
 }

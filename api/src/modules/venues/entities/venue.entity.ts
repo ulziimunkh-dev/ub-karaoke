@@ -16,8 +16,8 @@ import { RoomPricing } from '../../rooms/entities/room-pricing.entity';
 
 @Entity('venues')
 export class Venue {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column()
     name: string;
@@ -79,6 +79,12 @@ export class Venue {
     @Column({ name: 'advanceBookingDays', default: 3 })
     advanceBookingDays: number;
 
+    @Column('decimal', { name: 'minBookingHours', precision: 5, scale: 2, default: 1.0 })
+    minBookingHours: number;
+
+    @Column('decimal', { name: 'maxBookingHours', precision: 5, scale: 2, default: 6.0 })
+    maxBookingHours: number;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
@@ -86,17 +92,17 @@ export class Venue {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @ManyToOne(() => Organization, org => org.venues)
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: number;
+    organizationId: string;
 
     @OneToMany(() => Room, (room) => room.venue)
     rooms: Room[];

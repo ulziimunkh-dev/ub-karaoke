@@ -1,12 +1,12 @@
 import { IsNumber, IsString, IsOptional, Min, Max } from 'class-validator';
 
 export class CreateReviewDto {
-    @IsNumber()
-    venueId: number;
+    @IsString()
+    venueId: string;
 
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    userId?: number;
+    userId?: string;
 
     @IsString()
     userName: string;

@@ -4,18 +4,18 @@ import { OrganizationEarning } from './organization-earning.entity';
 
 @Entity('organization_payout_items')
 export class OrganizationPayoutItem {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ name: 'payout_id' })
-    payoutId: number;
+    payoutId: string;
 
     @ManyToOne(() => OrganizationPayout, (payout) => payout.items)
     @JoinColumn({ name: 'payout_id' })
     payout: OrganizationPayout;
 
     @Column({ name: 'earning_id' })
-    earningId: number;
+    earningId: string;
 
     @ManyToOne(() => OrganizationEarning)
     @JoinColumn({ name: 'earning_id' })

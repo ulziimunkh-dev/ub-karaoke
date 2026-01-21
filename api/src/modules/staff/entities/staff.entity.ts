@@ -9,8 +9,8 @@ export enum StaffRole {
 
 @Entity('staff')
 export class Staff {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ unique: true })
     email: string;
@@ -31,7 +31,7 @@ export class Staff {
     role: StaffRole;
 
     @Column({ name: 'organization_id', nullable: true })
-    organizationId: number;
+    organizationId: string;
 
     @ManyToOne(() => Organization, org => org.staff, { nullable: true })
     @JoinColumn({ name: 'organization_id' })
@@ -50,8 +50,8 @@ export class Staff {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

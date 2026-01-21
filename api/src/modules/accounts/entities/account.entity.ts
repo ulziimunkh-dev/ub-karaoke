@@ -15,8 +15,8 @@ export enum OwnerType {
 
 @Entity('accounts')
 export class Account {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ unique: true, length: 20 })
     code: string;
@@ -38,7 +38,7 @@ export class Account {
     ownerType: OwnerType;
 
     @Column({ name: 'owner_id', nullable: true })
-    ownerId: number;
+    ownerId: string;
 
     @ManyToOne(() => Organization, { nullable: true })
     @JoinColumn({ name: 'owner_id' })
@@ -57,8 +57,8 @@ export class Account {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 }

@@ -40,6 +40,7 @@ import { join } from 'path';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Enabled as requested by user for easier development
         logging: false,
+        timezone: '+08:00',
       }),
       inject: [ConfigService],
     }),

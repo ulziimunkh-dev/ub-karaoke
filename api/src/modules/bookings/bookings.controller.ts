@@ -29,7 +29,7 @@ export class BookingsController {
     @ApiOperation({ summary: 'Create a new booking' })
     create(@Body() createBookingDto: CreateBookingDto, @Request() req: any) {
         // If user is logged in, pass userId.
-        return this.bookingsService.create(createBookingDto, req.user.userId);
+        return this.bookingsService.create(createBookingDto, req.user.id);
     }
 
     @Post('manual')
@@ -45,18 +45,16 @@ export class BookingsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     // @Roles('admin', 'staff')
-    @ApiOperation({ summary: 'Approve a booking' })
     approve(@Param('id') id: string, @Request() req: any) {
-        return this.bookingsService.approve(+id, req.user.userId);
+        return this.bookingsService.approve(id, req.user.id);
     }
 
     @Patch(':id/reject')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     // @Roles('admin', 'staff')
-    @ApiOperation({ summary: 'Reject a booking' })
     reject(@Param('id') id: string, @Request() req: any) {
-        return this.bookingsService.reject(+id, req.user.userId);
+        return this.bookingsService.reject(id, req.user.id);
     }
 
     @Get()
@@ -72,28 +70,39 @@ export class BookingsController {
         @Query('status') status?: string,
     ) {
         return this.bookingsService.findAll({
-            userId: userId ? +userId : undefined,
-            venueId: venueId ? +venueId : undefined,
-            roomId: roomId ? +roomId : undefined,
+            userId,
+            venueId,
+            roomId,
             status,
         });
+    }
+
+    @Get('availability')
+    @ApiOperation({ summary: 'Get available time slots for a room on a specific date' })
+    @ApiQuery({ name: 'roomId', required: true })
+    @ApiQuery({ name: 'date', required: true, description: 'YYYY-MM-DD' })
+    getAvailability(
+        @Query('roomId') roomId: string,
+        @Query('date') date: string,
+    ) {
+        return this.bookingsService.getAvailableSlots(roomId, date);
     }
 
     @Get(':id')
     @ApiOperation({ summary: 'Get a specific booking by ID' })
     findOne(@Param('id') id: string) {
-        return this.bookingsService.findOne(+id);
+        return this.bookingsService.findOne(id);
     }
 
     @Patch(':id')
     @ApiOperation({ summary: 'Update a booking' })
     update(@Param('id') id: string, @Body() updateBookingDto: UpdateBookingDto) {
-        return this.bookingsService.update(+id, updateBookingDto);
+        return this.bookingsService.update(id, updateBookingDto);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Cancel/Delete a booking' })
     remove(@Param('id') id: string) {
-        return this.bookingsService.remove(+id);
+        return this.bookingsService.remove(id);
     }
 }

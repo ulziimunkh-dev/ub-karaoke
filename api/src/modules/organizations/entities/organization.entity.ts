@@ -6,8 +6,8 @@ import { OrganizationPayoutAccount } from './organization-payout-account.entity'
 
 @Entity('organizations')
 export class Organization {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ unique: true, length: 10 })
     code: string;
@@ -63,10 +63,10 @@ export class Organization {
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
-    createdBy: number;
+    createdBy: string;
 
     @Column({ name: 'updated_by', nullable: true })
-    updatedBy: number;
+    updatedBy: string;
 
     @OneToMany(() => OrganizationPayoutAccount, (account) => account.organization)
     payoutAccounts: OrganizationPayoutAccount[];
