@@ -21,10 +21,50 @@ import { PlansModule } from './modules/plans/plans.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
+import 'winston-daily-rotate-file';
+import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import { join } from 'path';
+import { TypeOrmLoggerAdapter } from './common/adapters/typeorm-logger.adapter';
 
 @Module({
   imports: [
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.ms(),
+            nestWinstonModuleUtilities.format.nestLike('UBKaraoke', {
+              colors: true,
+              prettyPrint: true,
+            }),
+          ),
+        }),
+        new winston.transports.DailyRotateFile({
+          filename: 'logs/error-%DATE%.log',
+          datePattern: 'YYYY-MM-DD',
+          level: 'error',
+          maxSize: '20m',
+          maxFiles: '14d',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
+        new winston.transports.DailyRotateFile({
+          filename: 'logs/application-%DATE%.log',
+          datePattern: 'YYYY-MM-DD',
+          maxSize: '20m',
+          maxFiles: '14d',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json(),
+          ),
+        }),
+      ],
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -39,7 +79,8 @@ import { join } from 'path';
         database: configService.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true, // Enabled as requested by user for easier development
-        logging: false,
+        logging: true,
+        logger: new TypeOrmLoggerAdapter(),
         timezone: '+08:00',
       }),
       inject: [ConfigService],

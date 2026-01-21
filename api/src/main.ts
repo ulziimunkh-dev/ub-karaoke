@@ -3,8 +3,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { HttpAdapterHost } from '@nestjs/core';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Use Winston for system logging
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
+  const httpAdapter = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Enable CORS
   app.enableCors({
