@@ -63,7 +63,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Get all users (admin only)' })
     async findAll() {
         const users = await this.usersRepository.find({
-            select: ['id', 'email', 'username', 'name', 'phone', 'role', 'loyaltyPoints', 'isActive', 'createdAt'],
+            select: ['id', 'email', 'username', 'name', 'phone', 'avatar', 'role', 'loyaltyPoints', 'isActive', 'createdAt'],
             order: { createdAt: 'DESC' }
         });
         return users;
@@ -77,7 +77,7 @@ export class UsersController {
         const userId = req.user.id;
 
         // Only allow updating certain fields
-        const allowedFields = ['name', 'email', 'phone'];
+        const allowedFields = ['name', 'email', 'phone', 'avatar'];
         const safeUpdates: any = {};
         allowedFields.forEach(field => {
             if (updateData[field] !== undefined) {
@@ -98,9 +98,9 @@ export class UsersController {
 
         const updated = await this.usersRepository.findOne({
             where: { id: userId },
-            select: ['id', 'email', 'username', 'name', 'phone', 'role', 'loyaltyPoints', 'isActive', 'createdAt']
+            select: ['id', 'email', 'username', 'name', 'phone', 'avatar', 'role', 'loyaltyPoints', 'isActive', 'createdAt']
         });
-        return updated;
+        return { ...updated, userType: 'customer' };
     }
 
     @Patch(':id/role')

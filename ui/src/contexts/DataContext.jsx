@@ -305,9 +305,9 @@ export const DataProvider = ({ children }) => {
 
     const updateProfile = async (profileData) => {
         try {
-            const updatedUser = await api.updateProfile(profileData);
-            setCurrentUser(updatedUser);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
+            const updatedUser = await api.updateProfile(profileData, currentUser?.userType);
+            setCurrentUser(prev => ({ ...prev, ...updatedUser }));
+            localStorage.setItem('user', JSON.stringify({ ...currentUser, ...updatedUser }));
             return updatedUser;
         } catch (error) {
             console.error('Profile update failed:', error);

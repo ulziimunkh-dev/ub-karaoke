@@ -13,14 +13,16 @@ import { DataView } from 'primereact/dataview';
 import { Divider } from 'primereact/divider';
 import { Calendar } from 'primereact/calendar';
 import { InputText } from 'primereact/inputtext';
+import { api } from '../utils/api';
 
 import AuditLogViewer from './staff/AuditLogViewer';
+import ProfileModal from './common/ProfileModal';
 
 const StaffPortal = () => {
     const {
         venues, bookings, updateRoomStatus, updateBookingStatus, updateBooking,
         updateVenue, addOrder, currentUser, logout,
-        activeVenueId, setActiveVenueId, createManualBooking, updateRoom
+        activeVenueId, setActiveVenueId, createManualBooking, updateRoom, updateStaff
     } = useData();
     const { t } = useLanguage();
     const navigate = useNavigate();
@@ -266,8 +268,12 @@ const StaffPortal = () => {
                         className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
                         onClick={() => setIsProfileModalOpen(true)}
                     >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg">
-                            {(currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
+                            {currentUser?.avatar ? (
+                                <img src={api.getFileUrl(currentUser.avatar)} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                (currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()
+                            )}
                         </div>
                         <div className="hidden md:block text-right">
                             <p className="text-white text-xs font-bold m-0 leading-tight">
@@ -608,50 +614,12 @@ const StaffPortal = () => {
             </Dialog>
 
             {/* Profile Modal */}
-            <Dialog
-                header="Staff Profile"
+            <ProfileModal
                 visible={isProfileModalOpen}
                 onHide={() => setIsProfileModalOpen(false)}
-                className="w-full md:w-[350px]"
-                dismissableMask
-                draggable={false}
-                resizable={false}
-            >
-                <div className="flex flex-col items-center gap-4 py-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white text-3xl font-black shadow-2xl ring-4 ring-white/10">
-                        {(currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()}
-                    </div>
-                    <div className="text-center">
-                        <h3 className="text-xl font-black text-white m-0 uppercase tracking-tight">
-                            {currentUser?.firstName || 'Staff Member'}
-                        </h3>
-                        <p className="text-sm text-[#b000ff] font-bold uppercase tracking-widest mt-1">
-                            {currentUser?.role || 'Staff'}
-                        </p>
-                    </div>
-                    <div className="w-full bg-[#1e1e2d] rounded-xl p-4 border border-white/5 space-y-3 mt-2">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 font-bold uppercase">Username</span>
-                            <span className="text-sm text-white font-mono">{currentUser?.username}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 font-bold uppercase">Organization</span>
-                            <span className="text-sm text-white font-mono">{selectedVenue?.name?.split(' ')?.[0] || 'UB Karaoke'}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-500 font-bold uppercase">Phone</span>
-                            <span className="text-sm text-white font-mono">{currentUser?.phone || 'N/A'}</span>
-                        </div>
-                    </div>
-                    <div className="w-full">
-                        <Button
-                            label="Close"
-                            className="w-full p-button-outlined p-button-secondary p-button-sm"
-                            onClick={() => setIsProfileModalOpen(false)}
-                        />
-                    </div>
-                </div>
-            </Dialog>
+                currentUser={currentUser}
+                onUpdate={updateStaff}
+            />
         </div>
     );
 };

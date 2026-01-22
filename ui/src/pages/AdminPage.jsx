@@ -20,13 +20,17 @@ import PlanManagement from '../components/admin/PlanManagement';
 import SubscriptionManagement from '../components/admin/SubscriptionManagement';
 import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
+import ProfileModal from '../components/common/ProfileModal';
+import { api } from '../utils/api';
 
 const AdminPage = () => {
-    const { currentUser, logout, venues, activeVenueId, setActiveVenueId } = useData();
+    const { currentUser, logout, venues, activeVenueId, setActiveVenueId, updateStaff } = useData();
     const { language, toggleLanguage, t } = useLanguage();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
     if (!currentUser) {
         return <AdminLoginPage />;
     }
@@ -144,9 +148,16 @@ const AdminPage = () => {
                 </nav>
 
                 <div className="border-t border-white/5 pt-6 mt-4">
-                    <div className="flex items-center gap-3 mb-6 px-2">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center font-black text-white shadow-lg shadow-[#b000ff]/20">
-                            {currentUser.name?.charAt(0)}
+                    <div
+                        className="flex items-center gap-3 mb-6 px-2 cursor-pointer hover:bg-white/5 p-2 rounded-xl transition-all"
+                        onClick={() => setIsProfileModalOpen(true)}
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center font-black text-white shadow-lg shadow-[#b000ff]/20 overflow-hidden">
+                            {currentUser.avatar ? (
+                                <img src={api.getFileUrl(currentUser.avatar)} alt={currentUser.name} className="w-full h-full object-cover" />
+                            ) : (
+                                currentUser.name?.charAt(0)
+                            )}
                         </div>
                         <div className="overflow-hidden">
                             <p className="m-0 text-[10px] text-gray-500 uppercase tracking-widest font-black leading-none mb-1.5">{currentUser.role}</p>
@@ -237,6 +248,13 @@ const AdminPage = () => {
                     </button>
                 ))}
             </nav>
+
+            <ProfileModal
+                visible={isProfileModalOpen}
+                onHide={() => setIsProfileModalOpen(false)}
+                currentUser={currentUser}
+                onUpdate={updateStaff}
+            />
         </div>
     );
 };

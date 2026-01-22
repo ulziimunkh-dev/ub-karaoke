@@ -23,6 +23,10 @@ export class CreateStaffDto {
     @IsOptional()
     phone?: string;
 
+    @IsOptional()
+    @IsString()
+    avatar?: string;
+
     @IsEnum(StaffRole)
     @IsNotEmpty()
     role: StaffRole;

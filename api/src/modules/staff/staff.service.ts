@@ -69,6 +69,7 @@ export class StaffService {
                 email: true,
                 role: true,
                 isActive: true,
+                avatar: true,
                 organizationId: true,
                 createdAt: true,
                 updatedAt: true,
@@ -106,7 +107,7 @@ export class StaffService {
         }
 
         // Only sysadmin can change role
-        if (updateDto.role && updaterRole !== 'sysadmin') {
+        if (updateDto.role && updateDto.role !== staff.role && updaterRole !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can change staff roles');
         }
 

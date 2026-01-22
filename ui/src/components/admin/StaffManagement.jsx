@@ -9,13 +9,14 @@ import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
+import AvatarGalleryPicker from '../common/AvatarGalleryPicker';
 
 const StaffManagement = () => {
     const { staffs, addStaff, updateStaff, toggleStaffStatus, currentUser, organizations } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedOrganization, setSelectedOrganization] = useState(null);
-    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '' });
+    const [newUser, setNewUser] = useState({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '', avatar: '' });
     const [editingStaff, setEditingStaff] = useState(null);
     const [resetPasswordUser, setResetPasswordUser] = useState(null);
     const [newPassword, setNewPassword] = useState('');
@@ -26,7 +27,7 @@ const StaffManagement = () => {
         try {
             await addStaff({ ...newUser, isActive: true });
             toast.current.show({ severity: 'success', summary: 'Staff Created', detail: 'New staff member added successfully', life: 3000 });
-            setNewUser({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '' });
+            setNewUser({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '', avatar: '' });
             setIsModalOpen(false);
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to add staff', life: 3000 });
@@ -197,7 +198,18 @@ const StaffManagement = () => {
                     selectionMode={null}
                     dataKey="id"
                 >
-                    <Column field="name" header="Name" sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="name" header="Name" body={(rowData) => (
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center text-white font-bold overflow-hidden border-2 border-white/20">
+                                {rowData.avatar ? (
+                                    <img src={api.getFileUrl(rowData.avatar)} alt={rowData.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    rowData.name?.charAt(0)
+                                )}
+                            </div>
+                            <span>{rowData.name}</span>
+                        </div>
+                    )} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column field="username" header="Username" sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column field="email" header="Email" sortable style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column field="role" header="Role" body={roleBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
@@ -299,6 +311,12 @@ const StaffManagement = () => {
                 headerClassName="select-none"
             >
                 <form onSubmit={handleAddUser} className="flex flex-col gap-6">
+                    <div className="flex justify-center mb-4">
+                        <AvatarGalleryPicker
+                            currentAvatar={newUser.avatar}
+                            onSelect={(url) => setNewUser({ ...newUser, avatar: url })}
+                        />
+                    </div>
                     <div className="field grid grid-cols-1">
                         <label htmlFor="name" className="mb-3 font-semibold text-sm text-gray-700 select-none">Full Name</label>
                         <InputText
@@ -346,7 +364,9 @@ const StaffManagement = () => {
                             onChange={e => setNewUser({ ...newUser, role: e.value })}
                             placeholder="Select Role"
                             className="w-full"
-                            inputClassName="h-10 flex items-center justify-center border-0 bg-white rounded-lg focus:ring-2 focus:ring-[#b000ff]"
+                            pt={{
+                                input: { className: 'h-10 flex items-center justify-center border-0 bg-white rounded-lg focus:ring-2 focus:ring-[#b000ff]' }
+                            }}
                             panelClassName="p-dropdown-panel"
                         />
                     </div>
@@ -416,6 +436,12 @@ const StaffManagement = () => {
             >
                 {editingStaff && (
                     <form onSubmit={handleEditUser} className="flex flex-col gap-6">
+                        <div className="flex justify-center mb-4">
+                            <AvatarGalleryPicker
+                                currentAvatar={editingStaff.avatar}
+                                onSelect={(url) => setEditingStaff({ ...editingStaff, avatar: url })}
+                            />
+                        </div>
                         <div className="field grid grid-cols-1">
                             <label htmlFor="edit_name" className="mb-2 font-semibold text-sm text-gray-700">Full Name</label>
                             <InputText

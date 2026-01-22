@@ -16,6 +16,7 @@ import { MultiSelect } from 'primereact/multiselect';
 import { Calendar } from 'primereact/calendar';
 import { getOpeningHoursMap } from '../../utils/time';
 import RoomConfiguration from './RoomConfiguration';
+import ImageUpload from '../common/ImageUpload';
 
 // Import local stock images for the gallery
 import imgMinimal from '../../assets/defaults/karaoke_minimal.png';
@@ -555,6 +556,17 @@ const VenueManagement = () => {
                         </div>
                     </div>
 
+                    <div className="flex flex-col gap-2 mb-4">
+                        <label className="font-bold text-sm text-text-muted">Upload Custom Image</label>
+                        <ImageUpload
+                            label=""
+                            currentImage={venueForm.featuredImage}
+                            onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
+                            onUpload={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
+                        />
+                        <p className="text-xs text-gray-500 text-center m-0">- OR Select Stock Image -</p>
+                    </div>
+
                     <ImagePicker
                         label="Venue Featured Image"
                         selectedImage={venueForm.featuredImage}
@@ -662,6 +674,15 @@ const VenueManagement = () => {
                                 <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" required />
                             </div>
                             <div className="sm:col-span-2">
+                                <div className="flex flex-col gap-2 mb-4">
+                                    <label className="font-bold text-sm text-text-muted">Upload Room Image</label>
+                                    <ImageUpload
+                                        label=""
+                                        currentImage={roomForm.images[0]}
+                                        onUpload={(url) => setRoomForm({ ...roomForm, images: [url] })}
+                                    />
+                                    <p className="text-xs text-gray-500 text-center m-0">- OR Select Stock Image -</p>
+                                </div>
                                 <ImagePicker
                                     label="Room Image"
                                     selectedImage={roomForm.images[0]}

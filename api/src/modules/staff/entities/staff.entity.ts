@@ -27,6 +27,9 @@ export class Staff {
     @Column({ nullable: true })
     phone: string;
 
+    @Column({ nullable: true })
+    avatar: string;
+
     @Column({ type: 'enum', enum: StaffRole })
     role: StaffRole;
 

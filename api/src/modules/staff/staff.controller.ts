@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, ForbiddenException, Query, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
@@ -43,10 +43,32 @@ export class StaffController {
         @Param('id') id: string,
         @Body() updateStaffDto: Partial<CreateStaffDto>
     ) {
-        if (req.user.role !== 'manager' && req.user.role !== 'sysadmin') {
-            throw new ForbiddenException('Only managers and sysadmin can update staff');
+        // Allow if sysadmin/manager OR if updating self
+        const isSelf = req.user.id === id || req.user.sub === id;
+        const canManage = req.user.role === 'manager' || req.user.role === 'sysadmin';
+
+        if (!isSelf && !canManage) {
+            throw new ForbiddenException('You can only update your own profile');
         }
         return this.staffService.update(id, updateStaffDto, req.user.role);
+    }
+
+    @Patch('profile')
+    @ApiOperation({ summary: 'Update current staff profile' })
+    async updateProfile(@Req() req: any, @Body() updateData: any) {
+        const userId = req.user.id;
+
+        // Only allow updating certain fields
+        const allowedFields = ['name', 'email', 'phone', 'avatar'];
+        const safeUpdates: any = {};
+        allowedFields.forEach(field => {
+            if (updateData[field] !== undefined) {
+                safeUpdates[field] = updateData[field];
+            }
+        });
+
+        const updated = await this.staffService.update(userId, safeUpdates, req.user.role, userId);
+        return { ...updated, userType: 'staff' };
     }
 
     @Delete(':id')

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import { Button } from 'primereact/button';
+import { api } from '../utils/api';
+import AvatarGalleryPicker from '../components/common/AvatarGalleryPicker';
 
 import BookingCountdown from '../components/BookingCountdown';
 
@@ -23,7 +25,8 @@ const CustomerProfile = () => {
     const [editForm, setEditForm] = useState({
         name: currentUser?.name || '',
         email: currentUser?.email || '',
-        phone: currentUser?.phone || ''
+        phone: currentUser?.phone || '',
+        avatar: currentUser?.avatar || ''
     });
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
@@ -81,8 +84,12 @@ const CustomerProfile = () => {
             </div>
 
             <div className="flex items-center mb-8 bg-white/5 p-6 rounded-2xl border border-white/10">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex justify-center items-center text-2xl font-bold">
-                    {currentUser?.name?.charAt(0) || 'U'}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex justify-center items-center text-2xl font-bold overflow-hidden border-2 border-white/20">
+                    {currentUser?.avatar ? (
+                        <img src={api.getFileUrl(currentUser.avatar)} alt={currentUser.name} className="w-full h-full object-cover" />
+                    ) : (
+                        currentUser?.name?.charAt(0) || 'U'
+                    )}
                 </div>
                 <div className="ml-6 flex-1">
                     <h1 className="text-3xl font-bold m-0">{currentUser?.name || 'User'}</h1>
@@ -250,6 +257,12 @@ const CustomerProfile = () => {
                         >
                             ✕
                         </button>
+                    </div>
+                    <div className="flex justify-center mb-8">
+                        <AvatarGalleryPicker
+                            currentAvatar={editForm.avatar}
+                            onSelect={(url) => setEditForm({ ...editForm, avatar: url })}
+                        />
                     </div>
                     <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">

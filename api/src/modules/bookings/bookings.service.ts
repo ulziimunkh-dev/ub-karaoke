@@ -676,11 +676,18 @@ export class BookingsService {
     async confirmPayment(bookingId: string, paymentData: any): Promise<Booking> {
         const booking = await this.findOne(bookingId);
 
+        // Idempotency: If already confirmed, just return it
+        if (booking.status === BookingStatus.CONFIRMED) {
+            return booking;
+        }
+
         if (booking.status !== BookingStatus.RESERVED) {
-            throw new BadRequestException('Booking is not in RESERVED status');
+            throw new BadRequestException(`Booking cannot be confirmed. Current status: ${booking.status}`);
         }
 
         if (booking.expiresAt && new Date() > booking.expiresAt) {
+            booking.status = BookingStatus.EXPIRED;
+            this.bookingsRepository.save(booking); // Update status to expired
             throw new BadRequestException('Booking reservation has expired');
         }
 

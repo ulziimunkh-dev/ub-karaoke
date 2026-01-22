@@ -38,8 +38,13 @@ export const api = {
         const response = await apiInstance.get('/auth/me');
         return response.data;
     },
-    updateProfile: async (data) => {
-        const response = await apiInstance.patch('/users/profile', data);
+    updateProfile: async (data, userType = 'customer') => {
+        const endpoint = userType === 'staff' ? '/staff/profile' : '/users/profile';
+        const response = await apiInstance.patch(endpoint, data);
+        return response.data;
+    },
+    updateStaffProfile: async (data) => {
+        const response = await apiInstance.patch('/staff/profile', data);
         return response.data;
     },
     getUsers: async () => {
@@ -375,4 +380,16 @@ export const api = {
         const response = await apiInstance.delete(`/notifications/${id}`);
         return response.data;
     },
+
+    getFileUrl: (path) => {
+        if (!path) return '';
+        if (path.startsWith('http')) return path;
+        // Gallery avatars are served from frontend public folder
+        // Robust handling for both /avatars/ and avatars/
+        if (path.startsWith('/avatars/') || path.startsWith('avatars/')) {
+            return path.startsWith('/') ? path : '/' + path;
+        }
+        const base = API_URL;
+        return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+    }
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
+import { api } from '../utils/api';
 import LoginModal from './LoginModal';
 import NotificationBell from './NotificationBell';
 
@@ -39,8 +40,15 @@ const Header = () => {
                     {currentUser ? (
                         <div className="flex items-center gap-4">
                             <NotificationBell />
-                            <Link to="/user/profile" className="text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
-                                Hi, {currentUser.name}
+                            <Link to="/user/profile" className="flex items-center gap-2 text-white font-semibold hover:text-[#eb79b2] transition-colors no-underline">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center text-white font-bold overflow-hidden border border-white/20">
+                                    {currentUser.avatar ? (
+                                        <img src={api.getFileUrl(currentUser.avatar)} alt={currentUser.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                        currentUser.name?.charAt(0)
+                                    )}
+                                </div>
+                                <span className="hidden sm:inline">Hi, {currentUser.name}</span>
                             </Link>
                             <button className="h-10 px-4 text-sm font-semibold rounded-full border border-[#b000ff] text-[#eb79b2] hover:bg-[#b000ff]/10 hover:shadow-[0_0_10px_rgba(176,0,255,0.3)] transition-all flex items-center" onClick={handleLogout}>
                                 {t('logout')}

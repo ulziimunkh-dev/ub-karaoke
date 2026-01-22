@@ -140,22 +140,22 @@ const PlanManagement = () => {
                     <div className="grid grid-cols-2 gap-6">
                         <div className="flex flex-col gap-2">
                             <label htmlFor="monthlyFee" className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Monthly Fee (MNT)</label>
-                            <InputNumber id="monthlyFee" value={planData.monthlyFee} onValueChange={(e) => setPlanData({ ...planData, monthlyFee: e.value })} className="w-full h-11" inputClassName="h-11 bg-white/5 border-white/10 rounded-lg" />
+                            <InputNumber id="monthlyFee" value={planData.monthlyFee} onValueChange={(e) => setPlanData({ ...planData, monthlyFee: e.value })} className="w-full h-11" pt={{ input: { className: 'h-11 bg-white/5 border-white/10 rounded-lg' } }} />
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="commissionRate" className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Platform Commission (%)</label>
-                            <InputNumber id="commissionRate" value={planData.commissionRate} onValueChange={(e) => setPlanData({ ...planData, commissionRate: e.value })} minFractionDigits={2} className="w-full h-11" inputClassName="h-11 bg-white/5 border-white/10 rounded-lg" />
+                            <InputNumber id="commissionRate" value={planData.commissionRate} onValueChange={(e) => setPlanData({ ...planData, commissionRate: e.value })} minFractionDigits={2} className="w-full h-11" pt={{ input: { className: 'h-11 bg-white/5 border-white/10 rounded-lg' } }} />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-6 pb-4">
                         <div className="flex flex-col gap-2">
                             <label htmlFor="maxBranches" className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Branch Limit</label>
-                            <InputNumber id="maxBranches" value={planData.maxBranches} onValueChange={(e) => setPlanData({ ...planData, maxBranches: e.value })} placeholder="Null for Unlimited" className="w-full h-11" inputClassName="h-11 bg-white/5 border-white/10 rounded-lg" />
+                            <InputNumber id="maxBranches" value={planData.maxBranches} onValueChange={(e) => setPlanData({ ...planData, maxBranches: e.value })} placeholder="Null for Unlimited" className="w-full h-11" pt={{ input: { className: 'h-11 bg-white/5 border-white/10 rounded-lg' } }} />
                         </div>
                         <div className="flex flex-col gap-2">
                             <label htmlFor="maxRooms" className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Room Count Limit</label>
-                            <InputNumber id="maxRooms" value={planData.maxRooms} onValueChange={(e) => setPlanData({ ...planData, maxRooms: e.value })} placeholder="Null for Unlimited" className="w-full h-11" inputClassName="h-11 bg-white/5 border-white/10 rounded-lg" />
+                            <InputNumber id="maxRooms" value={planData.maxRooms} onValueChange={(e) => setPlanData({ ...planData, maxRooms: e.value })} placeholder="Null for Unlimited" className="w-full h-11" pt={{ input: { className: 'h-11 bg-white/5 border-white/10 rounded-lg' } }} />
                         </div>
                     </div>
 
