@@ -10,7 +10,7 @@ export class CreateVenueDto {
     description: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     address: string;
 
     @IsString()
@@ -49,13 +49,9 @@ export class CreateVenueDto {
     @IsOptional()
     featuredImage?: string;
 
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    latitude?: number;
-
-    @IsNumber()
-    @IsOptional()
-    longitude?: number;
+    gmapLocation?: string;
 
     @IsOptional()
     isBookingEnabled?: boolean;
@@ -71,4 +67,16 @@ export class CreateVenueDto {
     @IsNumber()
     @IsOptional()
     advanceBookingDays?: number;
+
+    @IsNumber()
+    @IsOptional()
+    minBookingHours?: number;
+
+    @IsNumber()
+    @IsOptional()
+    maxBookingHours?: number;
+
+    @IsString()
+    @IsOptional()
+    organizationId?: string;
 }

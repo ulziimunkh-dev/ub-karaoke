@@ -148,19 +148,19 @@ export class RoomsService {
             ...pricingData,
             roomId: room.id,
             venueId: room.venueId,
-            organizationId: user.organizationId,
+            organizationId: room.organizationId || room.venue?.organizationId || user.organizationId,
             createdBy: user.id
         });
         return this.pricingRepository.save(pricing);
     }
 
-    async addVenuePricing(venueId: string, pricingData: Partial<RoomPricing>, user: any) {
+    async addVenuePricing(venueId: string, pricingData: Partial<RoomPricing>, user: any, overrideOrganizationId?: string) {
         // Here you would normally verify venue ownership
         const pricing = this.pricingRepository.create({
             ...pricingData,
             venueId,
             roomId: null, // Applies to all rooms
-            organizationId: user.organizationId,
+            organizationId: overrideOrganizationId || user.organizationId,
             createdBy: user.id
         });
         return this.pricingRepository.save(pricing);
@@ -183,7 +183,7 @@ export class RoomsService {
         const image = this.imagesRepository.create({
             ...imageData,
             roomId: room.id,
-            organizationId: user.organizationId,
+            organizationId: room.organizationId || room.venue?.organizationId || user.organizationId,
         });
         return this.imagesRepository.save(image);
     }
@@ -218,7 +218,7 @@ export class RoomsService {
                 startTime,
                 endTime,
                 isAvailable,
-                organizationId: user.organizationId,
+                organizationId: room.organizationId || room.venue?.organizationId || user.organizationId,
                 createdBy: user.id
             });
         }

@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { Checkbox } from 'primereact/checkbox';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -56,7 +57,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, updateVenue, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures } = useData();
+    const { venues, activeVenueId, updateVenue, updateVenueStatus, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -67,6 +68,16 @@ const VenueManagement = () => {
         name: '',
         district: 'Sukhbaatar',
         openHours: '10:00 - 04:00',
+        useCustomHours: false,
+        dailyHours: {
+            Monday: '10:00 - 04:00',
+            Tuesday: '10:00 - 04:00',
+            Wednesday: '10:00 - 04:00',
+            Thursday: '10:00 - 04:00',
+            Friday: '10:00 - 04:00',
+            Saturday: '10:00 - 04:00',
+            Sunday: '10:00 - 04:00'
+        },
         address: '',
         description: '',
         phone: '',
@@ -75,6 +86,9 @@ const VenueManagement = () => {
         bookingWindowStart: '',
         bookingWindowEnd: '',
         advanceBookingDays: 3,
+        minBookingHours: 1,
+        maxBookingHours: 6,
+        gmapLocation: '',
         organizationId: currentUser.role === 'manager' ? currentUser.organizationId : ''
     });
 
@@ -91,10 +105,11 @@ const VenueManagement = () => {
         capacity: 6,
         hourlyRate: 40000,
         images: [imgStandard],
-        roomFeatureIds: [] // New features selection
+        roomFeatureIds: [],
+        isBookingEnabled: true
     });
 
-    const selectedVenue = venues?.find(v => v.id === selectedVenueId); // Safe access
+    const selectedVenue = venues?.find(v => v.id === activeVenueId);
 
     // Pricing Form State
     const [pricingForm, setPricingForm] = useState({
@@ -106,6 +121,69 @@ const VenueManagement = () => {
         dateRange: null, // [start, end]
         priority: 20
     });
+
+    // --- DATATABLE HELPERS (Defined early to avoid ReferenceErrors) ---
+
+    const roomRateBody = (rowData) => {
+        return (rowData.hourlyRate || rowData.pricePerHour || 0).toLocaleString() + '₮';
+    };
+
+    const roomBookingStatusBody = (rowData) => {
+        const isEnabled = rowData.isBookingEnabled !== false;
+        return (
+            <div className="flex items-center gap-2">
+                <Tag
+                    value={isEnabled ? 'Booking ON' : 'Booking OFF'}
+                    severity={isEnabled ? 'success' : 'warning'}
+                    className="text-[9px] px-1.5"
+                />
+            </div>
+        );
+    };
+
+    const roomStatusBody = (rowData) => {
+        const isActive = rowData.isActive !== false;
+        return (
+            <div className="flex items-center gap-2">
+                <Button
+                    icon={isActive ? "pi pi-check-circle" : "pi pi-times-circle"}
+                    severity={isActive ? "success" : "danger"}
+                    rounded
+                    text
+                    size="small"
+                    onClick={() => updateRoomStatus(selectedVenue.id, rowData.id, !isActive)}
+                    tooltip={isActive ? 'Deactivate Room' : 'Activate Room'}
+                />
+                <span className={`text-xs ${isActive ? 'text-green-400' : 'text-red-400'}`}>
+                    {isActive ? t('active') || 'Active' : t('inactive') || 'Inactive'}
+                </span>
+            </div>
+        );
+    };
+
+    const roomActionsBody = (rowData) => {
+        return (
+            <div className="flex gap-3">
+                <Button
+                    icon="pi pi-pencil"
+                    outlined
+                    size="small"
+                    className="h-9 w-9"
+                    onClick={() => handleEditRoom(rowData)}
+                    tooltip="Edit Room"
+                />
+                <Button
+                    icon="pi pi-trash"
+                    outlined
+                    severity="danger"
+                    size="small"
+                    className="h-9 w-9"
+                    onClick={() => handleDeleteRoom(rowData.id)}
+                    tooltip="Delete Room"
+                />
+            </div>
+        );
+    };
 
     const handleAddPricing = async (roomId) => {
         if (!pricingForm.pricePerHour) return;
@@ -154,6 +232,16 @@ const VenueManagement = () => {
             name: '',
             district: 'Sukhbaatar',
             openHours: '10:00 - 04:00',
+            useCustomHours: false,
+            dailyHours: {
+                Monday: '10:00 - 04:00',
+                Tuesday: '10:00 - 04:00',
+                Wednesday: '10:00 - 04:00',
+                Thursday: '10:00 - 04:00',
+                Friday: '10:00 - 04:00',
+                Saturday: '10:00 - 04:00',
+                Sunday: '10:00 - 04:00'
+            },
             address: '',
             description: '',
             phone: '',
@@ -161,29 +249,37 @@ const VenueManagement = () => {
             featuredImage: imgStandard,
             bookingWindowStart: '',
             bookingWindowEnd: '',
-            advanceBookingDays: 3
+            advanceBookingDays: 3,
+            minBookingHours: 1,
+            maxBookingHours: 6,
+            gmapLocation: ''
         });
         setIsVenueModalOpen(true);
     };
 
     const openEditVenue = (venue) => {
         setEditingVenue(venue);
-        // Handle openHours object vs string
-        // Handle openHours data normalization
-        const hoursMap = getOpeningHoursMap(venue.operatingHours || venue.openingHours || venue.openHours);
-        const days = Object.keys(hoursMap);
-        let hoursStr = '10:00 - 04:00';
+        // Normalize operating hours
+        const rawHours = venue.openingHours || {};
+        const dailyHours = {
+            Monday: rawHours.Monday || '10:00-04:00',
+            Tuesday: rawHours.Tuesday || '10:00-04:00',
+            Wednesday: rawHours.Wednesday || '10:00-04:00',
+            Thursday: rawHours.Thursday || '10:00-04:00',
+            Friday: rawHours.Friday || '10:00-04:00',
+            Saturday: rawHours.Saturday || '10:00-04:00',
+            Sunday: rawHours.Sunday || '10:00-04:00'
+        };
 
-        if (days.length > 0) {
-            // Prefer 'Daily' or 'Monday' as the representative time
-            const repDay = hoursMap['Daily'] || hoursMap['Monday'] || hoursMap[days[0]];
-            if (repDay) hoursStr = repDay.replace('-', ' - '); // Format for input "10:00 - 04:00"
-        }
+        const hasCustom = !rawHours.Daily && Object.keys(rawHours).length > 0;
+        const mainHours = rawHours.Daily || rawHours.Monday || '10:00-04:00';
 
         setVenueForm({
             name: venue.name,
             district: venue.district,
-            openHours: hoursStr || '10:00 - 04:00',
+            openHours: mainHours.replace('-', ' - '),
+            useCustomHours: hasCustom,
+            dailyHours: dailyHours,
             address: venue.address || '',
             description: venue.description || '',
             phone: venue.phone || '',
@@ -192,6 +288,9 @@ const VenueManagement = () => {
             bookingWindowStart: venue.bookingWindowStart || '',
             bookingWindowEnd: venue.bookingWindowEnd || '',
             advanceBookingDays: venue.advanceBookingDays || 3,
+            minBookingHours: venue.minBookingHours || 1.0,
+            maxBookingHours: venue.maxBookingHours || 6.0,
+            gmapLocation: venue.gmapLocation || '',
             organizationId: venue.organizationId || ''
         });
         setIsVenueModalOpen(true);
@@ -201,16 +300,21 @@ const VenueManagement = () => {
         e.preventDefault();
 
         // Transform venueForm to match API DTO
-        const hours = venueForm.openHours.replace(/\s/g, '');
-        const openingHoursObj = {
-            "Monday": hours,
-            "Tuesday": hours,
-            "Wednesday": hours,
-            "Thursday": hours,
-            "Friday": hours,
-            "Saturday": hours,
-            "Sunday": hours
-        };
+        let openingHoursObj = {};
+        if (venueForm.useCustomHours) {
+            openingHoursObj = {
+                Monday: venueForm.dailyHours.Monday.replace(/\s/g, ''),
+                Tuesday: venueForm.dailyHours.Tuesday.replace(/\s/g, ''),
+                Wednesday: venueForm.dailyHours.Wednesday.replace(/\s/g, ''),
+                Thursday: venueForm.dailyHours.Thursday.replace(/\s/g, ''),
+                Friday: venueForm.dailyHours.Friday.replace(/\s/g, ''),
+                Saturday: venueForm.dailyHours.Saturday.replace(/\s/g, ''),
+                Sunday: venueForm.dailyHours.Sunday.replace(/\s/g, '')
+            };
+        } else {
+            const hours = venueForm.openHours.replace(/\s/g, '');
+            openingHoursObj = { Daily: hours };
+        }
 
         const venueData = {
             name: venueForm.name,
@@ -221,12 +325,15 @@ const VenueManagement = () => {
             openingHours: openingHoursObj,
             address: venueForm.address,
             organizationId: venueForm.organizationId || currentUser.organizationId,
-            amenities: JSON.stringify(["WiFi", "AC", "Premium sound"]),
-            images: JSON.stringify([venueForm.featuredImage]),
+            amenities: ["WiFi", "AC", "Premium sound"],
+            images: [venueForm.featuredImage],
             featuredImage: venueForm.featuredImage,
-            bookingWindowStart: venueForm.bookingWindowStart || null,
-            bookingWindowEnd: venueForm.bookingWindowEnd || null,
-            advanceBookingDays: venueForm.advanceBookingDays || 3
+            bookingWindowStart: venueForm.bookingWindowStart || undefined,
+            bookingWindowEnd: venueForm.bookingWindowEnd || undefined,
+            advanceBookingDays: venueForm.advanceBookingDays || 3,
+            minBookingHours: Number(venueForm.minBookingHours) || 1.0,
+            maxBookingHours: Number(venueForm.maxBookingHours) || 6.0,
+            gmapLocation: venueForm.gmapLocation || undefined
         };
 
         if (editingVenue) {
@@ -267,10 +374,12 @@ const VenueManagement = () => {
         setEditingRoom(null);
         setRoomForm({
             name: '',
-            type: 'Standard',
+            roomTypeId: null,
             capacity: 6,
             hourlyRate: 40000,
-            images: [imgStandard]
+            images: [imgStandard],
+            roomFeatureIds: [],
+            isBookingEnabled: true
         });
         setIsRoomModalOpen(true);
     };
@@ -279,19 +388,20 @@ const VenueManagement = () => {
         setEditingRoom(room);
         setRoomForm({
             name: room.name,
-            roomTypeId: room.roomTypeId || (roomTypes.find(t => t.name === room.type)?.id), // Try to match by ID or name fallback
+            roomTypeId: room.roomTypeId || (roomTypes.find(t => t.name === room.type)?.id),
             capacity: room.capacity,
-            hourlyRate: room.hourlyRate || room.pricePerHour, // Handle both for safety during transition
+            hourlyRate: room.hourlyRate || room.pricePerHour,
             images: (room.images && room.images.length > 0) ? room.images : [imgStandard],
-            roomFeatureIds: room.roomFeatures?.map(f => f.id) || []
+            roomFeatureIds: room.roomFeatures?.map(f => f.id) || [],
+            isBookingEnabled: room.isBookingEnabled !== false
         });
+        setIsRoomModalOpen(true);
     };
 
     const handleSaveRoom = (e) => {
         e.preventDefault();
         if (!selectedVenue) return;
 
-        // Ensure numeric fields are numbers for API validation
         const payload = {
             ...roomForm,
             hourlyRate: Number(roomForm.hourlyRate),
@@ -300,20 +410,21 @@ const VenueManagement = () => {
 
         if (editingRoom) {
             updateRoom(selectedVenue.id, editingRoom.id, payload);
-            setEditingRoom(null); // Reset to add mode
+            setEditingRoom(null);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room updated' });
         } else {
             addRoom(selectedVenue.id, payload);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room added' });
         }
-        // Reset form keeping defaults or clear?
+        setIsRoomModalOpen(false);
         setRoomForm({
             name: '',
             roomTypeId: null,
             capacity: 6,
             hourlyRate: 40000,
             images: [imgStandard],
-            roomFeatureIds: []
+            roomFeatureIds: [],
+            isBookingEnabled: true
         });
     };
 
@@ -330,7 +441,6 @@ const VenueManagement = () => {
     };
 
     const handleRowReorder = async (e) => {
-        // e.value is the new reordered array
         const newOrder = e.value.map((room, index) => ({
             roomId: room.id,
             sortOrder: index + 1
@@ -342,59 +452,6 @@ const VenueManagement = () => {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to update order' });
         }
     };
-
-    const roomRateBody = (rowData) => {
-        return (rowData.hourlyRate || rowData.pricePerHour || 0).toLocaleString() + '₮';
-    };
-
-    const roomStatusBody = (rowData) => {
-        const isActive = rowData.isActive !== false; // Default to active if undefined
-        return (
-            <div className="flex items-center gap-2">
-                <Button
-                    icon={isActive ? "pi pi-check-circle" : "pi pi-times-circle"}
-                    severity={isActive ? "success" : "danger"}
-                    rounded
-                    text
-                    size="small"
-                    onClick={() => updateRoomStatus(selectedVenue.id, rowData.id, !isActive)}
-                    tooltip={isActive ? 'Deactivate Room' : 'Activate Room'}
-                />
-                <span className={`text-xs ${isActive ? 'text-green-400' : 'text-red-400'}`}>
-                    {isActive ? t('active') || 'Active' : t('inactive') || 'Inactive'}
-                </span>
-            </div>
-        );
-    };
-
-    const roomActionsBody = (rowData) => {
-        return (
-            <div className="flex gap-3">
-                <Button
-                    icon="pi pi-pencil"
-                    outlined
-                    size="small"
-                    className="h-9 w-9"
-                    onClick={() => handleEditRoom(rowData)}
-                    tooltip="Edit Room"
-                />
-                <Button
-                    icon="pi pi-trash"
-                    outlined
-                    severity="danger"
-                    size="small"
-                    className="h-9 w-9"
-                    onClick={() => handleDeleteRoom(rowData.id)}
-                    tooltip="Delete Room"
-                />
-            </div>
-        );
-    };
-
-    const displayVenues = currentUser.role === 'sysadmin'
-        ? venues
-        : venues.filter(v => v.organizationId === currentUser.organizationId);
-
 
     return (
         <div>
@@ -422,124 +479,227 @@ const VenueManagement = () => {
                 </div>
             </div>
 
-            <div className="grid gap-4">
-                {displayVenues.length === 0 && (
-                    <div className="text-center text-gray-500 py-8">
-                        <p>No venues found. Add a new branch to get started.</p>
+            {!selectedVenue ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-white/5 rounded-3xl border border-dashed border-white/10 text-center">
+                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                        <i className="pi pi-building text-2xl text-gray-400"></i>
                     </div>
-                )}
-                {displayVenues.map(venue => {
-                    // Safe render openHours
-                    const hMap = getOpeningHoursMap(venue.operatingHours || venue.openingHours || venue.openHours);
-                    const hDisplay = hMap['Daily'] || hMap['Monday'] || Object.values(hMap)[0] || '10:00 - 04:00';
-                    const openHoursDisplay = hDisplay.replace('-', ' - ');
-
-                    return (
-                        <div key={venue.id} className="bg-white/5 p-4 sm:p-5 rounded-xl transition-all duration-300 hover:bg-white/[0.08]" style={{ borderLeft: `6px solid ${venue.isActive === false ? '#ef4444' : '#22c55e'}` }}>
-                            <div className="flex flex-col lg:flex-row justify-between gap-4">
-                                <div className="flex-1">
-                                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                                        <h3 className={`text-xl sm:text-2xl font-bold m-0 ${venue.isActive === false ? 'text-gray-500' : 'text-white'}`}>
-                                            {venue.name}
-                                        </h3>
-                                        {venue.isActive === false && <Tag value={t('inactive') || 'Inactive'} severity="danger" className="ml-2 px-2 py-1" />}
-                                        <Button
-                                            icon="pi pi-pencil"
-                                            onClick={() => openEditVenue(venue)}
-                                            text
-                                            rounded
-                                            className="ml-auto lg:ml-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-                                        />
-                                    </div>
-                                    <p className="text-gray-400 my-2 text-sm">{venue.district} • {openHoursDisplay}</p>
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                        <span className="text-xs sm:text-sm font-bold uppercase text-gray-400">{t('rooms')}: {venue.rooms.length}</span>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {venue.rooms?.slice(0, 5).map(room => (
-                                                <Tag key={room.id} value={room.name} severity={room.isActive === false ? 'danger' : 'info'} style={{ fontSize: '0.7rem' }} className="px-2 py-1" />
-                                            ))}
-                                            {venue.rooms?.length > 5 && <span className="text-xs text-gray-500">+{venue.rooms.length - 5}</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col lg:flex-row gap-4 items-center">
-                                    <Button
-                                        label={t('manageRooms')}
-                                        icon="pi pi-building"
-                                        onClick={() => handleManageRooms(venue)}
-                                        className="w-full lg:w-auto h-11 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold hover:shadow-[0_0_15px_rgba(176,0,255,0.5)] transition-all duration-300"
+                    <h3 className="text-xl font-bold text-white mb-2">No Branch Selected</h3>
+                    <p className="text-gray-400 max-w-sm mb-6">Select a branch from the dropdown menu at the top right to manage its rooms and settings.</p>
+                    {['sysadmin', 'admin'].includes(currentUser.role) && (
+                        <Button
+                            label="Add New Branch"
+                            icon="pi pi-plus"
+                            onClick={openAddVenue}
+                            className="bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none font-bold px-6 h-11"
+                        />
+                    )}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-6">
+                    <div className="bg-[#1a1a24] p-6 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden" style={{ borderLeft: `6px solid ${selectedVenue.isActive === false ? '#ef4444' : '#22c55e'}` }}>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-3xl font-black text-white m-0 tracking-tight">{selectedVenue.name}</h3>
+                                    <Tag
+                                        value={selectedVenue.isActive === false ? (t('inactive') || 'Inactive') : (t('active') || 'Active')}
+                                        severity={selectedVenue.isActive === false ? 'danger' : 'success'}
+                                        className="px-3"
                                     />
-                                    <div className="flex gap-3 w-full lg:w-auto">
-                                        <Button
-                                            label={venue.isActive === false ? (t('reOpen') || 'Activate') : (t('closeBranch') || 'Deactivate')}
-                                            icon={venue.isActive === false ? "pi pi-play" : "pi pi-pause"}
-                                            severity={venue.isActive === false ? "success" : "warning"}
-                                            outlined
-                                            onClick={() => handleToggleStatus(venue)}
-                                            className="flex-1 lg:flex-none h-11 px-4"
-                                        />
-                                        <Button
-                                            icon="pi pi-trash"
-                                            severity="danger"
-                                            outlined
-                                            onClick={() => handleDeleteVenue(venue.id)}
-                                            className="h-11 w-11"
-                                            tooltip={t('delete')}
-                                            tooltipOptions={{ position: 'top' }}
-                                        />
-                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-400">
+                                    <span className="flex items-center gap-2 text-sm font-medium">
+                                        <i className="pi pi-map-marker text-[#eb79b2]"></i>
+                                        {selectedVenue.district}
+                                    </span>
+                                    <span className="flex items-center gap-2 text-sm font-medium">
+                                        <i className="pi pi-clock text-[#eb79b2]"></i>
+                                        {(() => {
+                                            const hMap = getOpeningHoursMap(selectedVenue.operatingHours || selectedVenue.openingHours || selectedVenue.openHours);
+                                            return hMap['Daily'] || hMap['Monday'] || Object.values(hMap)[0] || '10:00 - 04:00';
+                                        })()}
+                                    </span>
+                                    <span className="flex items-center gap-2 text-sm font-medium">
+                                        <i className="pi pi-phone text-[#eb79b2]"></i>
+                                        {selectedVenue.phone}
+                                    </span>
                                 </div>
                             </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    icon="pi pi-pencil"
+                                    label="Edit Details"
+                                    onClick={() => openEditVenue(selectedVenue)}
+                                    className="p-button-outlined border-white/10 text-white font-bold h-10 px-4"
+                                />
+                                <Button
+                                    icon={selectedVenue.isActive === false ? "pi pi-play" : "pi pi-pause"}
+                                    label={selectedVenue.isActive === false ? "Activate" : "Deactivate"}
+                                    severity={selectedVenue.isActive === false ? "success" : "warning"}
+                                    outlined
+                                    className="h-10 px-4"
+                                    onClick={() => handleToggleStatus(selectedVenue)}
+                                />
+                                <Button
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    outlined
+                                    onClick={() => handleDeleteVenue(selectedVenue.id)}
+                                    className="h-10 w-10 p-0 flex items-center justify-center"
+                                    tooltip={t('delete')}
+                                />
+                            </div>
                         </div>
-                    )
-                })}
-            </div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#b000ff]/10 to-transparent rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                    </div>
 
-            {/* Venue Add/Edit Dialog */}
-            <Dialog header={editingVenue ? 'Edit Venue' : 'Add Venue'} visible={isVenueModalOpen} className="w-full max-w-[95vw] sm:max-w-[500px]" modal onHide={() => setIsVenueModalOpen(false)}>
-                <form onSubmit={handleSaveVenue} className="flex flex-col gap-4 mt-2">
-                    <div className="flex flex-col gap-2">
-                        <label className="font-bold text-sm text-text-muted">Venue Name</label>
-                        <InputText value={venueForm.name} onChange={e => setVenueForm({ ...venueForm, name: e.target.value })} required />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="font-bold text-sm text-text-muted">District</label>
-                        <Dropdown value={venueForm.district} options={[
-                            'Sukhbaatar', 'Chingeltei', 'Bayangol', 'Bayanzurkh', 'Khan-Uul', 'Songinokhairkhan'
-                        ]} onChange={e => setVenueForm({ ...venueForm, district: e.value })} />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="font-bold text-sm text-text-muted">Description</label>
-                        <InputTextarea value={venueForm.description} onChange={e => setVenueForm({ ...venueForm, description: e.target.value })} required rows={2} autoResize />
-                    </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="font-bold text-sm text-text-muted">Phone</label>
-                        <InputText value={venueForm.phone} onChange={e => setVenueForm({ ...venueForm, phone: e.target.value })} required />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="sm:col-span-2 flex flex-col gap-2">
-                            <label className="font-bold text-sm text-text-muted">Open Hours</label>
-                            <InputText value={venueForm.openHours} onChange={e => setVenueForm({ ...venueForm, openHours: e.target.value })} placeholder="10:00 - 04:00" required />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="font-bold text-sm text-text-muted">Price</label>
-                            <Dropdown
-                                value={venueForm.priceRange}
-                                options={[
-                                    { label: 'Budget ($)', value: '$' },
-                                    { label: 'Standard ($$)', value: '$$' },
-                                    { label: 'Premium ($$$)', value: '$$$' },
-                                    { label: 'Luxury ($$$$)', value: '$$$$' }
-                                ]}
-                                optionLabel="label"
-                                optionValue="value"
-                                onChange={e => setVenueForm({ ...venueForm, priceRange: e.value })}
+                    <div className="bg-[#1a1a24] rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+                        <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex items-center justify-center">
+                                    <i className="pi pi-th-large text-white text-xs"></i>
+                                </div>
+                                <h4 className="m-0 font-bold uppercase tracking-widest text-xs text-gray-400">Branch Rooms & Inventory</h4>
+                            </div>
+                            <Button
+                                label="Add Room"
+                                icon="pi pi-plus"
+                                onClick={() => {
+                                    setEditingRoom(null);
+                                    setRoomForm({
+                                        name: '',
+                                        roomTypeId: null,
+                                        capacity: 6,
+                                        hourlyRate: 40000,
+                                        images: [imgStandard],
+                                        roomFeatureIds: [],
+                                        isBookingEnabled: true
+                                    });
+                                    setIsRoomModalOpen(true);
+                                }}
+                                className="bg-white/10 border-none hover:bg-white/20 text-white font-black text-xs px-4 h-9 uppercase tracking-wider rounded-lg transition-all"
                             />
                         </div>
+
+                        <DataTable
+                            value={selectedVenue.rooms}
+                            className="rooms-datatable"
+                            reorderableRows
+                            onRowReorder={handleRowReorder}
+                            dataKey="id"
+                            emptyMessage="No rooms found for this branch."
+                        >
+                            <Column rowReorder style={{ width: '3rem' }} />
+                            <Column field="name" header="Room" className="font-bold text-white"></Column>
+                            <Column header="Type" body={(rowData) => (
+                                <Tag value={rowData.roomType?.name || rowData.type} severity="info" className="text-[10px] uppercase font-black px-2" />
+                            )}></Column>
+                            <Column field="capacity" header="Capacity" body={(rowData) => (
+                                <span className="flex items-center gap-2 text-sm"><i className="pi pi-users opacity-40"></i> {rowData.capacity}</span>
+                            )}></Column>
+                            <Column header="Rate / Hour" body={roomRateBody}></Column>
+                            <Column header="Status" body={roomStatusBody}></Column>
+                            <Column header="Booking" body={roomBookingStatusBody}></Column>
+                            <Column header="Actions" body={roomActionsBody} className="text-right"></Column>
+                        </DataTable>
+                    </div>
+                </div>
+            )}
+
+            <Dialog header={editingVenue ? 'Edit Venue' : 'Add Venue'} visible={isVenueModalOpen} className="w-full max-w-[95vw] sm:max-w-[700px]" modal onHide={() => setIsVenueModalOpen(false)}>
+                <form onSubmit={handleSaveVenue} className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Venue Name</label>
+                        <InputText value={venueForm.name} onChange={e => setVenueForm({ ...venueForm, name: e.target.value })} required className="h-11 shadow-sm" />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">District</label>
+                        <Dropdown
+                            value={venueForm.district}
+                            options={['Sukhbaatar', 'Chingeltei', 'Bayangol', 'Bayanzurkh', 'Khan-Uul', 'Songinokhairkhan']}
+                            onChange={e => setVenueForm({ ...venueForm, district: e.value })}
+                            placeholder="Select District"
+                            className="h-11"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Phone Contact</label>
+                        <InputText value={venueForm.phone} onChange={e => setVenueForm({ ...venueForm, phone: e.target.value })} required className="h-11 shadow-sm" />
+                    </div>
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Physical Address</label>
+                        <InputText value={venueForm.address} onChange={e => setVenueForm({ ...venueForm, address: e.target.value })} required className="h-11 shadow-sm" placeholder="e.g. 1st Floor, Shangri-La Mall" />
+                    </div>
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">GMap Location (Lat, Long)</label>
+                        <InputText value={venueForm.gmapLocation} onChange={e => setVenueForm({ ...venueForm, gmapLocation: e.target.value })} placeholder="e.g. 47.9189, 106.9176" className="h-11 shadow-sm" />
+                    </div>
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Description</label>
+                        <InputTextarea value={venueForm.description} onChange={e => setVenueForm({ ...venueForm, description: e.target.value })} required rows={2} autoResize className="shadow-sm" />
+                    </div>
+                    <div className="flex flex-col gap-3 md:col-span-2 bg-white/5 p-4 rounded-xl border border-white/5">
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-[#eb79b2]">Opening Hours</label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-text-muted uppercase">Custom per day</span>
+                                <Checkbox
+                                    checked={venueForm.useCustomHours}
+                                    onChange={e => setVenueForm({ ...venueForm, useCustomHours: e.checked })}
+                                />
+                            </div>
+                        </div>
+
+                        {!venueForm.useCustomHours ? (
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] text-text-muted uppercase ml-1">Daily (All Days)</label>
+                                <InputText
+                                    value={venueForm.openHours}
+                                    onChange={e => setVenueForm({ ...venueForm, openHours: e.target.value })}
+                                    placeholder="10:00 - 04:00"
+                                    required={!venueForm.useCustomHours}
+                                    className="h-11 shadow-sm"
+                                />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3">
+                                {Object.keys(venueForm.dailyHours).map(day => (
+                                    <div key={day} className="flex flex-col gap-1">
+                                        <label className="text-[10px] text-text-muted uppercase ml-1">{day}</label>
+                                        <InputText
+                                            value={venueForm.dailyHours[day]}
+                                            onChange={e => setVenueForm({
+                                                ...venueForm,
+                                                dailyHours: { ...venueForm.dailyHours, [day]: e.target.value }
+                                            })}
+                                            placeholder="10:00 - 04:00"
+                                            className="h-9 text-sm shadow-sm"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Price Tier</label>
+                        <Dropdown
+                            value={venueForm.priceRange}
+                            options={[
+                                { label: 'Budget ($)', value: '$' },
+                                { label: 'Standard ($$)', value: '$$' },
+                                { label: 'Premium ($$$)', value: '$$$' },
+                                { label: 'Luxury ($$$$)', value: '$$$$' }
+                            ]}
+                            optionLabel="label"
+                            optionValue="value"
+                            onChange={e => setVenueForm({ ...venueForm, priceRange: e.value })}
+                            className="h-11"
+                        />
                     </div>
 
-                    <div className="bg-white/5 p-3 rounded-lg">
-                        <h4 className="m-0 mb-3 text-xs font-bold uppercase text-gray-400">Booking Setup</h4>
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 md:col-span-2">
+                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">Booking System Settings</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs text-text-muted">Allowed Start Time</label>
@@ -553,322 +713,317 @@ const VenueManagement = () => {
                                 <label className="text-xs text-text-muted">Max Advance Booking (Days)</label>
                                 <InputNumber value={venueForm.advanceBookingDays} onValueChange={e => setVenueForm({ ...venueForm, advanceBookingDays: e.value })} min={1} max={30} showButtons className="p-inputtext-sm" />
                             </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs text-text-muted">Min Booking (Hours)</label>
+                                <InputNumber value={venueForm.minBookingHours} onValueChange={e => setVenueForm({ ...venueForm, minBookingHours: e.value })} min={0.5} max={12} step={0.5} showButtons className="p-inputtext-sm" />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-xs text-text-muted">Max Booking (Hours)</label>
+                                <InputNumber value={venueForm.maxBookingHours} onValueChange={e => setVenueForm({ ...venueForm, maxBookingHours: e.value })} min={1} max={24} step={0.5} showButtons className="p-inputtext-sm" />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 mb-4">
-                        <label className="font-bold text-sm text-text-muted">Upload Custom Image</label>
-                        <ImageUpload
+                    <div className="md:col-span-2">
+                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2] mt-4">Venue Branding</h4>
+                        <div className="flex flex-col gap-2 mb-4">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Upload Custom Image</label>
+                            <ImageUpload
+                                label=""
+                                currentImage={venueForm.featuredImage}
+                                onUpload={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
+                            />
+                            <p className="text-[10px] text-gray-500 text-center m-0 uppercase tracking-widest">- OR Select Stock Image -</p>
+                        </div>
+
+                        <ImagePicker
                             label=""
-                            currentImage={venueForm.featuredImage}
+                            selectedImage={venueForm.featuredImage}
                             onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
-                            onUpload={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
                         />
-                        <p className="text-xs text-gray-500 text-center m-0">- OR Select Stock Image -</p>
                     </div>
 
-                    <ImagePicker
-                        label="Venue Featured Image"
-                        selectedImage={venueForm.featuredImage}
-                        onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
-                    />
-
                     {currentUser.role === 'sysadmin' && (
-                        <div className="field grid grid-cols-1">
-                            <label htmlFor="organization" className="block text-sm font-semibold text-text-muted mb-2">Organization</label>
+                        <div className="md:col-span-2 flex flex-col gap-1.5">
+                            <label htmlFor="organization" className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Organization Owner</label>
                             <Dropdown
                                 id="organization"
                                 value={venueForm.organizationId}
                                 options={organizations.map(org => ({ label: org.name, value: org.id }))}
                                 onChange={e => setVenueForm({ ...venueForm, organizationId: e.value })}
                                 placeholder="Select Organization"
-                                className="w-full h-10 bg-white border-0 rounded-lg text-sm"
+                                className="w-full h-11"
                                 required
                             />
                         </div>
                     )}
-                    <div className="flex justify-end gap-3 mt-8">
-                        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setIsVenueModalOpen(false)} className="h-10 px-6" />
-                        <Button label={editingVenue ? "Update Venue" : "Create Venue"} icon="pi pi-check" type="submit" className="h-10 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold" />
+                    <div className="md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-white/5">
+                        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setIsVenueModalOpen(false)} className="h-11 px-6 font-bold" />
+                        <Button label={editingVenue ? "Update Changes" : "Create Venue"} icon="pi pi-check" type="submit" className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg" />
                     </div>
                 </form>
             </Dialog>
 
-            {/* Room Management Dialog */}
-            <Dialog header={`${t('manageRooms')}: ${selectedVenue?.name}`} visible={isRoomModalOpen} className="w-full max-w-[95vw] sm:max-w-[90vw] lg:max-w-[800px]" modal onHide={() => setIsRoomModalOpen(false)}>
-                <div className="flex flex-col gap-4">
-                    <div className="overflow-x-auto">
-                        <DataTable
-                            value={selectedVenue?.rooms}
-                            className="mt-2"
-                            reorderableRows
-                            onRowReorder={handleRowReorder}
-                            dataKey="id"
-                        >
-                            <Column rowReorder style={{ width: '3rem' }} />
-                            <Column field="name" header={t('roomName')}></Column>
-                            <Column header="Type" body={(rowData) => rowData.roomType?.name || rowData.type}></Column>
-                            <Column field="capacity" header={t('capacity')}></Column>
-                            <Column header="Features" body={(rowData) => (
-                                <div className="flex flex-wrap gap-1 max-w-[200px]">
-                                    {rowData.roomFeatures?.map(f => (
-                                        <Tag key={f.id} value={f.name} severity="info" className="text-[10px] px-2 py-1" />
-                                    ))}
-                                    {(!rowData.roomFeatures || rowData.roomFeatures.length === 0) && (
-                                        <span className="text-xs text-gray-500 italic">No features</span>
-                                    )}
-                                </div>
-                            )}></Column>
-                            <Column header={t('total')} body={roomRateBody}></Column>
-                            <Column header="Status" body={roomStatusBody}></Column>
-                            <Column header={t('actions')} body={roomActionsBody}></Column>
-                        </DataTable>
-                    </div>
-
-                    {/* Add/Edit Room Form */}
-                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 shadow-lg">
-                        <h4 className="text-lg font-bold m-0 mb-4">{editingRoom ? 'Edit Room' : t('addRoom')}</h4>
-                        <form onSubmit={handleSaveRoom} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-2">
-                                <label className="font-bold text-sm text-text-muted">{t('roomName')}</label>
-                                <InputText value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} required />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="font-bold text-sm text-text-muted">Type</label>
-                                <Dropdown
-                                    value={roomForm.roomTypeId}
-                                    options={roomTypes}
-                                    optionLabel="name"
-                                    optionValue="id"
-                                    placeholder="Select Type"
-                                    onChange={e => {
-                                        // Auto-select image based on type name as a hint
-                                        const type = roomTypes.find(t => t.id === e.value);
-                                        let newImg = imgStandard;
-                                        if (type?.name?.includes('VIP')) newImg = imgVIP;
-                                        else if (type?.name?.includes('Party')) newImg = imgParty;
-                                        else if (type?.name?.includes('Small') || type?.name?.includes('Minimal')) newImg = imgMinimal;
-
-                                        setRoomForm({ ...roomForm, roomTypeId: e.value, images: [newImg] });
-                                    }}
+            {/* Room Form Dialog */}
+            <Dialog
+                header={editingRoom ? `Edit Room: ${editingRoom.name}` : `Add New Room`}
+                visible={isRoomModalOpen}
+                className="w-full max-w-[95vw] sm:max-w-[750px]"
+                modal
+                onHide={() => setIsRoomModalOpen(false)}
+            >
+                <div className="flex flex-col gap-6 py-2">
+                    <form onSubmit={handleSaveRoom} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div className="flex flex-col gap-1.5 md:col-span-2">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Reference Name</label>
+                            <InputText value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} required className="h-11 shadow-sm" placeholder="e.g. VIP Room 301" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Category</label>
+                            <Dropdown
+                                value={roomForm.roomTypeId}
+                                options={roomTypes}
+                                optionLabel="name"
+                                optionValue="id"
+                                placeholder="Select Room Type"
+                                onChange={e => {
+                                    const type = roomTypes.find(t => t.id === e.value);
+                                    let newImg = imgStandard;
+                                    if (type?.name?.includes('VIP')) newImg = imgVIP;
+                                    else if (type?.name?.includes('Party')) newImg = imgParty;
+                                    else if (type?.name?.includes('Small') || type?.name?.includes('Minimal')) newImg = imgMinimal;
+                                    setRoomForm({ ...roomForm, roomTypeId: e.value, images: [newImg] });
+                                }}
+                                className="h-11 shadow-sm"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Capacity</label>
+                            <InputNumber value={roomForm.capacity} onValueChange={e => setRoomForm({ ...roomForm, capacity: e.value })} min={1} required showButtons className="h-11 shadow-sm" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Standard Base Rate (₮/hr)</label>
+                            <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" required className="h-11 shadow-sm" />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Included Features</label>
+                            <MultiSelect
+                                value={roomForm.roomFeatureIds}
+                                options={roomFeatures}
+                                optionLabel="name"
+                                optionValue="id"
+                                display="chip"
+                                placeholder="Select Features"
+                                onChange={(e) => setRoomForm({ ...roomForm, roomFeatureIds: e.value })}
+                                className="min-h-[44px] shadow-sm"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-[#eb79b2] ml-1">Online Reservation</label>
+                            <div className="flex items-center gap-3 h-11 bg-white/5 px-4 rounded-xl border border-white/5">
+                                <span className="text-xs text-text-muted">Allow customers to book online</span>
+                                <Checkbox
+                                    checked={roomForm.isBookingEnabled}
+                                    onChange={e => setRoomForm({ ...roomForm, isBookingEnabled: e.checked })}
                                 />
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="font-bold text-sm text-text-muted">Features</label>
-                                <MultiSelect
-                                    value={roomForm.roomFeatureIds}
-                                    options={roomFeatures}
-                                    optionLabel="name"
-                                    optionValue="id"
-                                    display="chip"
-                                    placeholder="Select Features"
-                                    onChange={(e) => setRoomForm({ ...roomForm, roomFeatureIds: e.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="font-bold text-sm text-text-muted">{t('capacity')}</label>
-                                <InputNumber value={roomForm.capacity} onValueChange={e => setRoomForm({ ...roomForm, capacity: e.value })} min={1} required showButtons />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="font-bold text-sm text-text-muted">{t('pricePerHour')}</label>
-                                <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" required />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <div className="flex flex-col gap-2 mb-4">
-                                    <label className="font-bold text-sm text-text-muted">Upload Room Image</label>
+                        </div>
+
+                        <div className="md:col-span-2 bg-white/5 p-4 rounded-xl border border-white/5 mt-2">
+                            <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">Room Presentation</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div className="flex flex-col gap-2">
+                                    <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Promotion Image</label>
                                     <ImageUpload
                                         label=""
                                         currentImage={roomForm.images[0]}
                                         onUpload={(url) => setRoomForm({ ...roomForm, images: [url] })}
                                     />
-                                    <p className="text-xs text-gray-500 text-center m-0">- OR Select Stock Image -</p>
                                 </div>
-                                <ImagePicker
-                                    label="Room Image"
-                                    selectedImage={roomForm.images[0]}
-                                    onSelect={(url) => setRoomForm({ ...roomForm, images: [url] })}
-                                />
+                                <div>
+                                    <p className="text-[10px] text-gray-500 text-center mb-3 uppercase tracking-widest">- OR STOCK GALLERY -</p>
+                                    <ImagePicker
+                                        label=""
+                                        selectedImage={roomForm.images[0]}
+                                        onSelect={(url) => setRoomForm({ ...roomForm, images: [url] })}
+                                    />
+                                </div>
                             </div>
+                        </div>
 
-                            {/* Dynamic Pricing Rules Section (Only when editing and room exists) */}
-                            {editingRoom && selectedVenue?.rooms?.find(r => r.id === editingRoom.id) && (
-                                <div className="sm:col-span-2 mt-6 border-t border-white/10 pt-4">
-                                    <h4 className="text-white font-bold mb-3 flex items-center gap-2">
-                                        <span>💰</span> Dynamic Pricing Rules
+                        {/* Dynamic Pricing Rules Section */}
+                        {editingRoom && selectedVenue?.rooms?.find(r => r.id === editingRoom.id) && (
+                            <div className="md:col-span-2 mt-4 pt-6 border-t border-white/5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-[#00f0ff] flex items-center gap-2">
+                                        <i className="pi pi-bolt text-xs"></i> Dynamic Pricing Rules
                                     </h4>
+                                </div>
 
-                                    {/* List Existing Rules - Responsive Card/Table */}
-                                    <div className="bg-[#151521] rounded-lg border border-white/10 overflow-hidden mb-4">
-                                        {/* Desktop Table - Hidden on small screens */}
-                                        <div className="hidden md:block">
-                                            <DataTable
-                                                value={selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []}
-                                                emptyMessage="No special pricing rules."
-                                                size="small"
-                                                className="text-sm"
-                                            >
-                                                <Column field="priority" header="Pri" style={{ width: '50px' }} />
-                                                <Column field="dayType" header="Type" body={(rowData) => rowData.startDateTime ? '📅 Specific' : rowData.dayType} />
-                                                <Column header="Period" body={(rowData) => {
-                                                    if (rowData.startDateTime) {
-                                                        const start = new Date(rowData.startDateTime);
-                                                        const end = new Date(rowData.endDateTime);
-                                                        return `${start.toLocaleDateString()} ${start.getHours()}:00 - ${end.toLocaleDateString()} ${end.getHours()}:00`;
-                                                    }
-                                                    return `${rowData.startTime?.slice(0, 5)} - ${rowData.endTime?.slice(0, 5)}`;
-                                                }} />
-                                                <Column field="pricePerHour" header="Price" body={(rowData) => `${Number(rowData.pricePerHour).toLocaleString()}₮`} />
-                                                <Column body={(rowData) => (
-                                                    <Button icon="pi pi-trash" className="p-button-danger p-button-text p-button-sm" onClick={() => handleDeletePricing(rowData.id)} />
-                                                )} style={{ width: '50px' }} />
-                                            </DataTable>
-                                        </div>
-
-                                        {/* Mobile Cards - Shown only on small screens */}
-                                        <div className="md:hidden flex flex-col gap-2 p-2">
-                                            {(selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []).map(rule => (
-                                                <div key={rule.id} className="bg-white/5 p-3 rounded-lg border border-white/5 flex justify-between items-center">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <Tag value={rule.priority} severity="warning" className="text-[10px] px-1 py-0" />
-                                                            <span className="font-bold text-sm text-white">
-                                                                {rule.startDateTime ? '📅 Specific Date' : rule.dayType}
-                                                            </span>
-                                                        </div>
-                                                        <div className="text-xs text-text-muted">
-                                                            {rule.startDateTime
-                                                                ? `${new Date(rule.startDateTime).toLocaleDateString()} ${new Date(rule.startDateTime).getHours()}:00`
-                                                                : `${rule.startTime?.slice(0, 5)} - ${rule.endTime?.slice(0, 5)}`
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="font-bold text-[#eb79b2] text-sm">{Number(rule.pricePerHour).toLocaleString()}₮</div>
-                                                        <Button icon="pi pi-trash" className="p-button-danger p-button-text h-8 w-8" onClick={() => handleDeletePricing(rule.id)} />
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {(!selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing?.length) && (
-                                                <p className="text-center text-text-muted text-xs py-2">No pricing rules</p>
-                                            )}
-                                        </div>
+                                <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden mb-6">
+                                    <div className="hidden md:block">
+                                        <DataTable
+                                            value={selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []}
+                                            emptyMessage="No special pricing rules defined for this room."
+                                            size="small"
+                                            className="text-xs pricing-table"
+                                        >
+                                            <Column field="priority" header="PRI" style={{ width: '60px' }} className="font-bold text-gray-500" />
+                                            <Column field="dayType" header="RULE TYPE" body={(rowData) => (
+                                                <Tag value={rowData.startDateTime ? 'SPECIFIC' : rowData.dayType} severity={rowData.startDateTime ? 'warning' : 'info'} className="text-[9px] px-1.5" />
+                                            )} />
+                                            <Column header="TIMING / PERIOD" body={(rowData) => {
+                                                if (rowData.startDateTime) {
+                                                    const start = new Date(rowData.startDateTime);
+                                                    const end = new Date(rowData.endDateTime);
+                                                    return <span className="text-gray-400">{start.toLocaleDateString()} {start.getHours()}:00 - {end.toLocaleDateString()} {end.getHours()}:00</span>;
+                                                }
+                                                return <span className="font-medium text-white">{rowData.startTime?.slice(0, 5)} - {rowData.endTime?.slice(0, 5)}</span>;
+                                            }} />
+                                            <Column field="pricePerHour" header="RATE" body={(rowData) => <span className="font-black text-[#eb79b2]">{Number(rowData.pricePerHour).toLocaleString()}₮</span>} />
+                                            <Column body={(rowData) => (
+                                                <Button icon="pi pi-trash" className="p-button-danger p-button-text p-button-sm hover:bg-red-500/10" onClick={() => handleDeletePricing(rowData.id)} />
+                                            )} style={{ width: '50px' }} />
+                                        </DataTable>
                                     </div>
 
-                                    {/* Add New Rule Form */}
-                                    <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-
-                                        {/* Mode Toggle */}
-                                        <div className="flex gap-2 mb-3 border-b border-white/10 pb-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: false, priority: 20 }))}
-                                                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${!pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white' : 'text-text-muted hover:text-white'}`}
-                                            >
-                                                Recurring Rule
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: true, priority: 100 }))}
-                                                className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all ${pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white' : 'text-text-muted hover:text-white'}`}
-                                            >
-                                                Specific Date
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-12 gap-2 items-end">
-                                            {!pricingForm.isSpecificDate ? (
-                                                <>
-                                                    <div className="col-span-6 md:col-span-4">
-                                                        <label className="text-xs text-text-muted block mb-1">Day Type</label>
-                                                        <Dropdown
-                                                            value={pricingForm.dayType}
-                                                            options={[{ label: 'Weekday (Mon-Thu)', value: 'WEEKDAY' }, { label: 'Weekend (Fri-Sun)', value: 'WEEKEND' }, { label: 'Holiday', value: 'HOLIDAY' }, { label: 'Daily (All)', value: 'DAILY' }]}
-                                                            onChange={(e) => setPricingForm({ ...pricingForm, dayType: e.value })}
-                                                            className="w-full p-inputtext-sm text-xs"
-                                                        />
+                                    <div className="md:hidden flex flex-col gap-2 p-3">
+                                        {(selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []).map(rule => (
+                                            <div key={rule.id} className="bg-white/5 p-3 rounded-lg border border-white/5 flex justify-between items-center">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <Tag value={rule.priority} severity="warning" className="text-[9px] px-1.5" />
+                                                        <span className="font-bold text-xs text-white uppercase tracking-wider">{rule.startDateTime ? 'Specific' : rule.dayType}</span>
                                                     </div>
-                                                    <div className="col-span-6 md:col-span-4">
-                                                        <label className="text-xs text-text-muted block mb-1">Time Range</label>
-                                                        <div className="flex items-center gap-1">
-                                                            <InputText type="time" value={pricingForm.startTime} onChange={(e) => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="w-full text-xs p-1" />
-                                                            <span className="text-white">-</span>
-                                                            <InputText type="time" value={pricingForm.endTime} onChange={(e) => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="w-full text-xs p-1" />
-                                                        </div>
+                                                    <div className="text-[10px] text-gray-500 font-medium">
+                                                        {rule.startDateTime
+                                                            ? `${new Date(rule.startDateTime).toLocaleDateString()} ${new Date(rule.startDateTime).getHours()}:00`
+                                                            : `${rule.startTime?.slice(0, 5)} - ${rule.endTime?.slice(0, 5)}`
+                                                        }
                                                     </div>
-                                                </>
-                                            ) : (
-                                                <div className="col-span-12 md:col-span-8">
-                                                    <label className="text-xs text-text-muted block mb-1">Date Range (Start - End)</label>
-                                                    <Calendar
-                                                        value={pricingForm.dateRange}
-                                                        onChange={(e) => setPricingForm({ ...pricingForm, dateRange: e.value })}
-                                                        selectionMode="range"
-                                                        readOnlyInput
-                                                        hideOnDateTimeSelect
-                                                        showTime
-                                                        hourFormat="24"
-                                                        className="w-full p-inputtext-sm text-xs"
-                                                        placeholder="Select start and end time..."
+                                                </div>
+                                                <div className="text-right flex flex-col items-end">
+                                                    <div className="font-black text-[#eb79b2] text-sm mb-1">{Number(rule.pricePerHour).toLocaleString()}₮</div>
+                                                    <Button icon="pi pi-trash" className="p-button-danger p-button-text h-7 w-7 p-0" onClick={() => handleDeletePricing(rule.id)} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <div className="flex gap-2 mb-4">
+                                        <Button
+                                            type="button"
+                                            label="Recurring Strategy"
+                                            size="small"
+                                            icon="pi pi-sync"
+                                            className={`text-[10px] uppercase font-bold px-4 py-2 rounded-lg transition-all ${!pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white border-none' : 'bg-transparent text-gray-500 border-white/10'}`}
+                                            onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: false, priority: 20 }))}
+                                        />
+                                        <Button
+                                            type="button"
+                                            label="Special Event"
+                                            size="small"
+                                            icon="pi pi-calendar"
+                                            className={`text-[10px] uppercase font-bold px-4 py-2 rounded-lg transition-all ${pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white border-none' : 'bg-transparent text-gray-500 border-white/10'}`}
+                                            onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: true, priority: 100 }))}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                        {!pricingForm.isSpecificDate ? (
+                                            <>
+                                                <div className="md:col-span-4 flex flex-col gap-1.5">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Repeat Type</label>
+                                                    <Dropdown
+                                                        value={pricingForm.dayType}
+                                                        options={[
+                                                            { label: 'Weekday (Mon-Thu)', value: 'WEEKDAY' },
+                                                            { label: 'Weekend (Fri-Sun)', value: 'WEEKEND' },
+                                                            { label: 'Holiday', value: 'HOLIDAY' },
+                                                            { label: 'Daily (All)', value: 'DAILY' }
+                                                        ]}
+                                                        onChange={(e) => setPricingForm({ ...pricingForm, dayType: e.value })}
+                                                        className="h-10 text-xs"
                                                     />
                                                 </div>
-                                            )}
+                                                <div className="md:col-span-4 flex flex-col gap-1.5">
+                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Active Time Range</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <InputText type="time" value={pricingForm.startTime} onChange={(e) => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="h-10 text-center text-xs flex-1" />
+                                                        <span className="text-gray-600 font-bold">-</span>
+                                                        <InputText type="time" value={pricingForm.endTime} onChange={(e) => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="h-10 text-center text-xs flex-1" />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="md:col-span-8 flex flex-col gap-1.5">
+                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Specific Period</label>
+                                                <Calendar
+                                                    value={pricingForm.dateRange}
+                                                    onChange={(e) => setPricingForm({ ...pricingForm, dateRange: e.value })}
+                                                    selectionMode="range"
+                                                    readOnlyInput
+                                                    showTime
+                                                    hourFormat="24"
+                                                    className="h-10 text-xs"
+                                                    placeholder="Click to select dates..."
+                                                />
+                                            </div>
+                                        )}
 
-                                            <div className="col-span-6 md:col-span-2">
-                                                <label className="text-xs text-text-muted block mb-1">Price (₮)</label>
-                                                <InputNumber
-                                                    value={pricingForm.pricePerHour}
-                                                    onValueChange={(e) => setPricingForm({ ...pricingForm, pricePerHour: e.value })}
-                                                    mode="currency" currency="MNT" locale="mn-MN"
-                                                    className="w-full p-inputtext-sm text-xs"
-                                                />
-                                            </div>
-                                            <div className="col-span-6 md:col-span-1">
-                                                <label className="text-xs text-text-muted block mb-1">Priority</label>
-                                                <InputNumber
-                                                    value={pricingForm.priority}
-                                                    onValueChange={(e) => setPricingForm({ ...pricingForm, priority: e.value })}
-                                                    min={1} max={999}
-                                                    className="w-full p-inputtext-sm text-xs"
-                                                />
-                                            </div>
-                                            <div className="col-span-12 md:col-span-1">
-                                                <Button icon="pi pi-plus" className="w-full p-button-sm p-button-outlined h-8" onClick={() => handleAddPricing(editingRoom.id)} />
-                                            </div>
+                                        <div className="md:col-span-2 flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Special Rate</label>
+                                            <InputNumber
+                                                value={pricingForm.pricePerHour}
+                                                onValueChange={(e) => setPricingForm({ ...pricingForm, pricePerHour: e.value })}
+                                                mode="currency" currency="MNT" locale="mn-MN"
+                                                className="h-10 text-xs"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-1 flex flex-col gap-1.5">
+                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">PRI</label>
+                                            <InputNumber
+                                                value={pricingForm.priority}
+                                                onValueChange={(e) => setPricingForm({ ...pricingForm, priority: e.value })}
+                                                min={1} max={999}
+                                                className="h-10 text-xs"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <Button icon="pi pi-plus" type="button" className="w-full h-10 bg-[#00f0ff] border-none text-black hover:bg-[#00d8e6]" onClick={() => handleAddPricing(editingRoom.id)} />
                                         </div>
                                     </div>
                                 </div>
-                            )}
-                            <div className="sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-2">
-                                {editingRoom && (
-                                    <Button
-                                        type="button"
-                                        label="Cancel"
-                                        outlined
-                                        onClick={() => {
-                                            setEditingRoom(null);
-                                            setEditingRoom(null);
-                                            setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], roomFeatureIds: [] });
-                                        }}
-                                    />
-                                )}
-                                <Button
-                                    type="submit"
-                                    label={editingRoom ? t('save') : t('addRoom')}
-                                    className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold rounded-lg shadow-lg shadow-[#b000ff]/20"
-                                />
                             </div>
-                        </form>
-                    </div>
+                        )}
+                        <div className="md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-white/5">
+                            <Button
+                                type="button"
+                                label="Cancel"
+                                outlined
+                                className="h-11 px-6 font-bold"
+                                onClick={() => {
+                                    setEditingRoom(null);
+                                    setIsRoomModalOpen(false);
+                                    setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], roomFeatureIds: [], isBookingEnabled: true });
+                                }}
+                            />
+                            <Button
+                                type="submit"
+                                label={editingRoom ? "Update Room" : "Create Room"}
+                                className="h-11 px-10 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[#b000ff]/20"
+                            />
+                        </div>
+                    </form>
                 </div>
             </Dialog>
-
-
 
             <Dialog header="Room Types & Features Configuration" visible={isConfigModalOpen} className="w-full max-w-[95vw] lg:max-w-[1000px]" modal onHide={() => setIsConfigModalOpen(false)}>
                 <RoomConfiguration />
             </Dialog>
-
-        </div >
+        </div>
     );
 };
 

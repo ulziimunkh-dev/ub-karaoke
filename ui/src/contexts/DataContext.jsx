@@ -132,8 +132,8 @@ export const DataProvider = ({ children }) => {
                             const orgVenues = processedVenues.filter(v => v.organizationId === userData.organizationId);
                             if (orgVenues.length > 0) {
                                 const savedVenueId = localStorage.getItem('activeVenueId');
-                                if (savedVenueId && orgVenues.some(v => v.id === parseInt(savedVenueId))) {
-                                    setActiveVenueId(parseInt(savedVenueId));
+                                if (savedVenueId && orgVenues.some(v => v.id === savedVenueId)) {
+                                    setActiveVenueId(savedVenueId);
                                 } else {
                                     setActiveVenueId(orgVenues[0].id);
                                 }
@@ -218,8 +218,8 @@ export const DataProvider = ({ children }) => {
                 const orgVenues = venues.filter(v => v.organizationId === data.user.organizationId);
                 if (orgVenues.length > 0) {
                     const savedVenueId = localStorage.getItem('activeVenueId');
-                    if (savedVenueId && orgVenues.some(v => v.id === parseInt(savedVenueId))) {
-                        setActiveVenueId(parseInt(savedVenueId));
+                    if (savedVenueId && orgVenues.some(v => v.id === savedVenueId)) {
+                        setActiveVenueId(savedVenueId);
                     } else {
                         setActiveVenueId(orgVenues[0].id);
                     }
@@ -494,7 +494,7 @@ export const DataProvider = ({ children }) => {
         try {
             const data = {
                 ...roomData,
-                venueId: Number(venueId),
+                venueId: venueId.toString(),
                 condition: roomData.condition || 'Good',
                 amenities: roomData.amenities || [],
                 images: roomData.images || [],

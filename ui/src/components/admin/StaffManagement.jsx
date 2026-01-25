@@ -10,6 +10,7 @@ import { Tag } from 'primereact/tag';
 import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import AvatarGalleryPicker from '../common/AvatarGalleryPicker';
+import { api } from '../../utils/api';
 
 const StaffManagement = () => {
     const { staffs, addStaff, updateStaff, toggleStaffStatus, currentUser, organizations } = useData();

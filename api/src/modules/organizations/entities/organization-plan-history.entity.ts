@@ -32,15 +32,15 @@ export class OrganizationPlanHistory {
     commissionRate: number;
 
     // Period
-    @Column({ name: 'start_date', type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    @Column({ name: 'start_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     startDate: Date;
 
-    @Column({ name: 'end_date', type: 'timestamptz', nullable: true })
+    @Column({ name: 'end_date', type: 'timestamp', nullable: true })
     endDate: Date;
 
     @Column({ default: 'active' })
     status: string; // active, completed, changed
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 }

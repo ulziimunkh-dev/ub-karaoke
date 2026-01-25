@@ -120,6 +120,31 @@ const OrganizationManagement = () => {
         return plan ? <Tag value={plan.name} severity="warning" /> : <span className="text-gray-400">No Plan</span>;
     };
 
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            toast.current.show({ severity: 'success', summary: 'Copied', detail: 'ID copied to clipboard', life: 2000 });
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to copy ID', life: 2000 });
+        });
+    };
+
+    const idBodyTemplate = (rowData) => {
+        const fullId = rowData.id.toString();
+        const shortId = fullId.length > 8 ? `${fullId.substring(0, 8)}...` : fullId;
+
+        return (
+            <div
+                className="group flex items-center gap-2 cursor-pointer hover:text-blue-400 transition-colors"
+                onClick={() => copyToClipboard(fullId)}
+                title="Click to copy full ID"
+            >
+                <span className="font-mono text-xs">{shortId}</span>
+                <i className="pi pi-copy text-[10px] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+        );
+    };
+
     return (
         <div className="p-6">
             <Toast ref={toast} />
@@ -138,7 +163,7 @@ const OrganizationManagement = () => {
 
             <div className="card shadow-md rounded-xl overflow-hidden bg-[#1a1a24] border border-white/5 hidden lg:block">
                 <DataTable value={organizations} responsiveLayout="scroll" className="p-datatable-sm">
-                    <Column field="id" header="ID" style={{ width: '80px' }}></Column>
+                    <Column field="id" header="ID" body={idBodyTemplate} style={{ width: '120px' }}></Column>
                     <Column field="logoUrl" header="Logo" body={(row) => row.logoUrl ? <img src={row.logoUrl} alt="logo" className="w-10 h-10 object-cover rounded" /> : null} width="6rem"></Column>
                     <Column field="name" header="Name" sortable></Column>
                     <Column field="code" header="Unique Code" sortable body={(row) => <Tag value={row.code} severity="info" />}></Column>

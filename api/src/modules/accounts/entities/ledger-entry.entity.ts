@@ -37,6 +37,6 @@ export class LedgerEntry {
     @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
     credit: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 }

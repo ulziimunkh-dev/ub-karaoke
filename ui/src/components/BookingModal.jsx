@@ -149,6 +149,9 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         });
     };
 
+    // Filter rooms to only show those that are active and booking enabled
+    const displayRooms = venue.rooms?.filter(r => r.isActive !== false && r.isBookingEnabled !== false) || [];
+
     const handleRoomConfirmation = () => {
         if (selectedRooms.length > 0) {
             setStep(2);
@@ -445,7 +448,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                         </div>
                                                     </div>
                                                 )}
-                                                {venue.rooms.map(room => {
+                                                {displayRooms.map(room => {
                                                     const isSelected = selectedRooms.find(r => r.id === room.id);
                                                     const isRoomDisabled = room.isBookingEnabled === false;
                                                     const canSelect = !isHardBlocked && !isRoomDisabled;
@@ -606,14 +609,24 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         </div>
                                         <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
                                             <label className="font-bold text-sm text-text-muted">{t('duration')} (Hours)</label>
-                                            <InputNumber
+                                            <Dropdown
                                                 value={bookingData.hours}
-                                                onValueChange={(e) => setBookingData({ ...bookingData, hours: e.value })}
-                                                min={minVenueHours}
-                                                max={maxAllowedDuration}
-                                                step={minVenueHours === maxVenueHours ? 0 : (Number(venue.minBookingHours) || 1)}
-                                                disabled={isFixedDuration}
-                                                showButtons={!isFixedDuration}
+                                                options={(() => {
+                                                    const opts = [];
+                                                    const step = 0.5;
+                                                    for (let h = minVenueHours; h <= maxAllowedDuration; h += step) {
+                                                        opts.push({ label: `${h} ${t('hours') || 'Hours'}`, value: h });
+                                                    }
+                                                    // Ensure maxAllowedDuration is included if loop ends early
+                                                    if (opts.length === 0 || opts[opts.length - 1].value !== maxAllowedDuration) {
+                                                        if (maxAllowedDuration >= minVenueHours) {
+                                                            opts.push({ label: `${maxAllowedDuration} ${t('hours') || 'Hours'}`, value: maxAllowedDuration });
+                                                        }
+                                                    }
+                                                    return opts;
+                                                })()}
+                                                onChange={(e) => setBookingData({ ...bookingData, hours: e.value })}
+                                                disabled={isFixedDuration || loadingSlots}
                                                 className="w-full"
                                             />
                                             {isFixedDuration && <span className="text-[10px] text-text-muted">{t('fixedDurationNote') || 'Fixed duration policy applies'}</span>}

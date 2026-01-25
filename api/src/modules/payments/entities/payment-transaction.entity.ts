@@ -55,6 +55,6 @@ export class PaymentTransaction {
     @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
     organizationId: string;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 }

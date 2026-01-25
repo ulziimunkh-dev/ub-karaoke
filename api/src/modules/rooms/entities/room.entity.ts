@@ -85,10 +85,10 @@ export class Room {
     @Column({ name: 'sort_order', default: 0 })
     sortOrder: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
@@ -105,7 +105,7 @@ export class Room {
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    @Column({ name: 'organization_id', nullable: true })
     organizationId: string;
 
     @OneToMany(() => Booking, (booking) => booking.room)

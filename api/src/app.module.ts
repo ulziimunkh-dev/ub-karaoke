@@ -28,6 +28,14 @@ import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import { join } from 'path';
 import { TypeOrmLoggerAdapter } from './common/adapters/typeorm-logger.adapter';
 
+const ignoreRouterExplorer = winston.format((info) => {
+  if (info.context === 'RouterExplorer') {
+    return false;
+  }
+  return info;
+});
+
+
 @Module({
   imports: [
     WinstonModule.forRoot({
@@ -49,8 +57,17 @@ import { TypeOrmLoggerAdapter } from './common/adapters/typeorm-logger.adapter';
           maxSize: '20m',
           maxFiles: '14d',
           format: winston.format.combine(
+            ignoreRouterExplorer(),
             winston.format.timestamp(),
-            winston.format.json(),
+            winston.format.printf(({ timestamp, level, message, context, ...rest }) => {
+              return JSON.stringify({
+                timestamp,
+                level,
+                context,
+                message,
+                ...rest,
+              });
+            }),
           ),
         }),
         new winston.transports.DailyRotateFile({
@@ -59,8 +76,17 @@ import { TypeOrmLoggerAdapter } from './common/adapters/typeorm-logger.adapter';
           maxSize: '20m',
           maxFiles: '14d',
           format: winston.format.combine(
+            ignoreRouterExplorer(),
             winston.format.timestamp(),
-            winston.format.json(),
+            winston.format.printf(({ timestamp, level, message, context, ...rest }) => {
+              return JSON.stringify({
+                timestamp,
+                level,
+                context,
+                message,
+                ...rest,
+              });
+            }),
           ),
         }),
       ],

@@ -24,7 +24,8 @@ import ProfileModal from '../components/common/ProfileModal';
 import { api } from '../utils/api';
 
 const AdminPage = () => {
-    const { currentUser, logout, venues, activeVenueId, setActiveVenueId, updateStaff } = useData();
+    const { currentUser, logout, venues, activeVenueId, setActiveVenueId, updateStaff, organizations } = useData();
+    const [selectedOrgId, setSelectedOrgId] = useState(null);
     const { language, toggleLanguage, t } = useLanguage();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -194,20 +195,39 @@ const AdminPage = () => {
                             <h1 className="text-xl font-bold text-white m-0 uppercase tracking-tight">Management context</h1>
                             <p className="text-xs text-gray-500 font-medium">Filtering data based on selected branch scope</p>
                         </div>
-                        <div className="flex items-center gap-4 bg-black/20 p-2 rounded-xl border border-white/5">
-                            <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Switch venue:</span>
-                            <Dropdown
-                                value={activeVenueId}
-                                options={currentUser.role === 'sysadmin'
-                                    ? venues.map(v => ({ label: v.name, value: v.id }))
-                                    : venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
-                                }
-                                onChange={(e) => setActiveVenueId(e.value)}
-                                placeholder="Select Branch Context"
-                                className="w-64 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
-                                filter
-                                showClear={currentUser.role === 'sysadmin'}
-                            />
+                        <div className="flex flex-wrap items-center gap-4 bg-black/20 p-2 rounded-xl border border-white/5">
+                            {currentUser.role === 'sysadmin' && (
+                                <div className="flex items-center gap-2">
+                                    <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Org:</span>
+                                    <Dropdown
+                                        value={selectedOrgId}
+                                        options={organizations.map(org => ({ label: org.name, value: org.id }))}
+                                        onChange={(e) => {
+                                            setSelectedOrgId(e.value);
+                                            setActiveVenueId(null);
+                                        }}
+                                        placeholder="All Organizations"
+                                        className="w-48 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
+                                        filter
+                                        showClear
+                                    />
+                                </div>
+                            )}
+                            <div className="flex items-center gap-2">
+                                <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Switch venue:</span>
+                                <Dropdown
+                                    value={activeVenueId}
+                                    options={currentUser.role === 'sysadmin'
+                                        ? venues.filter(v => !selectedOrgId || v.organizationId === selectedOrgId).map(v => ({ label: v.name, value: v.id }))
+                                        : venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
+                                    }
+                                    onChange={(e) => setActiveVenueId(e.value)}
+                                    placeholder="Select Branch Context"
+                                    className="w-64 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
+                                    filter
+                                    showClear={currentUser.role === 'sysadmin'}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}
@@ -218,9 +238,9 @@ const AdminPage = () => {
                 {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
-                {activeTab === 'users' && (currentUser.role === 'sysadmin' || currentUser.role === 'admin') && <UserManagement />}
+                {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
-                {activeTab === 'audit' && <AuditLogViewer />}
+                {activeTab === 'audit' && (currentUser.role === 'sysadmin') && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
                 {activeTab === 'finance' && <Finance />}
                 {activeTab === 'settings' && <SystemSettings />}

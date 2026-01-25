@@ -104,7 +104,8 @@ export class VenuesController {
     @ApiOperation({ summary: 'Add pricing to all rooms in a venue' })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    addVenuePricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
-        return this.roomsService.addVenuePricing(id, pricingData, req.user);
+    async addVenuePricing(@Param('id') id: string, @Body() pricingData: any, @Req() req: any) {
+        const venue = await this.venuesService.findOne(id);
+        return this.roomsService.addVenuePricing(id, pricingData, req.user, venue.organizationId);
     }
 }

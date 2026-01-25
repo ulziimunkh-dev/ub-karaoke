@@ -43,7 +43,7 @@ export class BookingStatusHistory {
     @JoinColumn({ name: 'changedByStaffId' })
     staff: Staff;
 
-    @CreateDateColumn({ name: 'changedAt' })
+    @CreateDateColumn({ name: 'changedAt', type: 'timestamp' })
     changedAt: Date;
 
     @ManyToOne(() => Organization)

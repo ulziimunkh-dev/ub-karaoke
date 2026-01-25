@@ -58,11 +58,8 @@ export class Venue {
     @Column({ name: 'featuredImage', nullable: true })
     featuredImage: string;
 
-    @Column('decimal', { precision: 10, scale: 7, nullable: true })
-    latitude: number;
-
-    @Column('decimal', { precision: 10, scale: 7, nullable: true })
-    longitude: number;
+    @Column({ name: 'gmap_location', nullable: true })
+    gmapLocation: string;
 
     @Column({ name: 'isBookingEnabled', default: true })
     isBookingEnabled: boolean;
@@ -85,10 +82,10 @@ export class Venue {
     @Column('decimal', { name: 'maxBookingHours', precision: 5, scale: 2, default: 6.0 })
     maxBookingHours: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })
@@ -101,7 +98,7 @@ export class Venue {
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    @Column({ name: 'organization_id', nullable: true })
     organizationId: string;
 
     @OneToMany(() => Room, (room) => room.venue)

@@ -60,13 +60,13 @@ export class RoomPricing {
     @Column({ default: 1 })
     priority: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
-    @DeleteDateColumn({ name: 'deleted_at' })
+    @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp' })
     deletedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })

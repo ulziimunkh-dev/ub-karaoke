@@ -30,7 +30,7 @@ export class Plan {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
     @OneToMany(() => Organization, org => org.plan)

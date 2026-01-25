@@ -41,10 +41,10 @@ export class Organization {
     @JoinColumn({ name: 'plan_id' })
     plan: Plan;
 
-    @Column({ name: 'plan_started_at', type: 'timestamptz', nullable: true })
+    @Column({ name: 'plan_started_at', type: 'timestamp', nullable: true })
     planStartedAt: Date;
 
-    @Column({ name: 'plan_ends_at', type: 'timestamptz', nullable: true })
+    @Column({ name: 'plan_ends_at', type: 'timestamp', nullable: true })
     planEndsAt: Date;
 
     @Column({ nullable: true })
@@ -56,10 +56,10 @@ export class Organization {
     @OneToMany(() => Venue, venue => venue.organization)
     venues: Venue[];
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })

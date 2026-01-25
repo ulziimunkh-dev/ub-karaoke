@@ -206,9 +206,10 @@
 .p-inputtext,
 .p-inputnumber-input,
 .p-dropdown,
+.p-multiselect,
 .p-inputtextarea {
   background-color: #0f0f16 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
   color: white !important;
   border-radius: 12px !important;
   transition: all 0.2s ease !important;
@@ -217,10 +218,105 @@
 .p-inputtext:focus,
 .p-inputnumber-input:focus,
 .p-dropdown:focus,
+.p-multiselect:focus,
 .p-inputtextarea:focus {
   border-color: #b000ff !important;
   box-shadow: 0 0 10px rgba(176, 0, 255, 0.3) !important;
   outline: none !important;
+}
+
+/* Dropdown & MultiSelect Specifics */
+.p-dropdown,
+.p-multiselect {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 44px !important;
+}
+
+.p-dropdown .p-dropdown-label,
+.p-multiselect .p-multiselect-label {
+  padding: 0.6rem 1rem !important;
+  text-align: left !important;
+  color: white !important;
+  font-size: 0.875rem !important;
+}
+
+.p-multiselect .p-multiselect-label {
+  gap: 0.25rem !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+.p-dropdown .p-dropdown-trigger,
+.p-multiselect .p-multiselect-trigger {
+  width: 2.5rem !important;
+  color: #8b8b9e !important;
+}
+
+/* Panel / Overlay Styling */
+.p-dropdown-panel,
+.p-multiselect-panel,
+.p-datepicker {
+  background: #1a1a24 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+  border-radius: 12px !important;
+  padding: 0.5rem 0 !important;
+}
+
+.p-dropdown-panel .p-dropdown-items,
+.p-multiselect-panel .p-multiselect-items {
+  padding: 0 !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item {
+  color: #8b8b9e !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0 0.5rem !important;
+  border-radius: 8px !important;
+  transition: all 0.2s !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+  background: rgba(176, 0, 255, 0.15) !important;
+  color: #eb79b2 !important;
+  font-weight: 700 !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:not(.p-highlight):not(.p-disabled):hover,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:not(.p-highlight):not(.p-disabled):hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+}
+
+.p-checkbox .p-checkbox-box {
+  background: #0f0f16 !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  border-radius: 6px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.p-checkbox:not(.p-checkbox-disabled):hover .p-checkbox-box {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.3) !important;
+}
+
+.p-checkbox.p-highlight .p-checkbox-box,
+.p-checkbox .p-checkbox-box.p-highlight {
+  background: #22c55e !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4) !important;
+}
+
+.p-checkbox.p-highlight .p-checkbox-box .p-checkbox-icon,
+.p-checkbox .p-checkbox-box.p-highlight .p-checkbox-icon {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  font-size: 0.875rem !important;
+  opacity: 1 !important;
+  display: block !important;
 }
 
 /* PrimeReact Buttons */

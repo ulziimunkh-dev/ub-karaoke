@@ -46,10 +46,10 @@ export class User {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
 
     @Column({ name: 'created_by', nullable: true })

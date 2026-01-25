@@ -87,6 +87,7 @@ export class VenuesService {
         if (!filters?.includeInactive) {
             query.andWhere('venue.is_active = :active', { active: true });
             query.andWhere('organization.is_active = :active', { active: true });
+            query.andWhere('room.is_active = :active', { active: true });
         }
 
         query.addOrderBy('room.sortOrder', 'ASC')
@@ -104,9 +105,9 @@ export class VenuesService {
             return cached;
         }
 
-        const venue = await this.venuesRepository.createQueryBuilder('venue')
+        const query = this.venuesRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.organization', 'organization')
-            .leftJoinAndSelect('venue.rooms', 'room')
+            .leftJoinAndSelect('venue.rooms', 'room', 'room.is_active = :roomActive', { roomActive: true })
             .leftJoinAndSelect('venue.reviews', 'review')
             .leftJoinAndSelect('venue.operatingHours', 'operatingHours')
             .leftJoinAndSelect('room.roomType', 'roomType')
@@ -114,8 +115,9 @@ export class VenuesService {
             .leftJoinAndSelect('room.pricing', 'pricing')
             .where('venue.id = :id', { id })
             .orderBy('room.sortOrder', 'ASC')
-            .addOrderBy('room.name', 'ASC')
-            .getOne();
+            .addOrderBy('room.name', 'ASC');
+
+        const venue = await query.getOne();
 
         if (!venue) {
             throw new NotFoundException(`Venue with ID ${id} not found`);
