@@ -21,8 +21,36 @@ async function bootstrap() {
   // Enable CORS
   const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
-    origin: frontendUrl ? [frontendUrl, frontendUrl.replace(/\/$/, '')] : true,
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // 1. Allow if no origin (like mobile apps or curl) 
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // 2. Check if it matches the explicit FRONTEND_URL
+      if (frontendUrl && (origin === frontendUrl || origin === frontendUrl.replace(/\/$/, ''))) {
+        callback(null, true);
+        return;
+      }
+
+      // 3. Allow localhost for development
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        callback(null, true);
+        return;
+      }
+
+      // 4. In development mode (not production), allow all if no frontendUrl is set
+      if (process.env.NODE_ENV !== 'production' && !frontendUrl) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   // Global validation pipe

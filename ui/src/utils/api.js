@@ -1,9 +1,17 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
-    // 1. Explicit Environment Variable (Highest Priority - MUST be set on Railway)
-    if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
+    // 1. Explicit Environment Variable (Highest Priority)
+    let url = import.meta.env.VITE_API_URL;
+
+    // Automatically force HTTPS for Production URLs to avoid "Mixed Content" errors
+    if (url && url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+        console.warn('Insecure VITE_API_URL detected in production. Upgrading to HTTPS.');
+        url = url.replace('http://', 'https://');
+    }
+
+    if (url) {
+        return url;
     }
 
     const hostname = window.location.hostname;
@@ -14,8 +22,6 @@ const getApiUrl = () => {
     }
 
     // 3. Fallback for deployed environments
-    // Warning: On Railway, services are usually on different domains.
-    // If VITE_API_URL is missing, we try to use the current host but without a specific port.
     console.warn('VITE_API_URL is not set. Falling back to current hostname.');
     return window.location.origin;
 };
