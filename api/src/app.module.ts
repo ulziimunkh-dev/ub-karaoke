@@ -126,13 +126,21 @@ const ignoreRouterExplorer = winston.format((info) => {
 
         let redisOptions: any;
         if (redisUrl) {
-          // If REDIS_URL is provided, we use it directly.
-          // ioredis and cache-manager-ioredis-yet support the url property.
-          redisOptions = {
-            url: redisUrl,
-            // Automatically enable TLS if the URL starts with rediss://
-            tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
-          };
+          try {
+            // Parse the URL to extract connection details
+            // ioredis needs these as separate fields in the options object
+            const parsed = new URL(redisUrl);
+            redisOptions = {
+              host: parsed.hostname,
+              port: parseInt(parsed.port) || 6379,
+              password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+              username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
+              tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+            };
+          } catch (e) {
+            // Fallback if URL parsing fails
+            redisOptions = { url: redisUrl };
+          }
         } else {
           redisOptions = {
             host: configService.get('REDIS_HOST') || 'localhost',
