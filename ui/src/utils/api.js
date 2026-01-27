@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
-    // If we're on a mobile device or another machine, we need to point to the server's IP
-    // window.location.hostname will be the IP of the server when accessed from another device
+    // Priority: Environment Variable > Current Hostname (for Railway/Production) > Localhost
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
     const hostname = window.location.hostname;
     return `http://${hostname}:3001`;
 };
