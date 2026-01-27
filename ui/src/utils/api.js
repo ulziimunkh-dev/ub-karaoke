@@ -1,12 +1,23 @@
 import axios from 'axios';
 
 const getApiUrl = () => {
-    // Priority: Environment Variable > Current Hostname (for Railway/Production) > Localhost
+    // 1. Explicit Environment Variable (Highest Priority - MUST be set on Railway)
     if (import.meta.env.VITE_API_URL) {
         return import.meta.env.VITE_API_URL;
     }
+
     const hostname = window.location.hostname;
-    return `http://${hostname}:3001`;
+
+    // 2. Localhost Development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return `http://${hostname}:3001`;
+    }
+
+    // 3. Fallback for deployed environments
+    // Warning: On Railway, services are usually on different domains.
+    // If VITE_API_URL is missing, we try to use the current host but without a specific port.
+    console.warn('VITE_API_URL is not set. Falling back to current hostname.');
+    return window.location.origin;
 };
 
 const API_URL = getApiUrl();

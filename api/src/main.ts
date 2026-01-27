@@ -19,8 +19,9 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Enable CORS
+  const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
-    origin: true, // Allow any origin in development to support cross-device testing
+    origin: frontendUrl ? [frontendUrl, frontendUrl.replace(/\/$/, '')] : true,
     credentials: true,
   });
 
