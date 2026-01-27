@@ -96,30 +96,47 @@ const ignoreRouterExplorer = winston.format((info) => {
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
-        username: configService.get('DATABASE_USER'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Enabled as requested by user for easier development
-        logging: true,
-        logger: new TypeOrmLoggerAdapter(),
-        timezone: '+08:00',
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get('DATABASE_URL');
+        const dbOptions = dbUrl ? { url: dbUrl } : {
+          host: configService.get('DATABASE_HOST'),
+          port: configService.get<number>('DATABASE_PORT'),
+          username: configService.get('DATABASE_USER'),
+          password: configService.get('DATABASE_PASSWORD'),
+          database: configService.get('DATABASE_NAME'),
+        };
+
+        return {
+          type: 'postgres',
+          ...dbOptions,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true, // Enabled for easier development
+          logging: true,
+          logger: new TypeOrmLoggerAdapter(),
+          timezone: '+08:00',
+        };
+      },
       inject: [ConfigService],
     }),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        store: await redisStore({
-          host: configService.get('REDIS_HOST'),
-          port: configService.get<number>('REDIS_PORT'),
-        }),
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const redisUrl = configService.get('REDIS_URL');
+        // If REDIS_URL is provided, use it directly.
+        // Otherwise, construct options from individual variables.
+        const redisOptions = redisUrl
+          ? { url: redisUrl }
+          : {
+            host: configService.get('REDIS_HOST') || 'localhost',
+            port: configService.get<number>('REDIS_PORT') || 6379,
+            password: configService.get('REDIS_PASSWORD'),
+          };
+
+        return {
+          store: await redisStore(redisOptions),
+        };
+      },
       inject: [ConfigService],
     }),
     VenuesModule,
