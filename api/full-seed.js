@@ -5,13 +5,16 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 async function run() {
-    const client = new Client({
-        host: '127.0.0.1',
-        port: process.env.DATABASE_PORT || 5432,
-        user: process.env.DATABASE_USER || 'postgres',
-        password: process.env.DATABASE_PASSWORD || 'postgres',
-        database: process.env.DATABASE_NAME || 'karaoke_db',
-    });
+    const connectionString = process.env.DATABASE_URL;
+    const client = connectionString
+        ? new Client({ connectionString, ssl: connectionString.includes('railway.internal') ? false : { rejectUnauthorized: false } })
+        : new Client({
+            host: process.env.DATABASE_HOST || '127.0.0.1',
+            port: process.env.DATABASE_PORT || 5432,
+            user: process.env.DATABASE_USER || 'postgres',
+            password: process.env.DATABASE_PASSWORD || 'postgres',
+            database: process.env.DATABASE_NAME || 'karaoke_db',
+        });
 
     try {
         await client.connect();
@@ -151,8 +154,7 @@ async function run() {
                 images: ["/assets/defaults/karaoke_standard.png"],
                 featuredImage: "/assets/defaults/karaoke_standard.png",
                 isBookingEnabled: false,
-                latitude: 47.9188,
-                longitude: 106.9176,
+                gmapLocation: "https://maps.app.goo.gl/seoul-street",
                 rooms: [
                     {
                         name: 'Standard Alpha',
@@ -198,8 +200,7 @@ async function run() {
                 openingHours: { "Daily": "14:00-06:00" },
                 images: ["/assets/defaults/karaoke_lux.png"],
                 featuredImage: "/assets/defaults/karaoke_lux.png",
-                latitude: 47.8864,
-                longitude: 106.9114,
+                gmapLocation: "https://maps.app.goo.gl/zaisan-hill",
                 rooms: [
                     {
                         name: 'Sky Room 1',
@@ -232,8 +233,7 @@ async function run() {
                 openingHours: { "Daily": "10:00-02:00" },
                 images: ["/assets/defaults/karaoke_standard.png"],
                 featuredImage: "/assets/defaults/karaoke_standard.png",
-                latitude: 47.9133,
-                longitude: 106.8833,
+                gmapLocation: "https://maps.app.goo.gl/star-voice",
                 rooms: [
                     { name: 'Melody Room', type: 'Standard', capacity: 4, hourlyRate: 25000, condition: 'Good', features: ['Vocal Effects'], amenities: ['Snacks'], images: ["/assets/defaults/karaoke_standard.png"], specs: { microphones: 2 }, partySupport: { birthday: true } },
                     { name: 'Harmony Suite', type: 'Large', capacity: 12, hourlyRate: 55000, condition: 'Good', features: ['Wide Screen'], amenities: ['Bottomless Tea'], images: ["/assets/defaults/karaoke_standard.png"], specs: { microphones: 3 }, partySupport: { birthday: true } }
@@ -243,9 +243,9 @@ async function run() {
 
         for (const venue of venues) {
             const vRes = await client.query(
-                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", latitude, longitude, created_by, updated_by, is_active)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $17, true) RETURNING id`,
-                [venue.orgId, venue.name, venue.district, venue.address, venue.description, venue.phone, venue.email, venue.priceRange, venue.rating, venue.totalReviews, JSON.stringify(venue.amenities), JSON.stringify(venue.openingHours), JSON.stringify(venue.images), venue.featuredImage, venue.latitude, venue.longitude, adminId]
+                `INSERT INTO venues (organization_id, name, district, address, description, phone, email, "priceRange", rating, "totalReviews", amenities, "openingHours", images, "featuredImage", gmap_location, created_by, updated_by, is_active)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $16, true) RETURNING id`,
+                [venue.orgId, venue.name, venue.district, venue.address, venue.description, venue.phone, venue.email, venue.priceRange, venue.rating, venue.totalReviews, JSON.stringify(venue.amenities), JSON.stringify(venue.openingHours), JSON.stringify(venue.images), venue.featuredImage, venue.gmapLocation, adminId]
             );
             const venueId = vRes.rows[0].id;
             console.log(`✅ Created venue: ${venue.name} (Org: ${venue.orgId})`);
@@ -254,7 +254,7 @@ async function run() {
             if (venue.openingHours && venue.openingHours['Daily']) {
                 const [start, end] = venue.openingHours['Daily'].split('-');
                 const days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-                
+
                 for (const day of days) {
                     // Check if specific day override exists (future proofing seed data)
                     // Currently seed uses 'Daily' for all
