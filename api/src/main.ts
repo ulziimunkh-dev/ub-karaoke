@@ -28,9 +28,13 @@ async function bootstrap() {
         return;
       }
 
-      // Cleanup URLs for comparison (remove trailing slashes)
-      const cleanOrigin = origin.replace(/\/$/, '');
-      const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '') : null;
+      // Cleanup URLs for comparison (remove trailing slashes and prefix)
+      const cleanOrigin = origin.replace(/\/$/, '').toLowerCase();
+      const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '').toLowerCase() : null;
+
+      // Log for debugging (This is critical while we still have connection issues)
+      console.log(`[CORS DEBUG] Request from Origin: "${origin}"`);
+      console.log(`[CORS DEBUG] Configured FRONTEND_URL: "${frontendUrl}"`);
 
       // 2. Check if it matches the explicit FRONTEND_URL
       if (cleanFrontendUrl && cleanOrigin === cleanFrontendUrl) {
@@ -44,15 +48,14 @@ async function bootstrap() {
         return;
       }
 
-      // 4. In development mode (not production), allow all if no frontendUrl is set
+      // 4. Fallback: Allow all in non-production environments if no frontendUrl is set
       if (process.env.NODE_ENV !== 'production' && !frontendUrl) {
         callback(null, true);
         return;
       }
 
-      // LOGGING FOR DEBUGGING
-      console.warn(`[CORS] Request BLOCKED from origin: "${origin}"`);
-      console.warn(`[CORS] Expected FRONTEND_URL (cleaned): "${cleanFrontendUrl}"`);
+      // LOGGING FOR PERMANENT FAILURE
+      console.warn(`[CORS BLOCKED] Reason: Origin "${origin}" does not match FRONTEND_URL "${frontendUrl}"`);
 
       callback(null, false);
     },
