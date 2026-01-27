@@ -28,8 +28,12 @@ async function bootstrap() {
         return;
       }
 
+      // Cleanup URLs for comparison (remove trailing slashes)
+      const cleanOrigin = origin.replace(/\/$/, '');
+      const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '') : null;
+
       // 2. Check if it matches the explicit FRONTEND_URL
-      if (frontendUrl && (origin === frontendUrl || origin === frontendUrl.replace(/\/$/, ''))) {
+      if (cleanFrontendUrl && cleanOrigin === cleanFrontendUrl) {
         callback(null, true);
         return;
       }
@@ -46,7 +50,11 @@ async function bootstrap() {
         return;
       }
 
-      callback(new Error('Not allowed by CORS'));
+      // LOGGING FOR DEBUGGING
+      console.warn(`[CORS] Request BLOCKED from origin: "${origin}"`);
+      console.warn(`[CORS] Expected FRONTEND_URL (cleaned): "${cleanFrontendUrl}"`);
+
+      callback(null, false);
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
