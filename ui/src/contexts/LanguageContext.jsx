@@ -7,6 +7,11 @@ export const useLanguage = () => useContext(LanguageContext);
 const dictionaries = {
     en: {
         appTitle: "UB KARAOKE",
+        home: "Home",
+        profile: "Profile",
+        aboutUs: "About Us",
+        faq: "FAQ",
+        policy: "Policy",
         myBookings: "My Bookings",
         searchPlaceholder: "Search karaoke...",
         allDistricts: "All Districts",
@@ -173,6 +178,10 @@ const dictionaries = {
         codeOfConduct: "Code of Conduct",
         conductText: "Users are expected to treat venue staff and property with respect. Damages caused to venue equipment (microphones, screens, furniture) will be charged to the user's account.",
         lastUpdated: "Last updated: January 2026",
+        iAgreeTo: "I agree to the",
+        termsOfService: "Terms of Service",
+        privacyPolicy: "Privacy Policy",
+        and: "&",
 
         faqTitle: "Frequently Asked Questions",
         faqSubtitle: "Everything you need to know about UB Karaoke.",
@@ -189,6 +198,11 @@ const dictionaries = {
     },
     mn: {
         appTitle: "UB КАРАОКЕ",
+        home: "Нүүр",
+        profile: "Профайл",
+        aboutUs: "Бидний тухай",
+        faq: "Түгээмэл асуултууд",
+        policy: "Үйлчилгээний нөхцөл",
         myBookings: "Миний захиалгууд",
         searchPlaceholder: "Караоке хайх...",
         allDistricts: "Бүх дүүрэг",
@@ -355,6 +369,10 @@ const dictionaries = {
         codeOfConduct: "Ёс Зүйн Дүрэм",
         conductText: "Хэрэглэгч байгууллагын эд хөрөнгөд хүндэтгэлтэй хандах үүрэгтэй. Тоног төхөөрөмж (микрофон, дэлгэц г.м) эвдсэн тохиолдолд төлбөрийг хэрэглэгч хариуцна.",
         lastUpdated: "Сүүлд шинэчилсэн: 2026 оны 1 сар",
+        iAgreeTo: "Би ",
+        termsOfService: "Үйлчилгээний Нөхцөл",
+        privacyPolicy: "Нууцлалын Бодлого",
+        and: " болон ",
 
         faqTitle: "Түгээмэл Асуултууд",
         faqSubtitle: "UB Karaoke-ийн талаар таны мэдэх ёстой бүх зүйл.",

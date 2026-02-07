@@ -154,7 +154,7 @@ async function run() {
                 images: ["/assets/defaults/karaoke_standard.png"],
                 featuredImage: "/assets/defaults/karaoke_standard.png",
                 isBookingEnabled: false,
-                gmapLocation: "https://maps.app.goo.gl/seoul-street",
+                gmapLocation: "47.9188, 106.9176",
                 rooms: [
                     {
                         name: 'Standard Alpha',
@@ -200,7 +200,7 @@ async function run() {
                 openingHours: { "Daily": "14:00-06:00" },
                 images: ["/assets/defaults/karaoke_lux.png"],
                 featuredImage: "/assets/defaults/karaoke_lux.png",
-                gmapLocation: "https://maps.app.goo.gl/zaisan-hill",
+                gmapLocation: "47.8960, 106.9100",
                 rooms: [
                     {
                         name: 'Sky Room 1',
@@ -233,7 +233,7 @@ async function run() {
                 openingHours: { "Daily": "10:00-02:00" },
                 images: ["/assets/defaults/karaoke_standard.png"],
                 featuredImage: "/assets/defaults/karaoke_standard.png",
-                gmapLocation: "https://maps.app.goo.gl/star-voice",
+                gmapLocation: "47.9200, 106.8800",
                 rooms: [
                     { name: 'Melody Room', type: 'Standard', capacity: 4, hourlyRate: 25000, condition: 'Good', features: ['Vocal Effects'], amenities: ['Snacks'], images: ["/assets/defaults/karaoke_standard.png"], specs: { microphones: 2 }, partySupport: { birthday: true } },
                     { name: 'Harmony Suite', type: 'Large', capacity: 12, hourlyRate: 55000, condition: 'Good', features: ['Wide Screen'], amenities: ['Bottomless Tea'], images: ["/assets/defaults/karaoke_standard.png"], specs: { microphones: 3 }, partySupport: { birthday: true } }
