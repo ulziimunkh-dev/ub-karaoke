@@ -207,6 +207,9 @@ const booking = await fetch('http://localhost:3001/bookings', {
 });
 ```
 
+to seed data
+$env:DATABASE_URL="{DATABASE_PUBLIC_URL}"; npm run seed  
+
 ## License
 
 MIT

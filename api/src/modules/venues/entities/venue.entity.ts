@@ -7,6 +7,7 @@ import {
     OneToMany,
     ManyToOne,
     JoinColumn,
+    AfterLoad,
 } from 'typeorm';
 import { Room } from '../../rooms/entities/room.entity';
 import { Review } from '../../reviews/entities/review.entity';
@@ -60,6 +61,28 @@ export class Venue {
 
     @Column({ name: 'gmap_location', nullable: true })
     gmapLocation: string;
+
+    latitude: number | null;
+    longitude: number | null;
+
+    @AfterLoad()
+    populateCoordinates() {
+        if (this.gmapLocation && typeof this.gmapLocation === 'string') {
+            const coords = this.gmapLocation.split(',').map((s) => s.trim());
+            if (coords.length === 2) {
+                const lat = parseFloat(coords[0]);
+                const lng = parseFloat(coords[1]);
+                this.latitude = !isNaN(lat) ? lat : null;
+                this.longitude = !isNaN(lng) ? lng : null;
+            } else {
+                this.latitude = null;
+                this.longitude = null;
+            }
+        } else {
+            this.latitude = null;
+            this.longitude = null;
+        }
+    }
 
     @Column({ name: 'isBookingEnabled', default: true })
     isBookingEnabled: boolean;

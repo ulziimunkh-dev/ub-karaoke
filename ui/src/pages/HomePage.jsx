@@ -20,7 +20,7 @@ const HomePage = () => {
     const [selectedVenue, setSelectedVenue] = useState(null);
     const [userLocation, setUserLocation] = useState(null);
 
-    // Get location on mount
+    // Get location on mount and handle focus
     useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -34,6 +34,14 @@ const HomePage = () => {
                     console.error("Error getting location", error);
                 }
             );
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('focus') === 'search') {
+            setTimeout(() => {
+                document.getElementById('search-input')?.focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 500);
         }
     }, []);
 

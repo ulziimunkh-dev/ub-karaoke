@@ -9,17 +9,19 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { DataProvider } from './contexts/DataContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 
-import Pricing from './components/public/Pricing';
 import AboutUs from './components/public/AboutUs';
+// import Pricing from './components/public/Pricing';
 import Policy from './components/public/Policy';
 import FAQ from './components/public/FAQ';
 import ReservationBanner from './components/ReservationBanner';
 import ReloadPrompt from './components/ReloadPrompt';
 
+import BottomNav from './components/BottomNav';
+import { useLocation } from 'react-router-dom';
 import { useData } from './contexts/DataContext';
 import BookingModal from './components/BookingModal';
 
-const AppContent = () => {
+const AppRoutes = () => {
   const [filters, setFilters] = useState({
     district: 'All',
     date: new Date(),
@@ -28,6 +30,7 @@ const AppContent = () => {
   });
 
   const { activeBooking, showResumeModal, setShowResumeModal, venues, addReview, addBooking } = useData();
+  const location = useLocation();
 
   // Find venue for activeBooking
   const activeVenue = React.useMemo(() => {
@@ -54,12 +57,14 @@ const AppContent = () => {
     });
   };
 
+  const isPublicRoute = !['/dashboard', '/sysadmin', '/staff/login'].some(p => location.pathname.startsWith(p));
+
   return (
-    <Router>
+    <>
       <Routes>
         <Route path="/" element={<HomePage filters={filters} setFilters={setFilters} />} />
         <Route path="/about" element={<div className="pt-20"><AboutUs /></div>} />
-        <Route path="/pricing" element={<div className="pt-20"><Pricing /></div>} />
+        {/* <Route path="/pricing" element={<div className="pt-20"><Pricing /></div>} /> */}
         <Route path="/policy" element={<div className="pt-20"><Policy /></div>} />
         <Route path="/faq" element={<div className="pt-20"><FAQ /></div>} />
         <Route path="/dashboard" element={<AdminPage />} />
@@ -69,6 +74,17 @@ const AppContent = () => {
       </Routes>
 
       <ReservationBanner />
+
+      {isPublicRoute && (
+        <BottomNav onSearchClick={() => {
+          if (location.pathname === '/') {
+            document.getElementById('search-input')?.focus();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.location.href = '/?focus=search';
+          }
+        }} />
+      )}
 
       {showResumeModal && activeVenue && (
         <BookingModal
@@ -80,6 +96,14 @@ const AppContent = () => {
       )}
 
       <ReloadPrompt />
+    </>
+  );
+}
+
+const AppContent = () => {
+  return (
+    <Router>
+      <AppRoutes />
     </Router>
   );
 }

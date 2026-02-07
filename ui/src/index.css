@@ -11,6 +11,7 @@
   --shadow-glow: 0 0 15px rgba(176, 0, 255, 0.4);
   --shadow-glow-hover: 0 0 25px rgba(176, 0, 255, 0.7);
   --shadow-modal: 0 10px 40px rgba(0, 0, 0, 0.8);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @layer utilities {
@@ -55,6 +56,37 @@
 
   .btn-secondary-modern:active {
     @apply scale-[0.98];
+  }
+
+  .safe-area-bottom {
+    padding-bottom: calc(var(--safe-area-bottom) + 0.75rem);
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(176, 0, 255, 0.3);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(176, 0, 255, 0.5);
   }
 }
 

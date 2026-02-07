@@ -60,7 +60,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
         <div className={`group bg-[#151521] rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] relative flex flex-col h-full ${!isOpen ? 'opacity-80 grayscale-[0.8]' : ''}`}>
 
             {/* Image Section */}
-            <div className="relative h-56 overflow-hidden">
+            <div className="relative h-40 md:h-56 overflow-hidden">
                 <img src={featuredImage} alt={venue.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
 
                 {/* Badges */}
@@ -83,10 +83,10 @@ const VenueCard = ({ venue, onBook, distance }) => {
             </div>
 
             {/* Content Section */}
-            <div className="p-5 flex flex-col flex-grow relative">
+            <div className="p-3 md:p-5 flex flex-col flex-grow relative">
                 {/* Name & Rating */}
                 <div className="flex justify-between items-start mb-0.5">
-                    <h3 className="text-xl font-bold text-white tracking-tight">
+                    <h3 className="text-base md:text-xl font-bold text-white tracking-tight line-clamp-1">
                         {venue.name}
                     </h3>
                     <div className="flex flex-col items-end">
@@ -113,8 +113,8 @@ const VenueCard = ({ venue, onBook, distance }) => {
                 </div>
 
                 {/* Working Hours Info */}
-                <div className="flex items-center gap-3 mb-4 bg-white/5 px-3 py-2 rounded-xl border border-white/5">
-                    <span className="text-xl">🕒</span>
+                <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4 bg-white/5 px-2 md:px-3 py-1.5 md:py-2 rounded-xl border border-white/5">
+                    <span className="text-base md:text-xl">🕒</span>
                     <div className="flex flex-col">
                         <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest leading-none mb-1">{t('workingHours')}</span>
                         <span className="text-white text-xs font-bold leading-none">
@@ -149,7 +149,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
                     </div>
                     <div className="text-right">
                         <div className="text-gray-500 text-xs font-bold uppercase tracking-wider">{t('from')}</div>
-                        <div className="text-highlight text-xl leading-none">
+                        <div className="text-highlight text-base md:text-xl leading-none">
                             {minPrice ? minPrice.toLocaleString() + '₮' : venue.priceRange}
                             <span className="text-[10px] ml-0.5 font-bold opacity-80 text-gray-500">{t('perHourShort')}</span>
                         </div>
@@ -158,7 +158,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
 
                 {/* Action Button */}
                 <button
-                    className={`w-full h-12 rounded-full font-bold transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter flex items-center justify-center gap-2 ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
+                    className={`w-full h-10 md:h-12 rounded-full font-bold text-sm md:text-base transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter flex items-center justify-center gap-2 ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
                         ? 'bg-transparent border border-white/10 text-gray-500 cursor-not-allowed'
                         : 'bg-neon-purple-pattern text-white shadow-[0_0_20px_rgba(176,0,255,0.3)] hover:shadow-[0_0_30px_rgba(176,0,255,0.5)]'
                         }`}

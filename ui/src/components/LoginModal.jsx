@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useData } from '../contexts/DataContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import PolicyDialog from './public/PolicyDialog';
 
 const LoginModal = ({ onClose }) => {
     const { login, registerCustomer, loginWithOtp, requestLoginOtp, verifyAccount, forgotPassword, resetPassword } = useData();
@@ -23,6 +24,8 @@ const LoginModal = ({ onClose }) => {
 
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+    const [showPolicy, setShowPolicy] = useState(false);
     const [step, setStep] = useState(1); // For flows with multiple steps
 
     const handleSubmit = async (e) => {
@@ -219,6 +222,34 @@ const LoginModal = ({ onClose }) => {
                                             className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
                                             required
                                         />
+                                        <div className="flex items-start gap-2 mt-2 px-1">
+                                            <input
+                                                type="checkbox"
+                                                id="policy-check"
+                                                checked={acceptedPolicy}
+                                                onChange={(e) => setAcceptedPolicy(e.target.checked)}
+                                                className="mt-1 accent-[#b000ff]"
+                                                required
+                                            />
+                                            <label htmlFor="policy-check" className="text-xs text-gray-400 leading-tight">
+                                                {t('iAgreeTo')}{' '}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPolicy(true)}
+                                                    className="inline p-0 bg-transparent border-none text-[#eb79b2] hover:underline font-bold cursor-pointer"
+                                                >
+                                                    {t('termsOfService')}
+                                                </button>{' '}
+                                                {t('and')}{' '}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPolicy(true)}
+                                                    className="inline p-0 bg-transparent border-none text-[#eb79b2] hover:underline font-bold cursor-pointer"
+                                                >
+                                                    {t('privacyPolicy')}
+                                                </button>
+                                            </label>
+                                        </div>
                                     </>
                                 ) : (
                                     <input
@@ -267,7 +298,8 @@ const LoginModal = ({ onClose }) => {
 
                         <button
                             type="submit"
-                            className="w-full h-12 mt-2 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_20px_rgba(176,0,255,0.4)] hover:shadow-[0_0_30px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center uppercase tracking-wide text-sm"
+                            disabled={mode === 'signup' && step === 1 && !acceptedPolicy}
+                            className={`w-full h-12 mt-2 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_20px_rgba(176,0,255,0.4)] hover:shadow-[0_0_30px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center uppercase tracking-wide text-sm ${mode === 'signup' && step === 1 && !acceptedPolicy ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                         >
                             {mode === 'login' && (loginMethod === 'otp' && step === 1 ? 'Send One-Time Code' : 'Sign In')}
                             {mode === 'signup' && (step === 1 ? 'Create Account' : 'Verify & Complete')}
@@ -307,6 +339,8 @@ const LoginModal = ({ onClose }) => {
                     </div>
                 </div>
             </div>
+
+            <PolicyDialog visible={showPolicy} onHide={() => setShowPolicy(false)} />
         </div>,
         document.body
     );

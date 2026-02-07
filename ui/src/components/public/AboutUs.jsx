@@ -13,23 +13,23 @@ const AboutUs = () => {
                 <div className="absolute top-[-100px] left-[-100px] w-[500px] h-[500px] bg-[#eb79b2]/10 blur-[150px] rounded-full pointer-events-none" />
                 <div className="absolute bottom-[-100px] right-[-100px] w-[500px] h-[500px] bg-[#b000ff]/10 blur-[150px] rounded-full pointer-events-none" />
 
-                <div className="max-w-5xl mx-auto px-4 py-20 relative z-10">
-                    <div className="text-center mb-20">
-                        <h1 className="text-6xl font-black tracking-tighter mb-6">
+                <div className="max-w-5xl mx-auto px-4 py-12 md:py-20 relative z-10">
+                    <div className="text-center mb-12 md:mb-20">
+                        <h1 className="text-3xl md:text-6xl font-black tracking-tighter mb-4 md:mb-6">
                             {t('aboutTitle')}
                         </h1>
-                        <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+                        <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto">
                             {t('aboutSubtitle')}
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-16 items-center mb-32">
-                        <div className="space-y-6">
-                            <h2 className="text-3xl font-bold text-white">{t('ourMission')}</h2>
-                            <p className="text-gray-400 text-lg leading-relaxed">
+                    <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center mb-16 md:mb-32">
+                        <div className="space-y-4 md:space-y-6">
+                            <h2 className="text-xl md:text-3xl font-bold text-white">{t('ourMission')}</h2>
+                            <p className="text-gray-400 text-sm md:text-lg leading-relaxed">
                                 {t('missionText1')}
                             </p>
-                            <p className="text-gray-400 text-lg leading-relaxed">
+                            <p className="text-gray-400 text-sm md:text-lg leading-relaxed">
                                 {t('missionText2')}
                             </p>
                         </div>
@@ -54,37 +54,37 @@ const AboutUs = () => {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-8 text-center text-white">
-                        <div className="p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
-                            <i className="pi pi-users text-4xl text-[#b000ff] mb-4"></i>
-                            <h3 className="text-xl font-bold mb-2">{t('communityFirst')}</h3>
-                            <p className="text-gray-500">{t('communityDesc')}</p>
+                    <div className="grid md:grid-cols-3 gap-4 md:gap-8 text-center text-white">
+                        <div className="p-4 md:p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
+                            <i className="pi pi-users text-2xl md:text-4xl text-[#b000ff] mb-3 md:mb-4"></i>
+                            <h3 className="text-base md:text-xl font-bold mb-2">{t('communityFirst')}</h3>
+                            <p className="text-gray-500 text-sm">{t('communityDesc')}</p>
                         </div>
-                        <div className="p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
-                            <i className="pi pi-bolt text-4xl text-[#eb79b2] mb-4"></i>
-                            <h3 className="text-xl font-bold mb-2">{t('innovation')}</h3>
-                            <p className="text-gray-500">{t('innovationDesc')}</p>
+                        <div className="p-4 md:p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
+                            <i className="pi pi-bolt text-2xl md:text-4xl text-[#eb79b2] mb-3 md:mb-4"></i>
+                            <h3 className="text-base md:text-xl font-bold mb-2">{t('innovation')}</h3>
+                            <p className="text-gray-500 text-sm">{t('innovationDesc')}</p>
                         </div>
-                        <div className="p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
-                            <i className="pi pi-check-circle text-4xl text-green-400 mb-4"></i>
-                            <h3 className="text-xl font-bold mb-2">{t('reliability')}</h3>
-                            <p className="text-gray-500">{t('reliabilityDesc')}</p>
+                        <div className="p-4 md:p-8 rounded-2xl bg-[#1a1a24]/40 border border-white/5 backdrop-blur-sm">
+                            <i className="pi pi-check-circle text-2xl md:text-4xl text-green-400 mb-3 md:mb-4"></i>
+                            <h3 className="text-base md:text-xl font-bold mb-2">{t('reliability')}</h3>
+                            <p className="text-gray-500 text-sm">{t('reliabilityDesc')}</p>
                         </div>
                     </div>
 
-                    <div className="mt-32 text-center border-t border-white/10 pt-20">
-                        <h2 className="text-3xl font-bold mb-8">{t('getInTouch')}</h2>
-                        <div className="flex flex-col md:flex-row justify-center gap-12 text-gray-400">
+                    <div className="mt-16 md:mt-32 text-center border-t border-white/10 pt-12 md:pt-20">
+                        <h2 className="text-xl md:text-3xl font-bold mb-6 md:mb-8">{t('getInTouch')}</h2>
+                        <div className="flex flex-col md:flex-row justify-center gap-6 md:gap-12 text-gray-400 text-sm">
                             <div className="flex flex-col items-center">
-                                <i className="pi pi-envelope mb-2 text-2xl text-white"></i>
+                                <i className="pi pi-envelope mb-2 text-xl md:text-2xl text-white"></i>
                                 <span>support@ubkaraoke.mn</span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <i className="pi pi-phone mb-2 text-2xl text-white"></i>
+                                <i className="pi pi-phone mb-2 text-xl md:text-2xl text-white"></i>
                                 <span>+976 7700-1234</span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <i className="pi pi-map-marker mb-2 text-2xl text-white"></i>
+                                <i className="pi pi-map-marker mb-2 text-xl md:text-2xl text-white"></i>
                                 <span>Central Tower, UB</span>
                             </div>
                         </div>
