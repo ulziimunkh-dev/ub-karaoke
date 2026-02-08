@@ -129,6 +129,10 @@ export const api = {
         const response = await apiInstance.patch(`/venues/${id}/status`, { isActive });
         return response.data;
     },
+    logPhoneReveal: async (venueId) => {
+        const response = await apiInstance.post(`/venues/${venueId}/phone-reveal`);
+        return response.data;
+    },
 
     // Rooms
     createRoom: async (data) => {

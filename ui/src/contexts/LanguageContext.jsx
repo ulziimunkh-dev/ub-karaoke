@@ -52,6 +52,8 @@ const dictionaries = {
         capacity: "People",
         features: "Features",
         from: "From",
+        tapToReveal: "Tap to reveal",
+        getDirections: "Get Directions",
         // Districts
         district_Sukhbaatar: "Sukhbaatar",
         district_Chingeltei: "Chingeltei",
@@ -245,6 +247,8 @@ const dictionaries = {
         capacity: "Хүн",
         features: "Онцлог",
         from: "Эхлэх үнэ",
+        tapToReveal: "Харуулах",
+        getDirections: "Байршил харах",
         // Districts
         district_Sukhbaatar: "Сүхбаатар",
         district_Chingeltei: "Чингэлтэй",

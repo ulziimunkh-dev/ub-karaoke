@@ -5,10 +5,12 @@ import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { Card } from 'primereact/card';
+import { Dropdown } from 'primereact/dropdown';
 
 const AuditLogViewer = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedAction, setSelectedAction] = useState(null);
 
     useEffect(() => {
         loadLogs();
@@ -90,9 +92,24 @@ const AuditLogViewer = () => {
                 />
             </div>
 
+            {/* Event Filter */}
+            <div className="flex items-center gap-3 mb-4">
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Filter by Event:</span>
+                <Dropdown
+                    value={selectedAction}
+                    options={[
+                        { label: 'All Events', value: null },
+                        ...([...new Set(logs.map(l => l.action?.toUpperCase()))].filter(Boolean).sort().map(a => ({ label: a, value: a })))
+                    ]}
+                    onChange={(e) => setSelectedAction(e.value)}
+                    placeholder="All Events"
+                    className="w-48 text-sm"
+                />
+            </div>
+
             <Card className="bg-[#1a1a24] border border-white/5 shadow-2xl p-0 overflow-hidden">
                 <DataTable
-                    value={logs}
+                    value={selectedAction ? logs.filter(l => l.action?.toUpperCase() === selectedAction) : logs}
                     paginator
                     rows={15}
                     loading={loading}

@@ -108,4 +108,13 @@ export class VenuesController {
         const venue = await this.venuesService.findOne(id);
         return this.roomsService.addVenuePricing(id, pricingData, req.user, venue.organizationId);
     }
+
+    @Post(':id/phone-reveal')
+    @ApiOperation({ summary: 'Log when a user reveals the venue phone number' })
+    async logPhoneReveal(@Param('id') id: string, @Req() req: any) {
+        const userId = req.user?.id;
+        const ipAddress = req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
+        const userAgent = req.headers['user-agent'];
+        return this.venuesService.logPhoneReveal(id, userId, ipAddress, userAgent);
+    }
 }

@@ -105,11 +105,6 @@ const VenueCard = ({ venue, onBook, distance }) => {
                 {/* Subtext info */}
                 <div className="flex flex-col gap-0.5 mb-3">
                     <p className="text-gray-400 text-xs truncate m-0 font-medium">{venue.address || venue.district}</p>
-                    {venue.phone && (
-                        <p className="text-[#eb79b2] text-[10px] font-black uppercase tracking-widest m-0 flex items-center gap-1">
-                            📞 {venue.phone}
-                        </p>
-                    )}
                 </div>
 
                 {/* Working Hours Info */}

@@ -23,6 +23,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const { currentUser, activeBooking, setActiveBooking, isExtending, extendBookingReservation } = useData();
     const [showLogin, setShowLogin] = useState(false);
     const [previewRoom, setPreviewRoom] = useState(null);
+    const [phoneRevealed, setPhoneRevealed] = useState(false);
 
 
     // Default Date: Today
@@ -561,6 +562,50 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Contact Info Footer */}
+                                {(venue.phone || venue.gmapLocation) && (
+                                    <div className="flex flex-wrap items-center justify-center gap-3 mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                                        {venue.phone && (
+                                            <button
+                                                onClick={async () => {
+                                                    if (!phoneRevealed) {
+                                                        setPhoneRevealed(true);
+                                                        try {
+                                                            await api.logPhoneReveal(venue.id);
+                                                        } catch (e) {
+                                                            console.error('Failed to log phone reveal:', e);
+                                                        }
+                                                    }
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 bg-[#b000ff]/10 hover:bg-[#b000ff]/20 border border-[#b000ff]/30 rounded-lg transition-all cursor-pointer"
+                                            >
+                                                <span className="text-lg">📞</span>
+                                                <span className="font-bold text-[#eb79b2] tracking-wide">
+                                                    {phoneRevealed
+                                                        ? venue.phone
+                                                        : venue.phone.length > 4
+                                                            ? venue.phone.slice(0, 4) + '****'
+                                                            : '****'}
+                                                </span>
+                                                {!phoneRevealed && (
+                                                    <span className="text-[10px] text-gray-400 uppercase tracking-widest">{t('tapToReveal') || 'Tap to reveal'}</span>
+                                                )}
+                                            </button>
+                                        )}
+                                        {venue.gmapLocation && (
+                                            <a
+                                                href={`https://www.google.com/maps/dir/?api=1&origin=Current+Location&destination=${encodeURIComponent(venue.gmapLocation)}&travelmode=driving`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 rounded-lg transition-all text-green-400 font-bold"
+                                            >
+                                                <span className="text-lg">📍</span>
+                                                <span>{t('getDirections') || 'Get Directions'}</span>
+                                            </a>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="border-t border-white/10 my-8"></div>
                                 <ReviewSection reviews={venue.reviews} onAddReview={(review) => onAddReview(venue.id, review)} />

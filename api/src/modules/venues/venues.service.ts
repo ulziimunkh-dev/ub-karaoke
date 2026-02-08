@@ -248,4 +248,29 @@ export class VenuesService {
             await this.hoursRepository.save(hoursToInsert);
         }
     }
+
+    async logPhoneReveal(
+        venueId: string,
+        userId?: string,
+        ipAddress?: string,
+        userAgent?: string
+    ): Promise<{ success: boolean }> {
+        const venue = await this.findOne(venueId);
+
+        await this.auditService.log({
+            action: 'PHONE_REVEAL',
+            resource: 'Venue',
+            resourceId: venueId,
+            details: {
+                venueName: venue.name,
+                phone: venue.phone,
+                ipAddress,
+                userAgent,
+                timestamp: new Date().toISOString()
+            },
+            userId: userId,
+        });
+
+        return { success: true };
+    }
 }
