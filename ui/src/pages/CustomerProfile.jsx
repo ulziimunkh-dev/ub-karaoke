@@ -11,6 +11,7 @@ const CustomerProfile = () => {
     const {
         currentUser,
         bookings,
+        venues,
         updateBookingStatus,
         logout,
         updateProfile,
@@ -162,7 +163,33 @@ const CustomerProfile = () => {
                                             <span>⏳ {b.duration}h</span>
                                         </p>
                                         <p className="font-bold my-1 text-[#b000ff]">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${isReserved ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                                        {/* Venue Contact Info */}
+                                        {(() => {
+                                            const venue = venues.find(v => v.id === b.venueId);
+                                            return venue && (
+                                                <div className="bg-black/20 rounded-lg p-2 mt-2 text-xs space-y-1">
+                                                    {venue.phone && (
+                                                        <p className="m-0 flex items-center gap-2 text-gray-300">
+                                                            <i className="pi pi-phone text-green-400" />
+                                                            <a href={`tel:${venue.phone}`} className="text-green-400 hover:underline no-underline">{venue.phone}</a>
+                                                        </p>
+                                                    )}
+                                                    {venue.address && (
+                                                        <p className="m-0 flex items-center gap-2 text-gray-400">
+                                                            <i className="pi pi-map-marker text-blue-400" />
+                                                            {venue.address}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                        {/* Customer Notes */}
+                                        {b.notes && (
+                                            <div className="bg-purple-500/10 rounded-lg p-2 mt-2 text-xs">
+                                                <p className="m-0 text-purple-300"><i className="pi pi-comment mr-1" /> {b.notes}</p>
+                                            </div>
+                                        )}
+                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider mt-2 inline-block ${isReserved ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
                                             {b.status}
                                         </span>
                                     </div>

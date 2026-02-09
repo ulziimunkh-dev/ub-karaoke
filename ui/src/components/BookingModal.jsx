@@ -37,6 +37,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [bookingData, setBookingData] = useState({
         time: '',
         hours: Number(venue.minBookingHours) || 2,
+        notes: '',
         addOns: { birthday: false, decoration: false }
     });
 
@@ -741,6 +742,22 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Customer Notes */}
+                                    <div className="mb-6 p-4 bg-surface rounded-xl border border-white/5">
+                                        <label className="text-sm text-gray-400 font-medium block mb-2">
+                                            <i className="pi pi-comment mr-2" />
+                                            {t('reservationNotes') || 'Notes for your reservation (optional)'}
+                                        </label>
+                                        <textarea
+                                            value={bookingData.notes}
+                                            onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
+                                            placeholder={t('notesPlaceholder') || 'Leave a comment related to your booking or additional phone/email for contact info...'}
+                                            className="w-full h-20 p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all resize-none text-sm"
+                                            maxLength={500}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1 text-right">{bookingData.notes.length}/500</p>
+                                    </div>
 
                                     <div className="flex justify-between items-center mb-6 p-4 bg-surface rounded-xl border border-white/5">
                                         <span className="text-xl font-semibold">{t('total')}:</span>

@@ -13,6 +13,7 @@ import Finance from '../components/admin/Finance';
 import StaffPortal from '../components/StaffPortal';
 import StaffLoginPage from './StaffLoginPage';
 import AdminLoginPage from './AdminLoginPage';
+import BookingsManagement from '../components/admin/BookingsManagement';
 
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
@@ -53,20 +54,21 @@ const AdminPage = () => {
 
     // Admin Sidebar Navigation
     const navItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'dashboard', label: t('dashboard'), icon: '📊' },
         ...(currentUser.role === 'sysadmin' ? [
-            { id: 'organizations', label: 'Organizations', icon: '🏛️' },
-            { id: 'plans', label: 'Plans', icon: '📑' }
+            { id: 'organizations', label: t('organizations'), icon: '🏛️' },
+            { id: 'plans', label: t('plans'), icon: '📑' }
         ] : []),
-        { id: 'venues', label: currentUser.role === 'sysadmin' ? 'Venues & Rooms' : 'Branches & Rooms', icon: '🏢' },
-        ...(currentUser.role === 'manager' ? [{ id: 'subscription', label: 'Subscription', icon: '💎' }] : []),
-        ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: 'Point of Sale', icon: '🖥️' }] : []),
-        ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: 'Users', icon: '👥' }] : []),
-        { id: 'staffs', label: 'Staffs', icon: '👥' },
-        { id: 'audit', label: 'Audit Logs', icon: '📋' },
-        { id: 'reports', label: 'Reports', icon: '📈' },
-        { id: 'finance', label: 'Finance', icon: '💰' },
-        { id: 'settings', label: 'Settings', icon: '⚙️' }
+        { id: 'venues', label: currentUser.role === 'sysadmin' ? t('venuesAndRooms') : t('branchesAndRooms'), icon: '🏢' },
+        { id: 'bookings', label: t('bookings'), icon: '📅' },
+        ...(currentUser.role === 'manager' ? [{ id: 'subscription', label: t('subscription'), icon: '💎' }] : []),
+        ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: t('pointOfSale'), icon: '🖥️' }] : []),
+        ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: t('users'), icon: '👥' }] : []),
+        { id: 'staffs', label: t('staffs'), icon: '👥' },
+        { id: 'audit', label: t('auditLogs'), icon: '📋' },
+        { id: 'reports', label: t('reports'), icon: '📈' },
+        { id: 'finance', label: t('finance'), icon: '💰' },
+        { id: 'settings', label: t('settings'), icon: '⚙️' }
     ];
 
 
@@ -166,7 +168,7 @@ const AdminPage = () => {
                         </div>
                     </div>
                     <Button
-                        label="End Session"
+                        label={t('endSession')}
                         icon="pi pi-power-off"
                         onClick={() => {
                             const redirectPath = logout();
@@ -174,7 +176,7 @@ const AdminPage = () => {
                         }}
                         className="w-full h-11 p-button-outlined p-button-danger border-[#ff3d32]/30 text-[#ff3d32] hover:bg-[#ff3d32]/10 transition-all font-bold text-xs uppercase tracking-widest rounded-xl mb-4 flex items-center justify-center gap-2"
                     />
-                    <a href="/" className="block text-center text-gray-500 no-underline text-[10px] hover:text-[#b000ff] transition-colors">PUBLIC SITE</a>
+                    <a href="/" className="block text-center text-gray-500 no-underline text-[10px] hover:text-[#b000ff] transition-colors">{t('publicSite')}</a>
                 </div>
             </aside>
 
@@ -192,8 +194,8 @@ const AdminPage = () => {
                 {['pos_view', 'venues'].includes(activeTab) && (
                     <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1a1a24] p-5 rounded-2xl border border-white/5 shadow-2xl">
                         <div className="flex flex-col gap-1">
-                            <h1 className="text-xl font-bold text-white m-0 uppercase tracking-tight">Management context</h1>
-                            <p className="text-xs text-gray-500 font-medium">Filtering data based on selected branch scope</p>
+                            <h1 className="text-xl font-bold text-white m-0 uppercase tracking-tight">{t('managementContext')}</h1>
+                            <p className="text-xs text-gray-500 font-medium">{t('filteringDataText')}</p>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 bg-black/20 p-2 rounded-xl border border-white/5">
                             {currentUser.role === 'sysadmin' && (
@@ -237,6 +239,7 @@ const AdminPage = () => {
                 {activeTab === 'plans' && <PlanManagement />}
                 {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
+                {activeTab === 'bookings' && <BookingsManagement />}
                 {activeTab === 'pos_view' && <StaffPortal />}
                 {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
