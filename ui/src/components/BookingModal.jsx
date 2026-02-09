@@ -24,6 +24,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [showLogin, setShowLogin] = useState(false);
     const [previewRoom, setPreviewRoom] = useState(null);
     const [phoneRevealed, setPhoneRevealed] = useState(false);
+    const [showVenueGallery, setShowVenueGallery] = useState(false);
 
 
     // Default Date: Today
@@ -41,6 +42,29 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
     const [availableSlots, setAvailableSlots] = useState([]);
     const [loadingSlots, setLoadingSlots] = useState(false);
+
+    // Parse venue images if stored as JSON string
+    let venueImages = venue.images;
+    if (typeof venueImages === 'string') {
+        try {
+            venueImages = JSON.parse(venueImages);
+        } catch (e) {
+            venueImages = [];
+        }
+    }
+    if (!Array.isArray(venueImages)) venueImages = [];
+
+    // Helper to check valid image URL
+    const isValidImage = (src) => {
+        if (!src || typeof src !== 'string') return false;
+        return src.startsWith('http') || src.startsWith('/assets/') || src.startsWith('/src/assets/') || src.startsWith('data:image/');
+    };
+
+    // Filter valid images
+    const validVenueImages = venueImages.filter(isValidImage);
+    const displayImage = venue.featuredImage && isValidImage(venue.featuredImage)
+        ? venue.featuredImage
+        : (validVenueImages.length > 0 ? validVenueImages[0] : null);
 
     if (!venue) return null;
 
@@ -326,7 +350,25 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                 </button>
 
                 <div className="h-full overflow-y-auto pb-20 lg:pb-0">
-                    <div className="pt-8 px-8 pb-0">
+                    {/* Clickable Venue Image Header */}
+                    {displayImage && (
+                        <div
+                            className="relative h-40 sm:h-48 w-full cursor-pointer group"
+                            onClick={() => setShowVenueGallery(true)}
+                        >
+                            <img
+                                src={displayImage}
+                                alt={venue.name}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a24] via-transparent to-transparent" />
+                            <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-lg flex items-center gap-2 text-white text-xs font-bold border border-white/10">
+                                <i className="pi pi-images"></i>
+                                <span>{validVenueImages.length || 1} {t('photos') || 'Photos'}</span>
+                            </div>
+                        </div>
+                    )}
+                    <div className="pt-4 px-8 pb-0">
                         <h2 className="text-2xl font-bold mb-1">{venue.name}</h2>
                         <p className="text-text-muted">{venue.district}</p>
                     </div>
@@ -909,9 +951,15 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
                                 <Divider className="border-white/5 my-8" />
 
-                                <div className="flex justify-center">
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center px-4 sm:px-0">
                                     <button
-                                        className={`h-12 px-12 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${selectedRooms.find(r => r.id === previewRoom.id)
+                                        className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all border border-white/20 text-white hover:bg-white/10"
+                                        onClick={() => setPreviewRoom(null)}
+                                    >
+                                        {t('cancel') || 'Cancel'}
+                                    </button>
+                                    <button
+                                        className={`h-11 sm:h-12 px-6 sm:px-12 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all ${selectedRooms.find(r => r.id === previewRoom.id)
                                             ? 'bg-transparent border border-[#ff3d32] text-[#ff3d32] hover:bg-[#ff3d32]/10'
                                             : 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white hover:shadow-[0_0_20px_rgba(176,0,255,0.4)]'
                                             }`}
@@ -920,12 +968,66 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             setPreviewRoom(null);
                                         }}
                                     >
-                                        {selectedRooms.find(r => r.id === previewRoom.id) ? 'Deselect Room' : 'Select This Room'}
+                                        {selectedRooms.find(r => r.id === previewRoom.id) ? (t('deselectRoom') || 'Deselect') : (t('selectRoom') || 'Select')}
                                     </button>
                                 </div>
                             </div>
                         </div>
                     )}
+                </Dialog>
+
+                {/* Venue Gallery Dialog */}
+                <Dialog
+                    header={venue.name + ' - ' + (t('photos') || 'Photos')}
+                    visible={showVenueGallery}
+                    onHide={() => setShowVenueGallery(false)}
+                    className="w-full max-w-3xl bg-[#1a1a24]"
+                    contentClassName="p-0 overflow-hidden"
+                    headerClassName="bg-[#1a1a24] text-white border-b border-white/5 p-4 sm:p-6"
+                >
+                    <div className="bg-black/40">
+                        {validVenueImages.length > 0 ? (
+                            <Galleria
+                                value={validVenueImages.map(img => ({ itemImageSrc: img }))}
+                                numVisible={5}
+                                circular
+                                showItemNavigators
+                                showThumbnails={validVenueImages.length > 1}
+                                item={(item) => (
+                                    <img
+                                        src={item.itemImageSrc}
+                                        alt="Venue"
+                                        className="w-full h-[300px] sm:h-[400px] object-contain"
+                                    />
+                                )}
+                                thumbnail={(item) => (
+                                    <img
+                                        src={item.itemImageSrc}
+                                        alt="Thumbnail"
+                                        className="w-14 h-10 object-cover rounded"
+                                    />
+                                )}
+                            />
+                        ) : displayImage ? (
+                            <img
+                                src={displayImage}
+                                alt={venue.name}
+                                className="w-full h-[300px] sm:h-[400px] object-contain"
+                            />
+                        ) : (
+                            <div className="h-[200px] flex items-center justify-center text-gray-500">
+                                {t('noPhotos') || 'No photos available'}
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-4 flex justify-center">
+                        <button
+                            onClick={() => setShowVenueGallery(false)}
+                            className="h-10 sm:h-11 px-6 sm:px-8 rounded-lg font-bold text-xs sm:text-sm uppercase tracking-wider transition-all border border-white/20 text-white hover:bg-white/10"
+                        >
+                            {t('close') || 'Close'}
+                        </button>
+                    </div>
                 </Dialog>
 
                 <style>{`

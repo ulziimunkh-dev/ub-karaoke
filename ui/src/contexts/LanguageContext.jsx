@@ -54,6 +54,10 @@ const dictionaries = {
         from: "From",
         tapToReveal: "Tap to reveal",
         getDirections: "Get Directions",
+        photos: "Photos",
+        close: "Close",
+        noPhotos: "No photos available",
+        deselectRoom: "Deselect",
         // Districts
         district_Sukhbaatar: "Sukhbaatar",
         district_Chingeltei: "Chingeltei",
@@ -248,7 +252,11 @@ const dictionaries = {
         features: "Онцлог",
         from: "Эхлэх үнэ",
         tapToReveal: "Харуулах",
-        getDirections: "Байршил харах",
+        getDirections: "Замын Зааварчилгаа",
+        photos: "Зураг",
+        close: "Хаах",
+        noPhotos: "Зураг байхгүй байна",
+        deselectRoom: "Сонголт цуцлах",
         // Districts
         district_Sukhbaatar: "Сүхбаатар",
         district_Chingeltei: "Чингэлтэй",
