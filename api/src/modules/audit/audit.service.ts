@@ -11,9 +11,10 @@ export class AuditService {
         private auditRepository: Repository<AuditLog>,
     ) { }
 
-    async log(createAuditLogDto: CreateAuditLogDto): Promise<AuditLog> {
-        const auditLog = this.auditRepository.create(createAuditLogDto);
-        return this.auditRepository.save(auditLog);
+    async log(createAuditLogDto: CreateAuditLogDto, manager?: any): Promise<AuditLog> {
+        const repo = manager ? manager.getRepository(AuditLog) : this.auditRepository;
+        const auditLog = repo.create(createAuditLogDto);
+        return repo.save(auditLog);
     }
 
     async findAll(): Promise<AuditLog[]> {

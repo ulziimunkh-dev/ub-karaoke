@@ -75,10 +75,11 @@ const VenueCard = ({ venue, onBook, distance }) => {
     };
 
     return (
-        <div className={`group bg-[#151521] rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] relative flex flex-col h-full ${!isOpen ? 'opacity-80 grayscale-[0.8]' : ''}`}>
+        <div data-testid="venue-card" className={`group bg-[#151521] rounded-2xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] relative flex flex-col h-full ${!isOpen ? 'opacity-80 grayscale-[0.8]' : ''}`}>
 
             {/* Image Section - Swipeable Carousel */}
             <div
+                data-testid="venue-card-clickable"
                 className="relative h-40 md:h-56 overflow-hidden cursor-pointer"
                 onClick={() => onBook(venue)}
             >

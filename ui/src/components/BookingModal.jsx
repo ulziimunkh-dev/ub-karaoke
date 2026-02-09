@@ -338,7 +338,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
     return (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex flex-col lg:justify-center lg:items-center justify-end z-[60] p-0 lg:p-4 animate-[fadeIn_0.2s_ease]">
-            <div className="bg-[#1a1a24] w-full max-w-[800px] lg:rounded-2xl rounded-t-3xl relative h-full lg:h-auto max-h-[92vh] lg:max-h-[90vh] overflow-hidden border-t lg:border border-white/10 shadow-modal animate-[slideUp_0.3s_ease-out]">
+            <div data-testid="booking-modal" className="bg-[#1a1a24] w-full max-w-[800px] lg:rounded-2xl rounded-t-3xl relative h-full lg:h-auto max-h-[92vh] lg:max-h-[90vh] overflow-hidden border-t lg:border border-white/10 shadow-modal animate-[slideUp_0.3s_ease-out]">
                 {/* Mobile Handle */}
                 <div className="lg:hidden flex justify-center pt-3 pb-1">
                     <div className="w-16 h-2 bg-white/20 rounded-full"></div>
@@ -498,6 +498,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
                                                     return (
                                                         <div key={room.id}
+                                                            data-testid="room-item"
                                                             className={`bg-white/5 p-4 rounded-xl cursor-pointer transition-all duration-200 border group ${isSelected ? 'border-[#b000ff] bg-[#b000ff]/5 shadow-[0_0_15px_rgba(176,0,255,0.3)]' : 'border-white/5 hover:bg-white/10 hover:border-white/10'}`}
                                                             onClick={() => canSelect && toggleRoomSelection(room)}
                                                             style={{ opacity: canSelect ? 1 : (isHardBlocked ? 0.5 : 0.7) }}
@@ -586,17 +587,18 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0">
+                                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 w-full sm:w-auto border-t sm:border-t-0 border-white/5 pt-4 sm:pt-0 ml-auto">
                                         <button
                                             onClick={onClose}
-                                            className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2"
+                                            className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
                                         >
                                             {t('cancel')}
                                         </button>
                                         <button
-                                            disabled={selectedRooms.length === 0}
+                                            data-testid="confirm-selection-button"
+                                            disabled={selectedRooms.length === 0 || isBooking}
                                             onClick={handleRoomConfirmation}
-                                            className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
                                         >
                                             <span className="hidden sm:inline">{t('confirmSelection')}</span>
                                             <span className="sm:hidden">{t('confirm') || 'Confirm'}</span>
@@ -747,19 +749,22 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         </span>
                                     </div>
 
-                                    <div className="flex justify-end gap-3">
+                                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-4 sm:mt-0">
                                         <button
                                             type="button"
                                             onClick={() => setStep(1)}
-                                            className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2"
+                                            className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
                                         >
                                             {t('back')}
                                         </button>
                                         <button
                                             type="submit"
-                                            className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2"
+                                            data-testid="proceed-payment-button"
+                                            disabled={isBooking || loadingSlots || availableSlots.length === 0}
+                                            className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
                                         >
-                                            {t('proceedPayment')}
+                                            {isBooking && <i className="pi pi-spin pi-spinner"></i>}
+                                            {isBooking ? t('processing') || 'Processing...' : t('proceedPayment')}
                                         </button>
                                     </div>
                                 </form>
@@ -803,18 +808,19 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                     </div>
                                 )}
 
-                                <div className="flex justify-center gap-3 mt-6">
+                                <div className="flex flex-col-reverse sm:flex-row justify-center gap-3 mt-6">
                                     <button
                                         onClick={() => setStep(2)}
                                         disabled={isBooking}
-                                        className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                                        className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
                                     >
                                         {t('back')}
                                     </button>
                                     <button
+                                        data-testid="confirm-transfer-button"
                                         onClick={handleConfirmPayment}
                                         disabled={isBooking || (activeBooking && new Date() > new Date(activeBooking.expiresAt))}
-                                        className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70"
+                                        className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
                                     >
                                         {isBooking ? (
                                             <i className="pi pi-spin pi-spinner"></i>
@@ -831,7 +837,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                         {step === 4 && (
                             <div className="text-center py-12">
                                 <i className="pi pi-check-circle text-6xl text-green-400 mb-6 block animate-bounce"></i>
-                                <h2 className="text-2xl font-bold mb-2">{t('bookingConfirmed')}</h2>
+                                <h2 data-testid="booking-success-message" className="text-2xl font-bold mb-2">{t('bookingConfirmed')}</h2>
                                 <p className="text-text-muted mb-8">{t('reservedMessage', { venue: venue.name })}</p>
                                 <button
                                     onClick={onClose}
@@ -951,15 +957,15 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
                                 <Divider className="border-white/5 my-8" />
 
-                                <div className="flex flex-col sm:flex-row gap-3 justify-center px-4 sm:px-0">
+                                <div className="flex flex-col-reverse sm:flex-row gap-3 justify-center px-4 sm:px-0">
                                     <button
-                                        className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all border border-white/20 text-white hover:bg-white/10"
+                                        className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all border border-white/20 text-white hover:bg-white/10 w-full sm:w-auto"
                                         onClick={() => setPreviewRoom(null)}
                                     >
                                         {t('cancel') || 'Cancel'}
                                     </button>
                                     <button
-                                        className={`h-11 sm:h-12 px-6 sm:px-12 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all ${selectedRooms.find(r => r.id === previewRoom.id)
+                                        className={`h-11 sm:h-12 px-6 sm:px-12 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-widest transition-all w-full sm:w-auto ${selectedRooms.find(r => r.id === previewRoom.id)
                                             ? 'bg-transparent border border-[#ff3d32] text-[#ff3d32] hover:bg-[#ff3d32]/10'
                                             : 'bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white hover:shadow-[0_0_20px_rgba(176,0,255,0.4)]'
                                             }`}

@@ -46,52 +46,175 @@ export class BookingsService {
     ) { }
 
     async create(createBookingDto: CreateBookingDto, userId?: string): Promise<Booking> {
-        const roomIds = createBookingDto.roomIds || [createBookingDto.roomId];
-        const bookings: Booking[] = [];
-        const groupId = Math.random().toString(36).substring(2, 15);
+        return await this.bookingsRepository.manager.transaction(async (transactionalEntityManager) => {
+            const roomIds = createBookingDto.roomIds || [createBookingDto.roomId];
+            const bookings: Booking[] = [];
+            const groupId = Math.random().toString(36).substring(2, 15);
 
-        // Loyalty Logic: REDEMPTION (Apply once for the whole group)
-        let loyaltyDiscount = 0;
-        let pointsUsed = 0;
+            // 1. Lock the rooms to prevent concurrent booking attempts for these specific rooms
+            // This ensures that if two users try to book the same room, one will wait for the other.
+            await transactionalEntityManager.getRepository(Room).createQueryBuilder('room')
+                .setLock('pessimistic_write')
+                .where('room.id IN (:...roomIds)', { roomIds })
+                .getMany();
 
-        if (createBookingDto.pointsToUse && createBookingDto.pointsToUse > 0) {
-            if (!userId) {
-                throw new BadRequestException('Must be logged in to use loyalty points');
+            // Loyalty Logic: REDEMPTION (Apply once for the whole group)
+            let loyaltyDiscount = 0;
+            let pointsUsed = 0;
+
+            if (createBookingDto.pointsToUse && createBookingDto.pointsToUse > 0) {
+                if (!userId) {
+                    throw new BadRequestException('Must be logged in to use loyalty points');
+                }
+                const userRepo = transactionalEntityManager.getRepository(User);
+                const user = await userRepo.findOne({ where: { id: userId } });
+                if (!user) throw new NotFoundException('User not found');
+
+                if (user.loyaltyPoints < createBookingDto.pointsToUse) {
+                    throw new BadRequestException('Insufficient loyalty points');
+                }
+
+                // 1 Point = 100 MNT
+                const discountValue = createBookingDto.pointsToUse * 100;
+                const maxAllowedDiscount = createBookingDto.totalPrice * 0.50; // Max 50%
+
+                if (discountValue > maxAllowedDiscount) {
+                    throw new BadRequestException(`Loyalty points can only cover up to 50% of the total price (Max: ${maxAllowedDiscount} MNT)`);
+                }
+
+                // Deduct points
+                user.loyaltyPoints -= createBookingDto.pointsToUse;
+                await userRepo.save(user);
+
+                loyaltyDiscount = discountValue;
+                pointsUsed = createBookingDto.pointsToUse;
             }
-            const user = await this.usersRepository.findOne({ where: { id: userId } });
-            if (!user) throw new NotFoundException('User not found');
 
-            if (user.loyaltyPoints < createBookingDto.pointsToUse) {
-                throw new BadRequestException('Insufficient loyalty points');
+            // Distribute discount across rooms (simple division for now)
+            const discountPerRoom = loyaltyDiscount / roomIds.length;
+            const pointsPerRoom = Math.round(pointsUsed / roomIds.length);
+
+            for (const roomId of roomIds) {
+                const room = await transactionalEntityManager.getRepository(Room).findOne({
+                    where: { id: roomId },
+                    relations: ['venue'],
+                });
+                if (!room) throw new NotFoundException(`Room ${roomId} not found`);
+
+                const venue = room.venue;
+                const startDate = createBookingDto.date;
+                const startTime = new Date(`${startDate}T${createBookingDto.startTime}`);
+                let endTime = new Date(`${startDate}T${createBookingDto.endTime}`);
+
+                // Handle overnight bookings
+                if (endTime <= startTime) {
+                    endTime.setDate(endTime.getDate() + 1);
+                }
+
+                const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+
+                if (durationHours < Number(venue.minBookingHours || 1)) {
+                    throw new BadRequestException(`Minimum booking duration is ${venue.minBookingHours || 1} hours`);
+                }
+                if (durationHours > Number(venue.maxBookingHours || 6)) {
+                    throw new BadRequestException(`Maximum booking duration is ${venue.maxBookingHours || 6} hours`);
+                }
+
+                const conflicts = await this.checkTimeConflicts(
+                    roomId,
+                    startTime,
+                    endTime,
+                    undefined,
+                    transactionalEntityManager // Pass transactional manager to use the same lock
+                );
+
+                if (conflicts.length > 0) {
+                    throw new BadRequestException(
+                        `Room ${room.name} is already booked for the selected time`,
+                    );
+                }
+
+                const basePricePerRoom = createBookingDto.totalPrice / roomIds.length;
+                const finalPricePerRoom = basePricePerRoom - discountPerRoom;
+
+                const booking = transactionalEntityManager.getRepository(Booking).create({
+                    ...createBookingDto,
+                    roomId,
+                    userId,
+                    groupId,
+                    totalPrice: finalPricePerRoom,
+                    loyaltyPointsUsed: pointsPerRoom,
+                    loyaltyDiscount: discountPerRoom,
+                    startTime,
+                    endTime,
+                    createdBy: userId,
+                    status: BookingStatus.RESERVED,
+                    reservedAt: new Date(),
+                    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+                    source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
+                    organizationId: venue.organizationId,
+                });
+
+                const savedBooking = await transactionalEntityManager.getRepository(Booking).save(booking);
+                bookings.push(savedBooking);
+
+                // Status history inside transaction
+                const history = transactionalEntityManager.getRepository(BookingStatusHistory).create({
+                    bookingId: savedBooking.id,
+                    oldStatus: BookingStatus.RESERVED,
+                    newStatus: BookingStatus.RESERVED,
+                    changedBy: userId,
+                    organization: { id: venue.organizationId } as any,
+                });
+                await transactionalEntityManager.getRepository(BookingStatusHistory).save(history);
+
+                if (userId) {
+                    await this.auditService.log({
+                        action: 'BOOKING_CREATED',
+                        resource: 'Booking',
+                        resourceId: savedBooking.id,
+                        userId: userId || undefined,
+                        staffId: undefined,
+                        details: { ...createBookingDto, roomId },
+                    }, transactionalEntityManager); // Assuming audit service can take a manager
+                }
             }
 
-            // 1 Point = 100 MNT
-            const discountValue = createBookingDto.pointsToUse * 100;
-            const maxAllowedDiscount = createBookingDto.totalPrice * 0.50; // Max 50%
+            // Post-transaction actions (Notifications, WebSocket)
+            // We use the first booking to trigger global notifications
+            if (bookings.length > 0) {
+                const first = bookings[0];
+                if (userId) {
+                    this.notificationsService.sendBookingNotification(
+                        first.id,
+                        'reserved',
+                        userId,
+                        first.organizationId
+                    ).catch(err => console.error('Notification failed', err));
 
-            if (discountValue > maxAllowedDiscount) {
-                throw new BadRequestException(`Loyalty points can only cover up to 50% of the total price (Max: ${maxAllowedDiscount} MNT)`);
+                    this.notificationsGateway.emitToUser(userId, 'booking:reserved', first);
+                }
+                this.notificationsGateway.emitToOrganization(first.organizationId, 'booking:new_reservation', first);
             }
 
-            // Deduct points
-            user.loyaltyPoints -= createBookingDto.pointsToUse;
-            await this.usersRepository.save(user);
+            return bookings[0];
+        });
+    }
 
-            loyaltyDiscount = discountValue;
-            pointsUsed = createBookingDto.pointsToUse;
-        }
+    // Manual booking for Admin/Staff - Auto confirms
+    async createManual(createBookingDto: CreateBookingDto, user: any): Promise<Booking> {
+        return await this.bookingsRepository.manager.transaction(async (transactionalEntityManager) => {
+            // 1. Lock the room to prevent concurrent booking attempts
+            await transactionalEntityManager.getRepository(Room).createQueryBuilder('room')
+                .setLock('pessimistic_write')
+                .where('room.id = :roomId', { roomId: createBookingDto.roomId })
+                .getOne();
 
-        // Distribute discount across rooms (simple division for now)
-        const discountPerRoom = loyaltyDiscount / roomIds.length;
-        const pointsPerRoom = Math.round(pointsUsed / roomIds.length);
-
-        for (const roomId of roomIds) {
-            // ... (rest of the loop)
-            const room = await this.roomsRepository.findOne({
-                where: { id: roomId },
+            const room = await transactionalEntityManager.getRepository(Room).findOne({
+                where: { id: createBookingDto.roomId },
                 relations: ['venue'],
             });
-            if (!room) throw new NotFoundException(`Room ${roomId} not found`);
+            if (!room) throw new NotFoundException('Room not found');
 
             const venue = room.venue;
             const startDate = createBookingDto.date;
@@ -113,153 +236,51 @@ export class BookingsService {
             }
 
             const conflicts = await this.checkTimeConflicts(
-                roomId,
+                createBookingDto.roomId,
                 startTime,
                 endTime,
+                undefined,
+                transactionalEntityManager
             );
 
             if (conflicts.length > 0) {
-                throw new BadRequestException(
-                    `Room ${room.name} is already booked for the selected time`,
-                );
+                throw new BadRequestException('Room is already booked.');
             }
 
-            // Per room price - if totalPrice in DTO is total for ALL rooms, we should divide it.
-            // But usually the client calculates per room. Let's assume DTO.totalPrice is per room if roomId is present,
-            // or total if roomIds is used.
-            // Actually, my BookingModal sends a single totalPrice.
-            const basePricePerRoom = createBookingDto.totalPrice / roomIds.length;
-            const finalPricePerRoom = basePricePerRoom - discountPerRoom;
-
-            const booking = this.bookingsRepository.create({
+            const booking = transactionalEntityManager.getRepository(Booking).create({
                 ...createBookingDto,
-                roomId,
-                userId,
-                groupId,
-                totalPrice: finalPricePerRoom,
-                loyaltyPointsUsed: pointsPerRoom,
-                loyaltyDiscount: discountPerRoom,
                 startTime,
                 endTime,
-                createdBy: userId,
-                status: BookingStatus.RESERVED,
-                reservedAt: new Date(),
-                expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-                source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
-                organizationId: venue.organizationId,
+                status: BookingStatus.CONFIRMED,
+                source: BookingSource.WALK_IN,
+                createdBy: user.id,
+                updatedBy: user.id,
+                organizationId: user.organizationId,
             });
 
-            const savedBooking = await this.bookingsRepository.save(booking);
-            bookings.push(savedBooking);
+            const savedBooking = await transactionalEntityManager.getRepository(Booking).save(booking);
 
-            await this.logStatusChange(
-                savedBooking.id,
-                BookingStatus.RESERVED,
-                BookingStatus.RESERVED,
-                userId,
-                venue.organizationId,
-            );
+            // Status history inside transaction
+            const history = transactionalEntityManager.getRepository(BookingStatusHistory).create({
+                bookingId: savedBooking.id,
+                oldStatus: BookingStatus.CONFIRMED,
+                newStatus: BookingStatus.CONFIRMED,
+                changedBy: user.id,
+                organization: { id: user.organizationId } as any,
+            });
+            await transactionalEntityManager.getRepository(BookingStatusHistory).save(history);
 
-            // Send reserved notification for each room
-            if (userId) {
-                await this.notificationsService.sendBookingNotification(
-                    savedBooking.id,
-                    'reserved',
-                    userId,
-                    venue.organizationId
-                );
-            }
+            await this.auditService.log({
+                action: 'BOOKING_MANUAL_CREATED',
+                resource: 'Booking',
+                resourceId: savedBooking.id,
+                details: { ...createBookingDto },
+                userId: undefined,
+                staffId: user.id,
+            }, transactionalEntityManager);
 
-            if (userId) {
-                await this.auditService.log({
-                    action: 'BOOKING_CREATED',
-                    resource: 'Booking',
-                    resourceId: savedBooking.id,
-                    userId: userId || undefined,
-                    staffId: undefined,
-                    details: { ...createBookingDto, roomId },
-                });
-            }
-        }
-
-        // Emit WebSocket events for the group (using first booking as reference)
-        if (userId) {
-            this.notificationsGateway.emitToUser(userId, 'booking:reserved', bookings[0]);
-        }
-        this.notificationsGateway.emitToOrganization(bookings[0].organizationId, 'booking:new_reservation', bookings[0]);
-
-        return bookings[0];
-    }
-
-    // Manual booking for Admin/Staff - Auto confirms
-    async createManual(createBookingDto: CreateBookingDto, user: any): Promise<Booking> {
-        const room = await this.roomsRepository.findOne({
-            where: { id: createBookingDto.roomId },
-            relations: ['venue'],
+            return savedBooking;
         });
-        if (!room) throw new NotFoundException('Room not found');
-
-        const venue = room.venue;
-        const startDate = createBookingDto.date;
-        const startTime = new Date(`${startDate}T${createBookingDto.startTime}`);
-        let endTime = new Date(`${startDate}T${createBookingDto.endTime}`);
-
-        // Handle overnight bookings
-        if (endTime <= startTime) {
-            endTime.setDate(endTime.getDate() + 1);
-        }
-
-        const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-
-        if (durationHours < Number(venue.minBookingHours || 1)) {
-            throw new BadRequestException(`Minimum booking duration is ${venue.minBookingHours || 1} hours`);
-        }
-        if (durationHours > Number(venue.maxBookingHours || 6)) {
-            throw new BadRequestException(`Maximum booking duration is ${venue.maxBookingHours || 6} hours`);
-        }
-
-        const conflicts = await this.checkTimeConflicts(
-            createBookingDto.roomId,
-            startTime,
-            endTime,
-        );
-
-        if (conflicts.length > 0) {
-            throw new BadRequestException('Room is already booked.');
-        }
-
-        const booking = this.bookingsRepository.create({
-            ...createBookingDto,
-            startTime,
-            endTime,
-            status: BookingStatus.CONFIRMED,
-            source: BookingSource.WALK_IN,
-            createdBy: user.id,
-            updatedBy: user.id,
-            organizationId: user.organizationId,
-        });
-
-        const savedBooking = await this.bookingsRepository.save(booking);
-
-        await this.logStatusChange(
-            savedBooking.id,
-            BookingStatus.CONFIRMED,
-            BookingStatus.CONFIRMED,
-            user.id,
-            user.organizationId,
-            true, // isStaff
-        );
-
-        await this.auditService.log({
-            action: 'BOOKING_MANUAL_CREATED',
-            resource: 'Booking',
-            resourceId: savedBooking.id,
-            details: { ...createBookingDto },
-            userId: undefined,
-            staffId: user.id,
-        });
-
-        return savedBooking;
     }
 
     async approve(id: string, adminId: string): Promise<Booking> {
@@ -441,8 +462,11 @@ export class BookingsService {
         startMoment: Date,
         endMoment: Date,
         excludeId?: string,
+        manager?: any,
     ): Promise<Booking[]> {
-        const room = await this.roomsRepository.findOne({ where: { id: roomId } });
+        const repo = manager ? manager.getRepository(Booking) : this.bookingsRepository;
+        const roomRepo = manager ? manager.getRepository(Room) : this.roomsRepository;
+        const room = await roomRepo.findOne({ where: { id: roomId } });
         if (!room) return [];
 
         let bufferMinutes = 15;
@@ -459,8 +483,7 @@ export class BookingsService {
         // AND
         // NewBooking.End > ExistingBooking.Start - Buffer
 
-        const query = this.bookingsRepository
-            .createQueryBuilder('booking')
+        const query = repo.createQueryBuilder('booking')
             .where('booking.roomId = :roomId', { roomId })
             .andWhere('booking.status NOT IN (:...statuses)', {
                 statuses: [

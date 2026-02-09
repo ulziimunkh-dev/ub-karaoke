@@ -1,0 +1,205 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - link "UB KARAOKE" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]:
+            - generic [ref=e8]: UB
+            - generic [ref=e9]: KARAOKE
+        - navigation [ref=e11]:
+          - generic [ref=e12]:
+            - link "Бидний тухай" [ref=e13] [cursor=pointer]:
+              - /url: /about
+            - link "Түгээмэл асуултууд" [ref=e14] [cursor=pointer]:
+              - /url: /faq
+          - button "MN" [ref=e15]
+          - button "Нэвтрэх" [ref=e16]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - generic: 🔍
+        - textbox "Караоке хайх..." [ref=e20]
+      - generic [ref=e21]:
+        - combobox [ref=e23] [cursor=pointer]:
+          - option "Бүх дүүрэг" [selected]
+          - option "Сүхбаатар"
+          - option "Чингэлтэй"
+          - option "Баянгол"
+          - option "Баянзүрх"
+          - option "Сонгинохайрхан"
+          - option "Хан-Уул"
+          - option "Налайх"
+          - option "Багахангай"
+          - option "Багануур"
+        - combobox [ref=e25] [cursor=pointer]:
+          - option "Бүх үнэлгээ" [selected]
+          - option "3+ Од"
+          - option "4+ Од"
+          - option "4.5+ Од"
+        - button "📍 📍 Ойрхон" [ref=e26]
+        - combobox [ref=e28] [cursor=pointer]:
+          - option "Хүний тоо" [selected]
+          - option "1-5 Хүн"
+          - option "6-10 Хүн"
+          - option "11-15 Хүн"
+          - option "16-20 Хүн"
+          - option "21-25 Хүн"
+          - option "25+ Хүн"
+        - button "🎉 🎉 Парти хийх" [ref=e29]
+    - main [ref=e30]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33] [cursor=pointer]:
+            - img "Star Voice Academy" [ref=e34]
+            - generic [ref=e35]: 2.4km
+            - generic [ref=e36]: Bayangol
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - heading "Star Voice Academy" [level=3] [ref=e39]
+              - generic [ref=e40]:
+                - generic [ref=e41]:
+                  - generic [ref=e42]: ★
+                  - generic [ref=e43]: "4.5"
+                - generic [ref=e44]: 210 Үнэлгээ
+            - paragraph [ref=e46]: Peace Avenue 45, 3rd Khoroo
+            - generic [ref=e47]:
+              - generic [ref=e48]: 🕒
+              - generic [ref=e49]:
+                - generic [ref=e50]: Цагийн хуваарь
+                - generic [ref=e51]: 10:00AM-02:00AM
+            - generic [ref=e52]: ОДОО НЭЭЛТТЭЙ
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: Хүн
+                - generic [ref=e59]: Up to 12
+              - generic [ref=e60]:
+                - generic [ref=e61]: Эхлэх үнэ
+                - generic [ref=e62]: 25,000₮/ цаг
+            - button "Захиалах" [ref=e63]
+        - generic [ref=e64]:
+          - generic [ref=e65] [cursor=pointer]:
+            - img "Neon Nights (Zaisan)" [ref=e66]
+            - generic [ref=e67]: 2.4km
+            - generic [ref=e68]: Khan-Uul
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - heading "Neon Nights (Zaisan)" [level=3] [ref=e71]
+              - generic [ref=e72]:
+                - generic [ref=e73]:
+                  - generic [ref=e74]: ★
+                  - generic [ref=e75]: "4.9"
+                - generic [ref=e76]: 86 Үнэлгээ
+            - paragraph [ref=e78]: Zaisan Hill Complex, 5th Floor
+            - generic [ref=e79]:
+              - generic [ref=e80]: 🕒
+              - generic [ref=e81]:
+                - generic [ref=e82]: Цагийн хуваарь
+                - generic [ref=e83]: 14:00PM-06:00AM
+            - generic [ref=e84]: ОДОО НЭЭЛТТЭЙ
+            - generic [ref=e88]:
+              - generic [ref=e89]:
+                - generic [ref=e90]: Хүн
+                - generic [ref=e91]: Up to 25
+              - generic [ref=e92]:
+                - generic [ref=e93]: Эхлэх үнэ
+                - generic [ref=e94]: 75,000₮/ цаг
+            - button "Захиалах" [ref=e95]
+        - generic [ref=e96]:
+          - generic [ref=e97] [cursor=pointer]:
+            - img "Neon Nights (Seoul St)" [ref=e98]
+            - generic [ref=e99]: 2.4km
+            - generic [ref=e100]: Sukhbaatar
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - heading "Neon Nights (Seoul St)" [level=3] [ref=e103]
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - generic [ref=e106]: ★
+                  - generic [ref=e107]: "4.8"
+                - generic [ref=e108]: 124 Үнэлгээ
+            - paragraph [ref=e110]: Seoul Street 12, Ulaanbaatar
+            - generic [ref=e111]:
+              - generic [ref=e112]: 🕒
+              - generic [ref=e113]:
+                - generic [ref=e114]: Цагийн хуваарь
+                - generic [ref=e115]: 12:00PM-04:00AM
+            - generic [ref=e116]: ОДОО НЭЭЛТТЭЙ
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - generic [ref=e122]: Хүн
+                - generic [ref=e123]: Up to 15
+              - generic [ref=e124]:
+                - generic [ref=e125]: Эхлэх үнэ
+                - generic [ref=e126]: 45,000₮/ цаг
+            - button "Захиалах" [ref=e127]
+    - generic [ref=e129]:
+      - button "×" [ref=e130]
+      - text: 
+      - generic [ref=e131]:
+        - generic [ref=e132] [cursor=pointer]:
+          - img "Star Voice Academy" [ref=e133]
+          - generic [ref=e135]:
+            - generic [ref=e136]: 
+            - generic [ref=e137]: 1 Зураг
+        - generic [ref=e138]:
+          - heading "Star Voice Academy" [level=2] [ref=e139]
+          - paragraph [ref=e140]: Bayangol
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - heading "Захиалгын дэлгэрэнгүй" [level=3] [ref=e144]
+            - generic [ref=e146]: 1 Өрөө сонгогдсон
+          - generic [ref=e148]:
+            - generic [ref=e149]: Harmony Suite (Large)
+            - generic [ref=e150]: 55000.00₮
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - generic [ref=e153]:
+                - generic [ref=e154]: Огноо
+                - generic [ref=e155]:
+                  - combobox [ref=e156]: 02/09/2026
+                  - button "Choose Date" [ref=e157] [cursor=pointer]:
+                    - img [ref=e158]
+              - generic [ref=e160]:
+                - generic [ref=e161]: Цаг
+                - generic [ref=e162] [cursor=pointer]:
+                  - generic:
+                    - textbox: 21:00
+                  - generic:
+                    - combobox:
+                      - option "21:00" [selected]
+                  - generic [ref=e163]: 21:00
+                  - button "Эхлэх цагаа сонгоно уу" [ref=e164]:
+                    - img [ref=e165]
+              - generic [ref=e167]:
+                - generic [ref=e168]: Үргэлжлэх цаг (Hours)
+                - generic [ref=e169] [cursor=pointer]:
+                  - generic:
+                    - textbox: 1 hours
+                  - generic:
+                    - combobox:
+                      - option "1 hours" [selected]
+                  - generic [ref=e170]: 1 hours
+                  - button [ref=e171]:
+                    - img [ref=e172]
+            - generic [ref=e174]:
+              - heading "Нэмэлт үйлчилгээ" [level=4] [ref=e175]
+              - generic [ref=e177]:
+                - checkbox "Төрсөн өдөр (+50,000₮)" [ref=e179] [cursor=pointer]
+                - generic [ref=e181] [cursor=pointer]: Төрсөн өдөр (+50,000₮)
+            - generic [ref=e182]:
+              - generic [ref=e183]: "Нийт:"
+              - generic [ref=e184]: 55,000₮
+            - generic [ref=e185]:
+              - button "Буцах" [ref=e186]
+              - button "Төлбөр төлөх" [ref=e187]
+  - generic [ref=e189]:
+    - generic [ref=e190]:
+      - generic [ref=e191]: 
+      - generic [ref=e192]: App ready to work offline
+    - paragraph [ref=e193]: You can now use UB Karaoke without an internet connection.
+    - button "Close" [ref=e195] [cursor=pointer]:
+      - generic [ref=e196]: Close
+```
