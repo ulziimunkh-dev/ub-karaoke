@@ -48,6 +48,9 @@ export class Notification {
     status: NotificationStatus;
 
     @Column({ type: 'text', nullable: true })
+    title: string;
+
+    @Column({ type: 'text', nullable: true })
     message: string;
 
     @Column({ type: 'timestamp', nullable: true })

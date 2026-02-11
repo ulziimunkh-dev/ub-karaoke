@@ -63,10 +63,10 @@ const AppRoutes = () => {
     <>
       <Routes>
         <Route path="/" element={<HomePage filters={filters} setFilters={setFilters} />} />
-        <Route path="/about" element={<div className="pt-20"><AboutUs /></div>} />
-        {/* <Route path="/pricing" element={<div className="pt-20"><Pricing /></div>} /> */}
-        <Route path="/policy" element={<div className="pt-20"><Policy /></div>} />
-        <Route path="/faq" element={<div className="pt-20"><FAQ /></div>} />
+        <Route path="/about" element={<AboutUs />} />
+        {/* <Route path="/pricing" element={<Pricing />} /> */}
+        <Route path="/policy" element={<Policy />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="/dashboard" element={<AdminPage />} />
         <Route path="/sysadmin" element={<AdminLoginPage />} />
         <Route path="/staff/login" element={<StaffLoginPage />} />

@@ -55,9 +55,18 @@ export const DataProvider = ({ children }) => {
 
     const loadInitialData = async () => {
         try {
-            setLoading(true);
-            // Load venues
-            const rawVenues = await api.getVenues();
+            // Only show global loading on the very first load
+            if (venues.length === 0) {
+                setLoading(true);
+            }
+            // Load venues with inactive ones if logged in (backend handles role-based access to inactive)
+            const token = localStorage.getItem('access_token');
+            const rawVenues = await api.getVenues(token ? { includeInactive: true } : {});
+
+            console.log(`[DataContext Debug] Fetched ${rawVenues.length} raw venues from API.`);
+            rawVenues.forEach(v => {
+                console.log(`[DataContext Debug] Venue: ${v.name}, isActive: ${v.isActive}, rating: ${v.rating}, roomsCount: ${v.rooms?.length}`);
+            });
 
             // Fix potential JSON string issues from API
             const safeParse = (data) => {
@@ -85,7 +94,6 @@ export const DataProvider = ({ children }) => {
             setVenues(processedVenues);
 
             // Check if user is logged in
-            const token = localStorage.getItem('access_token');
             if (token) {
                 try {
                     const userData = await api.getProfile();
@@ -127,6 +135,16 @@ export const DataProvider = ({ children }) => {
                             setPayouts(payoutsData);
                             setPayoutAccounts(accountsData);
                             setUsers(usersData);
+
+                            // Load manager's organization
+                            if (userData.organizationId) {
+                                try {
+                                    const orgData = await api.getOrganization(userData.organizationId);
+                                    setOrganizations([orgData]);
+                                } catch (err) {
+                                    console.error('Failed to load organization:', err);
+                                }
+                            }
 
                             // Set activeVenueId
                             const orgVenues = processedVenues.filter(v => v.organizationId === userData.organizationId);
@@ -186,65 +204,12 @@ export const DataProvider = ({ children }) => {
 
     // --- AUTH ---
     const handleLoginSuccess = async (data) => {
-        setCurrentUser(data.user);
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        setCurrentUser(data.user);
 
-        if (data.user.role === 'sysadmin') {
-            try {
-                const [orgsData, usersData, staffData] = await Promise.all([
-                    api.getOrganizations(),
-                    api.getUsers(),
-                    api.getStaff()
-                ]);
-                console.log('[DataContext] Sysadmin login staffs:', staffData);
-                setOrganizations(orgsData);
-                setUsers(usersData);
-                setStaffs(staffData);
-            } catch (error) {
-                console.error('Failed to load sysadmin data:', error);
-            }
-        } else if (data.user.role === 'manager' || data.user.role === 'staff') {
-            try {
-                const [staffData, usersData] = await Promise.all([
-                    api.getStaff(),
-                    api.getUsers()
-                ]);
-                setStaffs(staffData);
-                setUsers(usersData);
-
-                // Refresh venues to ensure org-scoped if necessary (though already fetched globally in loadInitialData for now)
-                // Set activeVenueId
-                const orgVenues = venues.filter(v => v.organizationId === data.user.organizationId);
-                if (orgVenues.length > 0) {
-                    const savedVenueId = localStorage.getItem('activeVenueId');
-                    if (savedVenueId && orgVenues.some(v => v.id === savedVenueId)) {
-                        setActiveVenueId(savedVenueId);
-                    } else {
-                        setActiveVenueId(orgVenues[0].id);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load manager/staff data:', error);
-            }
-        }
-
-        // [Global] Load Room Configurations for all administrative roles
-        if (['sysadmin', 'manager', 'staff'].includes(data.user.role)) {
-            try {
-                const [types, features, promotions] = await Promise.all([
-                    api.getRoomTypes(),
-                    api.getRoomFeatures(),
-                    api.getPromotions()
-                ]);
-                console.log('[DataContext] Loaded Room/Promo Config after Login:', { types, features, promotions });
-                setRoomTypes(types);
-                setRoomFeatures(features);
-                setPromos(promotions);
-            } catch (e) {
-                console.error('Failed to load room/promo config after login:', e);
-            }
-        }
+        // Load all data with the new token
+        await loadInitialData();
     };
 
     const login = async (identifier, password, orgCode) => {
@@ -911,10 +876,6 @@ export const DataProvider = ({ children }) => {
         await api.delete(`/room-settings/features/${id}`);
         setRoomFeatures(prev => prev.filter(f => f.id !== id));
     };
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
 
     return (
         <DataContext.Provider

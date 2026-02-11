@@ -21,17 +21,21 @@ const NotificationBell = () => {
         return date.toLocaleString();
     };
 
-    const getIcon = (type) => {
-        switch (type) {
-            case 'booking:confirmed':
-            case 'approved': return 'pi pi-check-circle text-green-500';
-            case 'booking:rejected':
-            case 'rejected': return 'pi pi-times-circle text-red-500';
-            case 'booking:expired':
-            case 'expired': return 'pi pi-exclamation-circle text-orange-500';
-            case 'booking:reminder': return 'pi pi-bell text-yellow-500';
-            default: return 'pi pi-info-circle text-blue-500';
-        }
+    const getIcon = (notif) => {
+        const title = (notif.title || '').toLowerCase();
+        if (title.includes('approved') || title.includes('confirmed') || title.includes('checked'))
+            return 'pi pi-check-circle text-green-500';
+        if (title.includes('rejected'))
+            return 'pi pi-times-circle text-red-500';
+        if (title.includes('expired'))
+            return 'pi pi-exclamation-circle text-orange-500';
+        if (title.includes('reminder'))
+            return 'pi pi-bell text-yellow-500';
+        if (title.includes('reserved') || title.includes('created'))
+            return 'pi pi-calendar-plus text-blue-500';
+        if (title.includes('completed'))
+            return 'pi pi-star text-purple-500';
+        return 'pi pi-info-circle text-blue-500';
     };
 
     return (
@@ -76,7 +80,7 @@ const NotificationBell = () => {
                                 onClick={() => !notif.readAt && markAsRead(notif.id)}
                             >
                                 <div className="flex align-items-start gap-3">
-                                    <i className={getIcon(notif.type)} style={{ fontSize: '1.2rem', marginTop: '2px' }} />
+                                    <i className={getIcon(notif)} style={{ fontSize: '1.2rem', marginTop: '2px' }} />
                                     <div className="flex-1">
                                         <div className="text-sm font-semibold mb-1">{notif.title}</div>
                                         <div className="text-xs text-color-secondary mb-2 line-height-3">{notif.message}</div>

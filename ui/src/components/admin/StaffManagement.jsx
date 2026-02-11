@@ -13,7 +13,7 @@ import AvatarGalleryPicker from '../common/AvatarGalleryPicker';
 import { api } from '../../utils/api';
 
 const StaffManagement = () => {
-    const { staffs, addStaff, updateStaff, toggleStaffStatus, currentUser, organizations } = useData();
+    const { staffs, addStaff, updateStaff, toggleStaffStatus, currentUser, organizations, refreshData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedOrganization, setSelectedOrganization] = useState(null);
@@ -30,6 +30,7 @@ const StaffManagement = () => {
             toast.current.show({ severity: 'success', summary: 'Staff Created', detail: 'New staff member added successfully', life: 3000 });
             setNewUser({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '', avatar: '' });
             setIsModalOpen(false);
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to add staff', life: 3000 });
         }
@@ -42,6 +43,7 @@ const StaffManagement = () => {
             toast.current.show({ severity: 'success', summary: 'Staff Updated', detail: 'Staff member updated successfully', life: 3000 });
             setIsEditModalOpen(false);
             setEditingStaff(null);
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to update staff', life: 3000 });
         }
@@ -62,6 +64,7 @@ const StaffManagement = () => {
             toast.current.show({ severity: 'success', summary: 'Password Reset', detail: `Password for ${resetPasswordUser.name} has been reset successfully`, life: 3000 });
             setResetPasswordUser(null);
             setNewPassword('');
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to reset password', life: 3000 });
         }
@@ -178,6 +181,14 @@ const StaffManagement = () => {
                             className="w-64 h-10 flex items-center bg-white border border-gray-200 rounded-lg"
                         />
                     )}
+                    <Button
+                        icon="pi pi-refresh"
+                        outlined
+                        onClick={() => refreshData?.()}
+                        className="h-10 w-10"
+                        tooltip="Refresh"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
                     <Button
                         label="Add Staff"
                         icon="pi pi-plus"

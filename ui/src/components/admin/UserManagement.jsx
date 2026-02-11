@@ -11,7 +11,7 @@ import { ConfirmDialog } from 'primereact/confirmdialog';
 
 const UserManagement = () => {
     // [REF] Using 'users' for Customers, 'addUser' for creating customers, 'toggleUserStatus' for customers
-    const { users, addUser, toggleUserStatus, currentUser, resetUserPassword } = useData();
+    const { users, addUser, toggleUserStatus, currentUser, resetUserPassword, refreshData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     // [REF] Removed 'role' (default to customer) and 'organizationId' (customers are global/not org-scoped in this context)
     const [newUser, setNewUser] = useState({ username: '', password: '', role: 'customer', name: '', email: '', phone: '' });
@@ -27,6 +27,7 @@ const UserManagement = () => {
             toast.current.show({ severity: 'success', summary: 'Customer Created', detail: 'New customer added successfully', life: 3000 });
             setNewUser({ username: '', password: '', role: 'customer', name: '', email: '', phone: '' });
             setIsModalOpen(false);
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to add customer', life: 3000 });
         }
@@ -37,15 +38,16 @@ const UserManagement = () => {
         setNewPassword('');
     };
 
-    const confirmResetPassword = () => {
+    const confirmResetPassword = async () => {
         if (!newPassword) {
             toast.current.show({ severity: 'warn', summary: 'Warning', detail: 'Please enter a new password', life: 3000 });
             return;
         }
-        resetUserPassword(resetPasswordUser.id, newPassword);
+        await resetUserPassword(resetPasswordUser.id, newPassword);
         toast.current.show({ severity: 'success', summary: 'Password Reset', detail: `Password for ${resetPasswordUser.name} has been reset successfully`, life: 3000 });
         setResetPasswordUser(null);
         setNewPassword('');
+        refreshData?.();
     };
 
     const statusBodyTemplate = (rowData) => {
@@ -101,12 +103,22 @@ const UserManagement = () => {
                     <h2 className="text-2xl font-bold m-0 select-none">Customer Management</h2>
                     <p className="text-gray-500 text-sm mt-1">Manage registered customers and their accounts</p>
                 </div>
-                <Button
-                    label="Add Customer"
-                    icon="pi pi-plus"
-                    onClick={() => setIsModalOpen(true)}
-                    className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 select-none border-0"
-                />
+                <div className="flex gap-2">
+                    <Button
+                        icon="pi pi-refresh"
+                        outlined
+                        onClick={() => refreshData?.()}
+                        className="h-10 w-10"
+                        tooltip="Refresh"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
+                    <Button
+                        label="Add Customer"
+                        icon="pi pi-plus"
+                        onClick={() => setIsModalOpen(true)}
+                        className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 select-none border-0"
+                    />
+                </div>
             </div>
 
             <div className="card p-0 shadow-md hidden lg:block">

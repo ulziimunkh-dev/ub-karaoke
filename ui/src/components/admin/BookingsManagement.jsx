@@ -11,7 +11,7 @@ import { Toast } from 'primereact/toast';
 import { InputText } from 'primereact/inputtext';
 
 const BookingsManagement = () => {
-    const { bookings, venues, currentUser, approveBooking, rejectBooking } = useData();
+    const { bookings, venues, currentUser, approveBooking, rejectBooking, refreshData } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -76,6 +76,7 @@ const BookingsManagement = () => {
         try {
             await approveBooking(booking.id);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Booking approved successfully' });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to approve booking' });
         }
@@ -85,6 +86,7 @@ const BookingsManagement = () => {
         try {
             await rejectBooking(booking.id);
             toast.current.show({ severity: 'warn', summary: 'Rejected', detail: 'Booking has been rejected' });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to reject booking' });
         }
@@ -229,9 +231,19 @@ const BookingsManagement = () => {
                         {t('manageBookingsDesc')}
                     </p>
                 </div>
-                <div className="bg-[#1a1a24] px-4 py-2 rounded-xl border border-white/5">
-                    <span className="text-xs text-gray-500 uppercase font-bold">{t('totalBookings')}: </span>
-                    <span className="text-white font-bold">{getFilteredBookings().length}</span>
+                <div className="flex gap-2 items-center">
+                    <div className="bg-[#1a1a24] px-4 py-2 rounded-xl border border-white/5">
+                        <span className="text-xs text-gray-500 uppercase font-bold">{t('totalBookings')}: </span>
+                        <span className="text-white font-bold">{getFilteredBookings().length}</span>
+                    </div>
+                    <Button
+                        icon="pi pi-refresh"
+                        outlined
+                        onClick={() => refreshData?.()}
+                        className="h-10 w-10"
+                        tooltip="Refresh"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
                 </div>
             </div>
 

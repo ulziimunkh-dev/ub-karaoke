@@ -17,7 +17,7 @@ const Finance = () => {
     const {
         earnings, payouts, payoutAccounts,
         requestPayout, addPayoutAccount, updatePayoutStatus,
-        currentUser, bookings, processRefund, venues
+        currentUser, bookings, processRefund, venues, refreshData
     } = useData();
     const { t } = useLanguage();
     const [activeIndex, setActiveIndex] = useState(0);
@@ -85,6 +85,7 @@ const Finance = () => {
             setIsPayoutModalOpen(false);
             setSelectedEarnings([]);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Payout requested successfully' });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to request payout' });
         }
@@ -95,6 +96,7 @@ const Finance = () => {
             await addPayoutAccount(accountForm);
             setIsAccountModalOpen(false);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Payout account added' });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add account' });
         }
@@ -104,6 +106,7 @@ const Finance = () => {
         try {
             await updatePayoutStatus(id, status);
             toast.current.show({ severity: 'success', summary: 'Success', detail: `Payout marked as ${status}` });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Update failed' });
         }
@@ -118,6 +121,14 @@ const Finance = () => {
                     <p className="text-gray-500 text-sm">Manage earnings, payouts and bank accounts</p>
                 </div>
                 <div className="flex gap-2">
+                    <Button
+                        icon="pi pi-refresh"
+                        outlined
+                        onClick={() => refreshData?.()}
+                        className="p-button-sm h-10 w-10"
+                        tooltip="Refresh"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
                     <Button
                         label="Add Bank Account"
                         icon="pi pi-plus"

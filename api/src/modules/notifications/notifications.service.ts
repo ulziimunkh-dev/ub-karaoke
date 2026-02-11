@@ -59,6 +59,17 @@ export class NotificationsService {
         userId?: string,
         organizationId?: string
     ) {
+        const titles = {
+            created: 'Booking Created',
+            reserved: 'Slot Reserved',
+            approved: 'Booking Approved',
+            rejected: 'Booking Rejected',
+            checked_in: 'Checked In',
+            completed: 'Booking Completed',
+            expired: 'Reservation Expired',
+            reminder: 'Payment Reminder'
+        };
+
         const messages = {
             created: 'Your booking has been created and is pending approval',
             reserved: 'Your time slot has been reserved. Complete payment within 15 minutes.',
@@ -70,6 +81,7 @@ export class NotificationsService {
             reminder: 'Your reservation expires soon. Complete payment now!'
         };
 
+        const title = titles[type];
         const message = messages[type];
 
         if (userId) {
@@ -79,6 +91,7 @@ export class NotificationsService {
                 bookingId,
                 type: NotificationType.PUSH,
                 status: NotificationStatus.SENT,
+                title,
                 message,
                 organizationId
             });

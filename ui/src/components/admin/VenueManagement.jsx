@@ -57,7 +57,7 @@ const ImagePicker = ({ selectedImage, onSelect, label }) => {
 };
 
 const VenueManagement = () => {
-    const { venues, activeVenueId, updateVenue, updateVenueStatus, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures } = useData();
+    const { venues, activeVenueId, updateVenue, updateVenueStatus, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures, refreshData } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
 
@@ -210,6 +210,7 @@ const VenueManagement = () => {
             await addRoomPricing(roomId, payload);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule added' });
             setPricingForm(prev => ({ ...prev, isSpecificDate: false, dateRange: null }));
+            refreshData?.();
         } catch (e) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add rule' });
         }
@@ -219,6 +220,7 @@ const VenueManagement = () => {
         try {
             await removeRoomPricing(pricingId);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule removed' });
+            refreshData?.();
         } catch (e) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to remove rule' });
         }
@@ -296,7 +298,7 @@ const VenueManagement = () => {
         setIsVenueModalOpen(true);
     };
 
-    const handleSaveVenue = (e) => {
+    const handleSaveVenue = async (e) => {
         e.preventDefault();
 
         // Transform venueForm to match API DTO
@@ -337,13 +339,14 @@ const VenueManagement = () => {
         };
 
         if (editingVenue) {
-            updateVenue(editingVenue.id, venueData);
+            await updateVenue(editingVenue.id, venueData);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue updated successfully' });
         } else {
-            addVenue(venueData);
+            await addVenue(venueData);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue added successfully' });
         }
         setIsVenueModalOpen(false);
+        refreshData?.();
     };
 
     const handleDeleteVenue = (venueId) => {
@@ -351,16 +354,17 @@ const VenueManagement = () => {
             message: t('areYouSure'),
             header: 'Delete Confirmation',
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                deleteVenue(venueId);
+            accept: async () => {
+                await deleteVenue(venueId);
                 toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Venue removed successfully' });
+                refreshData?.();
             }
         });
     };
 
-    const handleToggleStatus = (venue) => {
+    const handleToggleStatus = async (venue) => {
         const newIsActive = !venue.isActive;
-        updateVenueStatus(venue.id, newIsActive);
+        await updateVenueStatus(venue.id, newIsActive);
         toast.current.show({
             severity: 'info',
             summary: 'Status Updated',
@@ -398,7 +402,7 @@ const VenueManagement = () => {
         setIsRoomModalOpen(true);
     };
 
-    const handleSaveRoom = (e) => {
+    const handleSaveRoom = async (e) => {
         e.preventDefault();
         if (!selectedVenue) return;
 
@@ -409,14 +413,15 @@ const VenueManagement = () => {
         };
 
         if (editingRoom) {
-            updateRoom(selectedVenue.id, editingRoom.id, payload);
+            await updateRoom(selectedVenue.id, editingRoom.id, payload);
             setEditingRoom(null);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room updated' });
         } else {
-            addRoom(selectedVenue.id, payload);
+            await addRoom(selectedVenue.id, payload);
             toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room added' });
         }
         setIsRoomModalOpen(false);
+        refreshData?.();
         setRoomForm({
             name: '',
             roomTypeId: null,
@@ -433,9 +438,10 @@ const VenueManagement = () => {
             message: t('areYouSure'),
             header: 'Delete Confirmation',
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                deleteRoom(selectedVenue.id, roomId);
+            accept: async () => {
+                await deleteRoom(selectedVenue.id, roomId);
                 toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Room removed' });
+                refreshData?.();
             }
         });
     };
@@ -448,6 +454,7 @@ const VenueManagement = () => {
         try {
             await updateRoomSortOrders(selectedVenue.id, newOrder);
             toast.current.show({ severity: 'success', summary: 'Sorted', detail: 'Room order updated' });
+            refreshData?.();
         } catch (error) {
             toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to update order' });
         }
@@ -461,6 +468,14 @@ const VenueManagement = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                 <h2 className="text-2xl font-bold m-0">{t('venueManagement')}</h2>
                 <div className="flex gap-2">
+                    <Button
+                        icon="pi pi-refresh"
+                        outlined
+                        onClick={() => refreshData?.()}
+                        className="h-11 w-11"
+                        tooltip="Refresh"
+                        tooltipOptions={{ position: 'bottom' }}
+                    />
                     {['sysadmin', 'admin'].includes(currentUser.role) && (
                         <Button
                             label="Room Settings"

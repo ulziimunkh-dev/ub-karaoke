@@ -26,6 +26,16 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [phoneRevealed, setPhoneRevealed] = useState(false);
     const [showVenueGallery, setShowVenueGallery] = useState(false);
 
+    // Close on ESC key
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
 
     // Default Date: Today
     const [bookingDate, setBookingDate] = useState(new Date());

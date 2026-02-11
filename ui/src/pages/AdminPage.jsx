@@ -234,7 +234,7 @@ const AdminPage = () => {
                     </div>
                 )}
 
-                {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard />)}
+                {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard onNavigate={setActiveTab} />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
                 {activeTab === 'plans' && <PlanManagement />}
                 {activeTab === 'subscription' && <SubscriptionManagement />}

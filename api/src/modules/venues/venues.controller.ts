@@ -16,6 +16,7 @@ import { VenuesService } from './venues.service';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 import { RoomsService } from '../rooms/rooms.service';
 
@@ -43,6 +44,7 @@ export class VenuesController {
     @ApiQuery({ name: 'organizationId', required: false })
     @ApiQuery({ name: 'includeInactive', required: false })
     @ApiBearerAuth()
+    @UseGuards(OptionalJwtAuthGuard)
     findAll(
         @Req() req: any,
         @Query('district') district?: string,

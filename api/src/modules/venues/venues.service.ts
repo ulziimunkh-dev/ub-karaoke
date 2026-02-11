@@ -52,6 +52,7 @@ export class VenuesService {
         organizationId?: string;
         includeInactive?: boolean;
     }): Promise<Venue[]> {
+        console.log('[VenuesService.findAll] Filters:', filters);
         const query = this.venuesRepository.createQueryBuilder('venue')
             .leftJoinAndSelect('venue.organization', 'organization')
             .leftJoinAndSelect('venue.rooms', 'room')
@@ -79,21 +80,22 @@ export class VenuesService {
         }
 
         if (filters?.organizationId) {
-            query.andWhere('venue.organization_id = :organizationId', {
+            query.andWhere('venue.organizationId = :organizationId', {
                 organizationId: filters.organizationId,
             });
         }
 
         if (!filters?.includeInactive) {
-            query.andWhere('venue.is_active = :active', { active: true });
-            query.andWhere('organization.is_active = :active', { active: true });
-            query.andWhere('room.is_active = :active', { active: true });
+            query.andWhere('venue.isActive = :active', { active: true });
+            query.andWhere('organization.isActive = :active', { active: true });
+            query.andWhere('room.isActive = :active', { active: true });
         }
 
         query.addOrderBy('room.sortOrder', 'ASC')
             .addOrderBy('room.name', 'ASC');
 
         const venues = await query.getMany();
+        console.log(`[VenuesService.findAll] Found ${venues.length} venues`);
         return venues;
     }
 
