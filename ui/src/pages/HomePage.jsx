@@ -138,18 +138,6 @@ const HomePage = () => {
 
     return (
         <div className="min-h-screen bg-[#0B0B15] text-white selection:bg-[#b000ff] selection:text-white">
-            {/* DEBUG OVERLAY */}
-            <div className="bg-black/80 text-white p-4 text-[10px] font-mono fixed bottom-4 right-4 z-[9999] rounded border border-white/20 pointer-events-none">
-                <div>Total Venues from Context: {venues.length}</div>
-                <div>Filtered Venues: {filteredVenues.length}</div>
-                <div className="mt-2 text-gray-400">
-                    {venues.map(v => (
-                        <div key={v.id}>
-                            {v.name}: {filteredVenues.find(fv => fv.id === v.id) ? 'VISIBLE' : 'HIDDEN'}
-                        </div>
-                    ))}
-                </div>
-            </div>
             <Header />
             <FilterBar filters={filters} onFilterChange={setFilters} />
 
