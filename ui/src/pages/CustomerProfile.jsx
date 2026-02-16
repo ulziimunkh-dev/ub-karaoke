@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from 'primereact/button';
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { api } from '../utils/api';
 import AvatarGalleryPicker from '../components/common/AvatarGalleryPicker';
 
@@ -21,6 +23,7 @@ const CustomerProfile = () => {
         isExtending,
         activeBooking: globalActiveBooking
     } = useData();
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('bookings');
     const [editForm, setEditForm] = useState({
@@ -46,9 +49,15 @@ const CustomerProfile = () => {
     const historyBookings = myBookings.filter(b => ['Completed', 'Cancelled', 'Refunded', 'EXPIRED', 'expired'].includes(b.status));
 
     const handleCancel = (id) => {
-        if (window.confirm('Are you sure you want to cancel this booking? Cancellation fees may apply.')) {
-            updateBookingStatus(id, 'Cancelled');
-        }
+        confirmDialog({
+            message: t('cancelBookingMessage'),
+            header: t('cancelBookingHeader'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptClassName: 'p-button-danger',
+            acceptLabel: t('yesCancel'),
+            rejectLabel: t('goBack'),
+            accept: () => updateBookingStatus(id, 'CANCELLED'),
+        });
     };
 
     const handleUpdateProfile = async (e) => {
@@ -68,6 +77,7 @@ const CustomerProfile = () => {
 
     return (
         <div className="p-8 max-w-6xl mx-auto">
+            <ConfirmDialog />
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
                 <Link to="/" className="text-[#b000ff] hover:text-[#eb79b2] transition-colors text-sm font-medium flex items-center gap-2">

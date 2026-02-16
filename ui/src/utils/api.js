@@ -227,6 +227,16 @@ export const api = {
         return response.data;
     },
 
+    // QPay
+    createQpayInvoice: async (bookingId) => {
+        const response = await apiInstance.post('/payments/qpay/create-invoice', { bookingId });
+        return response.data;
+    },
+    checkQpayPayment: async (paymentId) => {
+        const response = await apiInstance.post(`/payments/qpay/check-payment/${paymentId}`);
+        return response.data;
+    },
+
     // Plans
     getPlans: async () => {
         const response = await apiInstance.get('/plans');

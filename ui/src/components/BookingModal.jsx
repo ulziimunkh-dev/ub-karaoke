@@ -218,6 +218,11 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [isBooking, setIsBooking] = useState(false);
     const [bookingError, setBookingError] = useState(null);
 
+    // QPay State
+    const [qpayPayment, setQpayPayment] = useState(null);
+    const [qpayLoading, setQpayLoading] = useState(false);
+    const [qpayPolling, setQpayPolling] = useState(false);
+
     const handlePayment = async () => {
         if (!currentUser) {
             setShowLogin(true);
@@ -225,7 +230,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         }
 
         if (currentUser.role === 'staff' || currentUser.role === 'manager' || currentUser.role === 'sysadmin') {
-            alert(t('staffBookingRestriction') || "Staff must use Admin Panel for manual bookings.");
+            alert(t('staffBookingRestriction'));
             return;
         }
 
@@ -251,23 +256,46 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const handleConfirmPayment = async () => {
         if (!activeBooking) return;
 
-        setIsBooking(true);
+        setQpayLoading(true);
         setBookingError(null);
         try {
-            const confirmed = await api.confirmBookingPayment(activeBooking.id, {
-                paymentMethod: 'transfer',
-                amount: totalCost,
-                confirmedAt: new Date().toISOString()
-            });
-            setActiveBooking(confirmed);
-            setStep(4);
+            const payment = await api.createQpayInvoice(activeBooking.id);
+            setQpayPayment(payment);
+            setQpayPolling(true);
         } catch (error) {
-            console.error('Payment confirmation failed:', error);
-            setBookingError(error.response?.data?.message || error.message || "Payment confirmation failed");
+            console.error('QPay invoice creation failed:', error);
+            setBookingError(error.response?.data?.message || error.message || 'QPay invoice creation failed');
         } finally {
-            setIsBooking(false);
+            setQpayLoading(false);
         }
     };
+
+    // QPay polling for payment status
+    useEffect(() => {
+        if (!qpayPolling || !qpayPayment?.id) return;
+
+        const interval = setInterval(async () => {
+            try {
+                const updated = await api.checkQpayPayment(qpayPayment.id);
+                if (updated.status === 'COMPLETED') {
+                    setQpayPolling(false);
+                    setQpayPayment(updated);
+                    setStep(4);
+                }
+            } catch (error) {
+                console.error('QPay payment check failed:', error);
+            }
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [qpayPolling, qpayPayment?.id]);
+
+    // Auto-create QPay invoice when entering Step 3
+    useEffect(() => {
+        if (step === 3 && activeBooking && !qpayPayment && !qpayLoading) {
+            handleConfirmPayment();
+        }
+    }, [step, activeBooking]);
 
 
 
@@ -777,6 +805,21 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                     </div>
 
                                     <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-4 sm:mt-0">
+
+                                        {bookingError && (
+                                            <div className="w-full mb-3 p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 sm:order-first sm:flex-1">
+                                                <i className="pi pi-exclamation-circle text-red-400 text-lg flex-shrink-0"></i>
+                                                <p className="text-red-300 text-sm m-0">{bookingError}</p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBookingError(null)}
+                                                    className="ml-auto text-red-400 hover:text-red-300 bg-transparent border-none cursor-pointer flex-shrink-0"
+                                                >
+                                                    <i className="pi pi-times text-xs"></i>
+                                                </button>
+                                            </div>
+                                        )}
+
                                         <button
                                             type="button"
                                             onClick={() => setStep(1)}
@@ -791,42 +834,96 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
                                         >
                                             {isBooking && <i className="pi pi-spin pi-spinner"></i>}
-                                            {isBooking ? t('processing') || 'Processing...' : t('proceedPayment')}
+                                            {isBooking ? t('processing') : t('proceedPayment')}
                                         </button>
                                     </div>
                                 </form>
                             </div>
                         )}
 
-                        {/* Step 3: Payment */}
+                        {/* Step 3: QPay Payment */}
                         {step === 3 && (
                             <div className="text-center py-4">
-                                <h3 className="text-xl font-bold mb-6">{t('confirmPayment')}</h3>
+                                {/* Header with title + countdown */}
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-bold mb-3">{t('confirmPayment')}</h3>
+                                    {activeBooking && (
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-3">
+                                            <BookingCountdown
+                                                booking={activeBooking}
+                                                onExpired={() => {
+                                                    setBookingError(t('reservationExpired'));
+                                                    setQpayPolling(false);
+                                                }}
+                                                onExtend={() => extendBookingReservation(activeBooking.id)}
+                                                isExtending={isExtending}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
 
-                                {activeBooking && (
-                                    <BookingCountdown
-                                        booking={activeBooking}
-                                        onExpired={() => {
-                                            setBookingError("Reservation expired. Please try again.");
-                                        }}
-                                        onExtend={() => extendBookingReservation(activeBooking.id)}
-                                        isExtending={isExtending}
-                                    />
+                                {/* QPay Loading */}
+                                {qpayLoading && (
+                                    <div className="bg-white/5 p-8 rounded-xl border border-white/10 mb-6">
+                                        <i className="pi pi-spin pi-spinner text-4xl text-[#b000ff] mb-4 block"></i>
+                                        <p className="text-gray-300">{t('creatingInvoice')}</p>
+                                    </div>
                                 )}
 
-                                <div className="bg-white/5 p-6 rounded-xl border border-white/10 mb-6">
-                                    <p className="mb-3 text-gray-300">{t('transferInstruction')}</p>
-                                    <h2 className="m-0 text-3xl font-bold text-primary mb-6 drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
-                                        {totalCost.toLocaleString()}₮
-                                    </h2>
-                                    <div className="p-4 bg-black/30 rounded-lg text-left inline-block border border-white/5 w-full max-w-sm">
-                                        <p className="my-1.5"><span className="text-text-muted mr-2">{t('bankName')}:</span> <span className="font-bold text-white">KHAN BANK</span></p>
-                                        <p className="my-1.5"><span className="text-text-muted mr-2">{t('accountNumber')}:</span> <span className="font-bold text-secondary">5070******</span></p>
-                                        <p className="my-1.5"><span className="text-text-muted mr-2">{t('accountName')}:</span> <span className="font-bold text-white">UB KARAOKE LLC</span></p>
-                                        <p className="my-1.5"><span className="text-text-muted mr-2">{t('referenceNumber')}:</span> <span className="font-bold text-secondary">{activeBooking?.id?.substring(0, 8).toUpperCase()}</span></p>
+                                {/* QPay QR Code & Payment Info */}
+                                {qpayPayment && !qpayLoading && (
+                                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 mb-6">
+                                        <div className="mb-4">
+                                            <p className="text-sm text-gray-400 mb-1">{t('amountToPay')}</p>
+                                            <h2 className="m-0 text-3xl font-bold text-primary drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
+                                                {Number(qpayPayment.amount).toLocaleString()}₮
+                                            </h2>
+                                        </div>
+
+                                        {/* QR Code */}
+                                        {qpayPayment.qpayQrImage && (
+                                            <div className="mb-6">
+                                                <p className="text-sm text-gray-400 mb-3">{t('scanQrCode')}</p>
+                                                <div className="inline-block bg-white p-3 rounded-xl shadow-lg">
+                                                    <img
+                                                        src={`data:image/png;base64,${qpayPayment.qpayQrImage}`}
+                                                        alt="QPay QR Code"
+                                                        className="w-48 h-48 sm:w-56 sm:h-56"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Bank Deep Links */}
+                                        {qpayPayment.qpayUrls && qpayPayment.qpayUrls.length > 0 && (
+                                            <div className="mt-4">
+                                                <p className="text-sm text-gray-400 mb-3">{t('orOpenBank')}</p>
+                                                <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+                                                    {qpayPayment.qpayUrls.map((bankUrl, idx) => (
+                                                        <a
+                                                            key={idx}
+                                                            href={bankUrl.link}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#b000ff]/40 rounded-lg transition-all text-sm text-gray-300 hover:text-white"
+                                                        >
+                                                            <i className="pi pi-external-link text-xs"></i>
+                                                            <span className="font-medium">{bankUrl.description || bankUrl.name}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Polling Indicator */}
+                                        {qpayPolling && (
+                                            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
+                                                <i className="pi pi-spin pi-spinner text-[#b000ff]"></i>
+                                                <span>{t('waitingForPayment')}</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="mt-4 text-xs text-text-muted">{t('clickConfirm')}</p>
-                                </div>
+                                )}
 
                                 {bookingError && (
                                     <div className="mb-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm flex items-center gap-2">
@@ -837,25 +934,26 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
                                 <div className="flex flex-col-reverse sm:flex-row justify-center gap-3 mt-6">
                                     <button
-                                        onClick={() => setStep(2)}
+                                        onClick={() => {
+                                            setStep(2);
+                                            setQpayPolling(false);
+                                            setQpayPayment(null);
+                                        }}
                                         disabled={isBooking}
                                         className="h-12 px-6 border border-[#b000ff] text-[#b000ff] bg-transparent rounded-lg hover:bg-[#b000ff]/10 hover:text-[#eb79b2] transition-all font-bold flex items-center justify-center gap-2 disabled:opacity-50 w-full sm:w-auto"
                                     >
                                         {t('back')}
                                     </button>
-                                    <button
-                                        data-testid="confirm-transfer-button"
-                                        onClick={handleConfirmPayment}
-                                        disabled={isBooking || (activeBooking && new Date() > new Date(activeBooking.expiresAt))}
-                                        className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
-                                    >
-                                        {isBooking ? (
-                                            <i className="pi pi-spin pi-spinner"></i>
-                                        ) : (
-                                            <i className="pi pi-check"></i>
-                                        )}
-                                        {isBooking ? t('processing') || 'Processing...' : t('confirmTransfer')}
-                                    </button>
+                                    {!qpayPayment && !qpayLoading && (
+                                        <button
+                                            data-testid="retry-qpay-button"
+                                            onClick={handleConfirmPayment}
+                                            className="h-12 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                        >
+                                            <i className="pi pi-refresh"></i>
+                                            {t('retry')}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}

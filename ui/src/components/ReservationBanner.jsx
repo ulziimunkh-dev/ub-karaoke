@@ -4,11 +4,12 @@ import BookingCountdown from './BookingCountdown';
 import { useLocation } from 'react-router-dom';
 
 const ReservationBanner = () => {
-    const { activeBooking, extendBookingReservation, isExtending, setActiveBooking, setShowResumeModal } = useData();
+    const { activeBooking, extendBookingReservation, isExtending, setActiveBooking, setShowResumeModal, showResumeModal } = useData();
     const location = useLocation();
 
-    // Don't show if no active booking or if it's not in RESERVED status
+    // Don't show if no active booking, not RESERVED, or if the payment modal is already open
     if (!activeBooking || (activeBooking.status !== 'RESERVED' && activeBooking.status !== 'reserved')) return null;
+    if (showResumeModal) return null;
 
     // Hide in administrative areas
     if (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/staff') || location.pathname.startsWith('/sysadmin')) {

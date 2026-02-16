@@ -275,7 +275,26 @@ const dictionaries = {
         saving: "Saving...",
         assignedBySysadmin: "Assigned by System Admin",
         orgDescPlaceholder: "Brief description of your organization...",
-        addressPlaceholder: "Organization address..."
+        addressPlaceholder: "Organization address...",
+        // QPay Payment
+        creatingInvoice: "Creating QPay invoice...",
+        amountToPay: "Amount to pay",
+        scanQrCode: "Scan QR code with your banking app",
+        orOpenBank: "Or open your banking app directly",
+        waitingForPayment: "Waiting for payment confirmation...",
+        retry: "Retry",
+        paymentSuccess: "Payment successful!",
+        // Cancel Booking
+        cancelBookingHeader: "Cancel Booking",
+        cancelBookingMessage: "Are you sure you want to cancel this booking? Cancellation fees may apply.",
+        yesCancel: "Yes, Cancel",
+        goBack: "Go Back",
+        // Booking Errors
+        reservationExpired: "Reservation expired. Please try again.",
+        bookingFailed: "Booking failed. Please try again.",
+        roomAlreadyBooked: "This room is already booked for the selected time.",
+        processing: "Processing...",
+        staffBookingRestriction: "Staff must use Admin Panel for manual bookings."
     },
     mn: {
         appTitle: "UB КАРАОКЕ",
@@ -547,7 +566,26 @@ const dictionaries = {
         saving: "Хадгалж байна...",
         assignedBySysadmin: "Системийн админ оноосон",
         orgDescPlaceholder: "Байгууллагын товч тайлбар...",
-        addressPlaceholder: "Байгууллагын хаяг..."
+        addressPlaceholder: "Байгууллагын хаяг...",
+        // QPay Payment
+        creatingInvoice: "QPay нэхэмжлэх үүсгэж байна...",
+        amountToPay: "Төлөх дүн",
+        scanQrCode: "Банкны аппликейшнээрээ QR кодыг уншуулна уу",
+        orOpenBank: "Эсвэл банкны аппаа шууд нээх",
+        waitingForPayment: "Төлбөр баталгаажихыг хүлээж байна...",
+        retry: "Дахин оролдох",
+        paymentSuccess: "Төлбөр амжилттай!",
+        // Cancel Booking
+        cancelBookingHeader: "Захиалга цуцлах",
+        cancelBookingMessage: "Та энэ захиалгыг цуцлахдаа итгэлтэй байна уу? Цуцлалтын шимтгэл нэхэмжлэгдэж болно.",
+        yesCancel: "Тийм, Цуцлах",
+        goBack: "Буцах",
+        // Booking Errors
+        reservationExpired: "Захиалгын хугацаа дууссан. Дахин оролдоно уу.",
+        bookingFailed: "Захиалга амжилтгүй боллоо. Дахин оролдоно уу.",
+        roomAlreadyBooked: "Энэ өрөө сонгосон цагт аль хэдийн захиалагдсан байна.",
+        processing: "Боловсруулж байна...",
+        staffBookingRestriction: "Ажилтнууд Админ хуудсаар захиалга хийнэ үү."
     }
 };
 

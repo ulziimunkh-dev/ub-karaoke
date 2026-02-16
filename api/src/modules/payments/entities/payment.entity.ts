@@ -14,7 +14,8 @@ export enum PaymentStatus {
 export enum PaymentMethod {
     CASH = 'CASH',
     CARD = 'CARD',
-    ONLINE = 'ONLINE', // Mock online
+    ONLINE = 'ONLINE',
+    QPAY = 'QPAY',
 }
 
 @Entity('payments')
@@ -44,6 +45,18 @@ export class Payment {
 
     @Column({ name: 'transactionId', nullable: true })
     transactionId: string;
+
+    @Column({ name: 'qpay_invoice_id', nullable: true })
+    qpayInvoiceId: string;
+
+    @Column({ name: 'qpay_qr_text', type: 'text', nullable: true })
+    qpayQrText: string;
+
+    @Column({ name: 'qpay_qr_image', type: 'text', nullable: true })
+    qpayQrImage: string;
+
+    @Column('jsonb', { name: 'qpay_urls', nullable: true })
+    qpayUrls: any;
 
     @ManyToOne(() => Booking, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'bookingId' })
