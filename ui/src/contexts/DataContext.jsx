@@ -249,6 +249,8 @@ export const DataProvider = ({ children }) => {
         }
 
         setCurrentUser(null);
+        setActiveBooking(null);
+        setShowResumeModal(false);
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
 

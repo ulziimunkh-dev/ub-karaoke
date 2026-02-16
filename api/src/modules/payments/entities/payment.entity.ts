@@ -69,7 +69,7 @@ export class Payment {
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    @Column({ name: 'organization_id', nullable: true })
     organizationId: string;
 
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

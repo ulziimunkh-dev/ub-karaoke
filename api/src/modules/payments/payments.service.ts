@@ -126,7 +126,9 @@ export class PaymentsService {
             method: PaymentMethod.QPAY,
             status: PaymentStatus.PENDING,
             bookingId: booking.id,
+            organizationId: booking.organizationId || booking.venue?.organizationId || undefined,
             createdBy: userId,
+            updatedBy: userId,
         });
         const savedPayment = await this.paymentsRepository.save(payment);
 
