@@ -76,272 +76,284 @@ const CustomerProfile = () => {
     };
 
     return (
-        <div className="p-8 max-w-6xl mx-auto">
+        <div className="min-h-screen bg-[#0a0a12] text-white">
             <ConfirmDialog />
-            {/* Header */}
-            <div className="flex justify-between items-center mb-8">
-                <Link to="/" className="text-[#b000ff] hover:text-[#eb79b2] transition-colors text-sm font-medium flex items-center gap-2">
-                    ← Home
+
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-50 bg-[#0a0a12]/80 backdrop-blur-xl border-b border-white/5 px-4 h-16 flex items-center justify-between">
+                <Link to="/" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors no-underline">
+                    <i className="pi pi-home"></i>
                 </Link>
+                <h1 className="text-lg font-bold tracking-tight m-0">{t('profile') || 'Profile'}</h1>
                 <Button
-                    label="Logout"
-                    outlined
+                    icon="pi pi-sign-out"
+                    rounded
+                    text
+                    severity="secondary"
                     onClick={() => {
                         const redirectPath = logout();
                         navigate(redirectPath);
                     }}
-                    className="h-10 px-5"
+                    className="w-10 h-10"
                 />
             </div>
 
-            <div className="flex items-center mb-8 bg-white/5 p-6 rounded-2xl border border-white/10">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex justify-center items-center text-2xl font-bold overflow-hidden border-2 border-white/20">
-                    {currentUser?.avatar ? (
-                        <img src={api.getFileUrl(currentUser.avatar)} alt={currentUser.name} className="w-full h-full object-cover" />
-                    ) : (
-                        currentUser?.name?.charAt(0) || 'U'
-                    )}
-                </div>
-                <div className="ml-6 flex-1">
-                    <h1 className="text-3xl font-bold m-0">{currentUser?.name || 'User'}</h1>
-                    <p className="text-gray-400 my-1">Member since 2024</p>
-                    <div className="flex items-center gap-3">
-                        <span className="text-yellow-400 font-bold">⭐ {currentUser?.loyaltyPoints || 0} Points</span>
-                        <span className="text-xs text-gray-600">(Gold Tier)</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className="border-b border-white/10 mb-8">
-                <button
-                    onClick={() => setActiveTab('bookings')}
-                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'bookings'
-                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
-                        : 'text-gray-400 hover:text-[#b000ff]'
-                        }`}
-                >
-                    My Bookings
-                </button>
-                <button
-                    onClick={() => setActiveTab('history')}
-                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'history'
-                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
-                        : 'text-gray-400 hover:text-[#b000ff]'
-                        }`}
-                >
-                    History
-                </button>
-                <button
-                    onClick={() => setActiveTab('loyalty')}
-                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'loyalty'
-                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
-                        : 'text-gray-400 hover:text-[#b000ff]'
-                        }`}
-                >
-                    Loyalty & Rewards
-                </button>
-                <button
-                    onClick={() => setActiveTab('settings')}
-                    className={`bg-transparent border-none px-5 py-3 text-lg cursor-pointer transition-all ${activeTab === 'settings'
-                        ? 'text-[#b000ff] border-b-2 border-[#b000ff] font-bold'
-                        : 'text-gray-400 hover:text-[#b000ff]'
-                        }`}
-                >
-                    Settings
-                </button>
-            </div>
-
-            {/* Content */}
-            {activeTab === 'bookings' && (
-                <div className="grid gap-5">
-                    {activeBookings.length === 0 ? <p className="text-gray-500">No upcoming bookings.</p> : activeBookings.map(b => {
-                        const isReserved = ['RESERVED', 'reserved', 'Reserved'].includes(b.status);
-                        const venueName = b.room?.venue?.name || b.venue?.name || 'Unknown Venue';
-
-                        return (
-                            <div key={b.id} className={`bg-white/5 p-5 rounded-xl border-l-4 ${isReserved ? 'border-yellow-500 bg-yellow-500/5' : 'border-green-500'} flex flex-col gap-4`}>
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-xl font-bold m-0">{b.room?.name || 'Room Selection'}</h3>
-                                            <span className="text-sm text-gray-400">• {venueName}</span>
-                                        </div>
-                                        <p className="text-gray-300 my-1 flex items-center gap-2">
-                                            <span>📅 {b.date}</span>
-                                            <span>⏰ {b.startTime || b.time}</span>
-                                            <span>⏳ {b.duration}h</span>
-                                        </p>
-                                        <p className="font-bold my-1 text-[#b000ff]">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
-                                        {/* Venue Contact Info */}
-                                        {(() => {
-                                            const venue = venues.find(v => v.id === b.venueId);
-                                            return venue && (
-                                                <div className="bg-black/20 rounded-lg p-2 mt-2 text-xs space-y-1">
-                                                    {venue.phone && (
-                                                        <p className="m-0 flex items-center gap-2 text-gray-300">
-                                                            <i className="pi pi-phone text-green-400" />
-                                                            <a href={`tel:${venue.phone}`} className="text-green-400 hover:underline no-underline">{venue.phone}</a>
-                                                        </p>
-                                                    )}
-                                                    {venue.address && (
-                                                        <p className="m-0 flex items-center gap-2 text-gray-400">
-                                                            <i className="pi pi-map-marker text-blue-400" />
-                                                            {venue.address}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            );
-                                        })()}
-                                        {/* Customer Notes */}
-                                        {b.notes && (
-                                            <div className="bg-purple-500/10 rounded-lg p-2 mt-2 text-xs">
-                                                <p className="m-0 text-purple-300"><i className="pi pi-comment mr-1" /> {b.notes}</p>
-                                            </div>
-                                        )}
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider mt-2 inline-block ${isReserved ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                                            {b.status}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col gap-2 min-w-[140px]">
-                                        {isReserved && (
-                                            <Button
-                                                label="Complete Payment"
-                                                icon="pi pi-check-circle"
-                                                className="p-button-sm p-button-warning w-full font-bold"
-                                                onClick={() => {
-                                                    setActiveBooking(b);
-                                                    setShowResumeModal(true);
-                                                }}
-                                            />
-                                        )}
-                                        <Button
-                                            label="Cancel Booking"
-                                            severity="danger"
-                                            outlined
-                                            onClick={() => handleCancel(b.id)}
-                                            className="w-full text-xs"
-                                            size="small"
-                                        />
-                                    </div>
-                                </div>
-
-                                {isReserved && (
-                                    <div className="mt-2 pt-3 border-t border-white/10">
-                                        <div className="text-xs uppercase font-bold text-gray-500 mb-2 tracking-widest">Reservation Status</div>
-                                        <BookingCountdown
-                                            booking={b}
-                                            isExtending={isExtending}
-                                            onExtend={() => extendBookingReservation(b.id)}
-                                            onExpired={() => {
-                                                // Refresh page or list to show expired
-                                                window.location.reload();
-                                            }}
-                                        />
-                                    </div>
+            <div className="max-w-xl mx-auto pb-24">
+                {/* Profile Header Section */}
+                <div className="flex flex-col items-center pt-8 pb-6 px-4">
+                    <div className="relative group">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#b000ff] to-[#eb79b2] p-1 shadow-[0_0_30px_rgba(176,0,255,0.3)]">
+                            <div className="w-full h-full rounded-full bg-[#161622] overflow-hidden flex justify-center items-center text-3xl font-black">
+                                {currentUser?.avatar ? (
+                                    <img src={api.getFileUrl(currentUser.avatar)} alt={currentUser?.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    currentUser?.name?.charAt(0) || 'U'
                                 )}
                             </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {activeTab === 'history' && (
-                <div className="grid gap-5">
-                    {historyBookings.length === 0 ? <p className="text-gray-500">No booking history.</p> : historyBookings.map(b => {
-                        const isCompleted = ['COMPLETED', 'Completed', 'completed'].includes(b.status);
-                        return (
-                            <div key={b.id} className="bg-white/5 p-5 rounded-xl flex justify-between items-center border-l-4 border-gray-500">
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-400 m-0 mb-1">{b.room?.name || 'Booking'}</h3>
-                                    <p className="text-gray-600 my-1">{b.date}</p>
-                                    <span className="bg-gray-700 text-gray-400 px-2 py-1 rounded text-xs font-bold">{b.status}</span>
-                                </div>
-                                {isCompleted && (
-                                    <Button
-                                        label="Write Review"
-                                        outlined
-                                        onClick={() => alert('Review coming soon!')}
-                                        className="text-xs"
-                                        size="small"
-                                    />
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {activeTab === 'loyalty' && (
-                <div className="text-center p-10 bg-white/5 rounded-xl border border-white/10">
-                    <h2 className="text-3xl font-bold text-yellow-400 mb-4">Gold Member</h2>
-                    <p className="text-lg">You have earned <strong className="text-[#b000ff]">{currentUser.loyaltyPoints} points</strong>.</p>
-                    <div className="w-full h-3 bg-white/10 rounded-full my-6 overflow-hidden">
-                        <div className="w-[45%] h-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2]"></div>
-                    </div>
-                    <p className="text-sm text-gray-400">450 points to Platinum Tier</p>
-                </div>
-            )}
-
-            {activeTab === 'settings' && (
-                <div className="max-w-xl mx-auto bg-white/5 p-8 rounded-xl border border-white/10">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold m-0">Profile Settings</h2>
+                        </div>
                         <button
-                            onClick={() => setActiveTab('bookings')}
-                            className="bg-transparent border-none text-gray-400 hover:text-white cursor-pointer text-2xl transition-colors"
-                            title="Back to Bookings"
+                            onClick={() => setActiveTab('settings')}
+                            className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#b000ff] border-4 border-[#0a0a12] flex items-center justify-center text-white text-xs hover:scale-110 transition-transform shadow-lg"
                         >
-                            ✕
+                            <i className="pi pi-pencil"></i>
                         </button>
                     </div>
-                    <div className="flex justify-center mb-8">
-                        <AvatarGalleryPicker
-                            currentAvatar={editForm.avatar}
-                            onSelect={(url) => setEditForm({ ...editForm, avatar: url })}
-                        />
+
+                    <div className="mt-4 text-center">
+                        <h2 className="text-2xl font-black m-0 tracking-tight">{currentUser?.name || 'User'}</h2>
+                        <div className="flex items-center justify-center gap-2 mt-2">
+                            <span className="bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full border border-yellow-500/20">
+                                ⭐ {currentUser?.loyaltyPoints || 0} PTS
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                                Member since {currentUser?.createdAt ? new Date(currentUser.createdAt).getFullYear() : '2024'}
+                            </span>
+                        </div>
                     </div>
-                    <form onSubmit={handleUpdateProfile} className="flex flex-col gap-5">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm text-gray-400 font-medium">Full Name</label>
-                            <input
-                                type="text"
-                                value={editForm.name}
-                                onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
-                                required
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm text-gray-400 font-medium">Email Address</label>
-                            <input
-                                type="email"
-                                value={editForm.email}
-                                onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
-                                required
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm text-gray-400 font-medium">Phone Number</label>
-                            <input
-                                type="text"
-                                value={editForm.phone}
-                                onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
-                                className="p-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all"
-                            />
-                        </div>
-                        {message && <p className={`text-sm ${message.includes('success') ? 'text-green-400' : 'text-red-400'}`}>{message}</p>}
-                        <Button
-                            type="submit"
-                            label={isSaving ? 'Saving...' : 'Update Profile'}
-                            disabled={isSaving}
-                            className="h-12 px-6"
-                        />
-                    </form>
                 </div>
-            )}
-        </div >
+
+                {/* Segmented Control Tabs */}
+                <div className="px-4 sticky top-16 z-40 bg-[#0a0a12] py-4">
+                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
+                        {[
+                            { id: 'bookings', label: 'Bookings', icon: 'pi-calendar' },
+                            { id: 'history', label: 'History', icon: 'pi-history' },
+                            { id: 'loyalty', label: 'Rewards', icon: 'pi-star' },
+                            { id: 'settings', label: 'Settings', icon: 'pi-cog' }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 min-w-fit ${activeTab === tab.id
+                                    ? 'bg-white text-black shadow-lg shadow-white/10'
+                                    : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                <i className={`pi ${tab.icon} text-sm`}></i>
+                                <span className="hidden sm:inline">{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="px-4 mt-2">
+                    {/* Content */}
+                    {activeTab === 'bookings' && (
+                        <div className="space-y-4">
+                            {activeBookings.length === 0 ? (
+                                <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                    <i className="pi pi-calendar text-3xl text-gray-700 mb-3"></i>
+                                    <p className="text-gray-500 font-medium">No upcoming bookings</p>
+                                </div>
+                            ) : activeBookings.map(b => {
+                                const isReserved = ['RESERVED', 'reserved', 'Reserved'].includes(b.status);
+                                const venueName = b.room?.venue?.name || b.venue?.name || 'Unknown Venue';
+
+                                return (
+                                    <div key={b.id} className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden active:scale-[0.98] transition-all">
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-[#b000ff]/10 flex items-center justify-center text-[#b000ff]">
+                                                        <i className="pi pi-map-marker"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-sm font-black m-0 tracking-tight">{b.room?.name || 'Room Selection'}</h3>
+                                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{venueName}</p>
+                                                    </div>
+                                                </div>
+                                                <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${isReserved ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                                                    {b.status}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2 bg-black/20 rounded-xl p-3 mb-3 text-center">
+                                                <div>
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Date</p>
+                                                    <p className="text-xs font-black">{b.date}</p>
+                                                </div>
+                                                <div className="border-x border-white/5">
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Time</p>
+                                                    <p className="text-xs font-black">{b.startTime || b.time}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Price</p>
+                                                    <p className="text-xs font-black text-[#b000ff]">{(Number(b.totalPrice) || Number(b.total) || 0).toLocaleString()}₮</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                {isReserved && (
+                                                    <Button
+                                                        label="PAY NOW"
+                                                        icon="pi pi-credit-card"
+                                                        className="flex-1 bg-white text-black border-none font-black text-[10px] tracking-widest h-10 rounded-xl"
+                                                        onClick={() => {
+                                                            setActiveBooking(b);
+                                                            setShowResumeModal(true);
+                                                        }}
+                                                    />
+                                                )}
+                                                <Button
+                                                    label="CANCEL"
+                                                    text
+                                                    className="flex-1 text-[10px] font-black tracking-widest h-10 rounded-xl text-gray-500 hover:text-red-400"
+                                                    onClick={() => handleCancel(b.id)}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {isReserved && (
+                                            <div className="bg-[#b000ff]/5 px-4 py-3 border-t border-[#b000ff]/10">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <i className="pi pi-clock text-xs text-yellow-500"></i>
+                                                    <span className="text-[10px] font-black text-yellow-500 uppercase tracking-widest">Time Remaining</span>
+                                                </div>
+                                                <BookingCountdown
+                                                    booking={b}
+                                                    isExtending={isExtending}
+                                                    onExtend={() => extendBookingReservation(b.id)}
+                                                    onExpired={() => window.location.reload()}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {activeTab === 'history' && (
+                        <div className="space-y-3">
+                            {historyBookings.length === 0 ? (
+                                <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                    <p className="text-gray-500 font-medium">No booking history</p>
+                                </div>
+                            ) : historyBookings.map(b => (
+                                <div key={b.id} className="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-500/10 flex items-center justify-center text-gray-500">
+                                            <i className="pi pi-check-circle"></i>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-bold m-0 tracking-tight">{b.room?.name || 'Booking'}</h3>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{b.date}</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 bg-gray-500/10 px-2 py-1 rounded-lg border border-gray-500/20">
+                                        {b.status}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {activeTab === 'loyalty' && (
+                        <div className="bg-gradient-to-br from-[#b000ff]/20 to-[#eb79b2]/20 p-8 rounded-3xl border border-white/10 text-center relative overflow-hidden">
+                            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#b000ff] blur-[80px] opacity-20"></div>
+                            <div className="relative z-10">
+                                <i className="pi pi-star-fill text-4xl text-yellow-400 mb-4 inline-block drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]"></i>
+                                <h2 className="text-3xl font-black m-0 tracking-tight text-white uppercase italic">Gold Tier</h2>
+                                <div className="my-8">
+                                    <p className="text-[10px] text-[#b000ff] font-black uppercase tracking-[0.2em] mb-2">Current Balance</p>
+                                    <span className="text-5xl font-black text-white">{currentUser.loyaltyPoints}</span>
+                                    <span className="text-xs font-bold text-gray-500 ml-2">PTS</span>
+                                </div>
+                                <div className="w-full h-2 bg-black/40 rounded-full mb-4 p-0.5 border border-white/5">
+                                    <div className="w-[45%] h-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] rounded-full shadow-[0_0_10px_rgba(176,0,255,0.5)]"></div>
+                                </div>
+                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest">450 points to Platinum Tier</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'settings' && (
+                        <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-1.5 h-6 bg-[#b000ff] rounded-full"></div>
+                                <h2 className="text-xl font-black m-0 tracking-tight">Edit Profile</h2>
+                            </div>
+
+                            <div className="flex justify-center mb-10">
+                                <div className="relative">
+                                    <AvatarGalleryPicker
+                                        currentAvatar={editForm.avatar}
+                                        onSelect={(url) => setEditForm({ ...editForm, avatar: url })}
+                                    />
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleUpdateProfile} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest px-1">Full Name</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                        className="w-full p-4 bg-black/40 border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-[#b000ff] transition-all"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest px-1">Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={editForm.email}
+                                        onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                        className="w-full p-4 bg-black/40 border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-[#b000ff] transition-all"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] text-gray-500 font-black uppercase tracking-widest px-1">Phone Number</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.phone}
+                                        onChange={e => setEditForm({ ...editForm, phone: e.target.value })}
+                                        className="w-full p-4 bg-black/40 border border-white/5 rounded-2xl text-white font-bold focus:outline-none focus:border-[#b000ff] transition-all"
+                                    />
+                                </div>
+
+                                {message && (
+                                    <div className={`p-4 rounded-2xl text-xs font-bold text-center ${message.includes('success') ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-500'}`}>
+                                        {message}
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    label={isSaving ? 'SAVING...' : 'SAVE CHANGES'}
+                                    disabled={isSaving}
+                                    className="w-full h-14 bg-[#b000ff] text-white border-none font-black text-xs tracking-widest rounded-2xl shadow-[0_10px_20px_rgba(176,0,255,0.2)] active:scale-95 transition-all mt-4"
+                                />
+                            </form>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

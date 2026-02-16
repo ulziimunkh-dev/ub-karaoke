@@ -51,6 +51,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             userType,
             avatar: user.avatar,
             loyaltyPoints: (user as User).loyaltyPoints || 0,
+            createdAt: user.createdAt,
             organization: userType === 'staff' ? (user as Staff).organization : null
         };
     }

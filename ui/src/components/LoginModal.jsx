@@ -26,6 +26,7 @@ const LoginModal = ({ onClose }) => {
     const [message, setMessage] = useState('');
     const [acceptedPolicy, setAcceptedPolicy] = useState(false);
     const [showPolicy, setShowPolicy] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [step, setStep] = useState(1); // For flows with multiple steps
 
     const handleSubmit = async (e) => {
@@ -176,14 +177,24 @@ const LoginModal = ({ onClose }) => {
                                     />
 
                                     {loginMethod === 'password' && (
-                                        <input
-                                            type="password"
-                                            placeholder="Password"
-                                            value={formData.password}
-                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="Password"
+                                                value={formData.password}
+                                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full h-12 px-4 pr-12 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer p-1"
+                                                tabIndex={-1}
+                                            >
+                                                <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'} text-sm`}></i>
+                                            </button>
+                                        </div>
                                     )}
 
                                     {loginMethod === 'otp' && step === 2 && (
@@ -211,14 +222,24 @@ const LoginModal = ({ onClose }) => {
                                             className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
                                             required
                                         />
-                                        <input
-                                            type="password"
-                                            placeholder="Create Strong Password"
-                                            value={formData.password}
-                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="Create Strong Password"
+                                                value={formData.password}
+                                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                                className="w-full h-12 px-4 pr-12 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer p-1"
+                                                tabIndex={-1}
+                                            >
+                                                <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'} text-sm`}></i>
+                                            </button>
+                                        </div>
                                         <div className="flex items-start gap-2 mt-2 px-1">
                                             <input
                                                 type="checkbox"
@@ -298,14 +319,24 @@ const LoginModal = ({ onClose }) => {
                                             className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none font-mono"
                                             required
                                         />
-                                        <input
-                                            type="password"
-                                            placeholder="New Password"
-                                            value={formData.newPassword}
-                                            onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="New Password"
+                                                value={formData.newPassword}
+                                                onChange={e => setFormData({ ...formData, newPassword: e.target.value })}
+                                                className="w-full h-12 px-4 pr-12 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer p-1"
+                                                tabIndex={-1}
+                                            >
+                                                <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'} text-sm`}></i>
+                                            </button>
+                                        </div>
                                     </>
                                 )}
                             </div>

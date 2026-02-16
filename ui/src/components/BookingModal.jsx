@@ -383,9 +383,9 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                     <div className="w-16 h-2 bg-white/20 rounded-full"></div>
                 </div>
 
-                <button className="absolute top-4 right-5 text-3xl bg-transparent text-text-muted leading-none z-[101] hover:text-white transition-colors lg:block hidden" onClick={onClose}>&times;</button>
-                <button className="absolute top-3 right-5 text-2xl bg-transparent text-text-muted leading-none z-[101] hover:text-white lg:hidden block" onClick={onClose}>
-                    <i className="pi pi-times-circle"></i>
+                <button className="absolute top-4 right-5 w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-white text-xl leading-none z-[101] hover:bg-white/30 transition-all lg:flex hidden border border-white/20" onClick={onClose}>&times;</button>
+                <button className="absolute top-3 right-4 w-8 h-8 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-white text-lg leading-none z-[101] hover:bg-white/30 transition-all lg:hidden border border-white/20" onClick={onClose}>
+                    <i className="pi pi-times"></i>
                 </button>
 
                 <div className="h-full overflow-y-auto pb-20 lg:pb-0">
@@ -559,12 +559,12 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                                         <i className="pi pi-search-plus text-white text-2xl"></i>
                                                                     </button>
                                                                 </div>
-                                                                <div className="flex-1 w-full">
+                                                                <div className="flex-1 w-full min-w-0">
                                                                     <div className="flex justify-between items-start mb-1 gap-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <h4 className="m-0 font-bold text-base sm:text-lg">{room.name}</h4>
+                                                                        <div className="flex items-center gap-2 min-w-0">
+                                                                            <h4 className="m-0 font-bold text-base sm:text-lg truncate">{room.name}</h4>
                                                                             <button
-                                                                                className="p-0 border-none bg-transparent text-secondary hover:text-white cursor-pointer transition-colors"
+                                                                                className="p-0 border-none bg-transparent text-secondary hover:text-white cursor-pointer transition-colors flex-shrink-0"
                                                                                 title="View Details"
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
@@ -594,7 +594,9 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                                     </div>
                                                                 </div>
                                                                 {canSelect && (
-                                                                    <Checkbox checked={!!isSelected} className="ml-0 sm:ml-2 self-center" />
+                                                                    <div className="absolute top-0 right-0 sm:relative sm:top-auto sm:right-auto sm:ml-2 sm:self-center">
+                                                                        <Checkbox checked={!!isSelected} />
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         </div>

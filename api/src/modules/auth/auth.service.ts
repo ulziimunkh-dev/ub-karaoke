@@ -190,14 +190,14 @@ export class AuthService {
             console.log(`[Auth] Attempting login for ${identifier} (No Org Code)`);
 
             // CUSTOMER LOGIN OR SYSADMIN LOGIN
-            // 1. Try Customer (Users)
-            user = await this.usersRepository.findOne({
-                where: [
-                    { email: identifier },
-                    { phone: identifier },
-                    { username: identifier }
-                ]
-            });
+            // 1. Try Customer (Users) — case-insensitive email
+            const normalizedIdentifier = identifier.trim();
+            user = await this.usersRepository
+                .createQueryBuilder('user')
+                .where('LOWER(user.email) = LOWER(:id)', { id: normalizedIdentifier })
+                .orWhere('user.phone = :id', { id: normalizedIdentifier })
+                .orWhere('user.username = :id', { id: normalizedIdentifier })
+                .getOne();
             userType = 'customer';
             console.log(`[Auth] Found in Users?: ${!!user}`);
 
