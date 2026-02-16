@@ -15,19 +15,19 @@ export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     email: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     username: string;
 
     @Column()
     password: string;
 
-    @Column()
+    @Column({ nullable: true })
     name: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     phone: string;
 
     @Column({ nullable: true })
@@ -45,6 +45,15 @@ export class User {
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
+
+    @Column({ name: 'is_verified', default: false })
+    isVerified: boolean;
+
+    @Column({ name: 'verification_code', type: 'varchar', nullable: true })
+    verificationCode: string | null;
+
+    @Column({ name: 'verification_code_expiry', type: 'timestamp', nullable: true })
+    verificationCodeExpiry: Date | null;
 
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;

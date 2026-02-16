@@ -1,26 +1,61 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Notification, NotificationType, NotificationStatus } from './entities/notification.entity';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class NotificationsService {
     private readonly logger = new Logger(NotificationsService.name);
+    private transporter: nodemailer.Transporter | null = null;
+    private fromEmail: string;
 
     constructor(
         @InjectRepository(Notification)
         private notificationsRepository: Repository<Notification>,
-    ) { }
+        private configService: ConfigService,
+    ) {
+        const smtpHost = this.configService.get<string>('SMTP_HOST');
+        const smtpPort = this.configService.get<number>('SMTP_PORT');
+        const smtpUser = this.configService.get<string>('SMTP_USER');
+        const smtpPass = this.configService.get<string>('SMTP_PASS');
+        this.fromEmail = this.configService.get<string>('SMTP_FROM') || 'noreply@ubkaraoke.com';
+
+        if (smtpHost && smtpUser && smtpPass) {
+            this.transporter = nodemailer.createTransport({
+                host: smtpHost,
+                port: smtpPort || 587,
+                secure: false,
+                auth: { user: smtpUser, pass: smtpPass },
+            });
+            this.logger.log(`SMTP configured: ${smtpHost}:${smtpPort}`);
+        } else {
+            this.logger.warn('SMTP not configured — emails will only be logged to console');
+        }
+    }
+
+    private async sendEmail(to: string, subject: string, html: string) {
+        if (this.transporter && to.includes('@')) {
+            try {
+                await this.transporter.sendMail({
+                    from: `"UB Karaoke" <${this.fromEmail}>`,
+                    to,
+                    subject,
+                    html,
+                });
+                this.logger.log(`Email sent to ${to}: ${subject}`);
+            } catch (err) {
+                this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+            }
+        }
+        // Always log to console as backup
+        console.log(`\n==================================================\n   [${subject}] To: ${to}\n==================================================\n`);
+    }
 
     private async logNotification(type: NotificationType, contact: string, message: string, userId?: number) {
-        // Since this is mock, we don't always have userId directly from call args in current existing methods
-        // But we should ideally pass it. For now, creating a record if we had more info.
-        // Assuming we update calls or just log minimal info. 
-        // Real implementation would look up user by phone/email or require userId.
-
-        // For now, logging to DB is best effort if we don't have user ID in generic calls (mock)
-        // Check if we can enhance existing methods
+        // Best-effort DB logging for mock
     }
 
     async create(data: Partial<Notification>) {
@@ -29,20 +64,52 @@ export class NotificationsService {
     }
 
     async sendVerificationCode(contact: string, code: string) {
-        // Mock sending - Logger
-        this.logger.log(`[MOCK EMAIL/SMS] To: ${contact} | Verification Code: ${code}`);
-        console.log(`\n\n==================================================\n   VERIFICATION CODE for ${contact}: [ ${code} ]\n==================================================\n\n`);
+        const subject = 'Your Verification Code';
+        const html = `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
+                <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
+                <p>Your verification code is:</p>
+                <div style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:24px;background:#0a0a12;border-radius:12px;color:#eb79b2;margin:16px 0">${code}</div>
+                <p style="color:#888;font-size:13px">This code expires in 10 minutes. If you did not request this, please ignore this email.</p>
+            </div>
+        `;
+        await this.sendEmail(contact, subject, html);
+        // Also log to console for phone / non-email contacts
+        if (!contact.includes('@')) {
+            console.log(`\n==================================================\n   VERIFICATION CODE for ${contact}: [ ${code} ]\n==================================================\n`);
+        }
     }
 
     async sendPasswordResetToken(contact: string, token: string) {
-        // Mock sending - Logger
-        this.logger.log(`[MOCK EMAIL/SMS] To: ${contact} | Reset Token: ${token}`);
-        console.log(`\n\n==================================================\n   RESET TOKEN for ${contact}: [ ${token} ]\n==================================================\n\n`);
+        const subject = 'Password Reset';
+        const html = `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
+                <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
+                <p>Your password reset token is:</p>
+                <div style="font-size:18px;font-weight:bold;text-align:center;padding:16px;background:#0a0a12;border-radius:12px;color:#eb79b2;margin:16px 0;word-break:break-all">${token}</div>
+                <p style="color:#888;font-size:13px">If you did not request this, please ignore this email.</p>
+            </div>
+        `;
+        await this.sendEmail(contact, subject, html);
+        if (!contact.includes('@')) {
+            console.log(`\n==================================================\n   RESET TOKEN for ${contact}: [ ${token} ]\n==================================================\n`);
+        }
     }
 
     async sendLoginOtp(contact: string, otp: string) {
-        this.logger.log(`[MOCK EMAIL/SMS] To: ${contact} | Login OTP: ${otp}`);
-        console.log(`\n\n==================================================\n   LOGIN OTP for ${contact}: [ ${otp} ]\n==================================================\n\n`);
+        const subject = 'Your Login Code';
+        const html = `
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
+                <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
+                <p>Your one-time login code is:</p>
+                <div style="font-size:32px;font-weight:bold;letter-spacing:8px;text-align:center;padding:24px;background:#0a0a12;border-radius:12px;color:#eb79b2;margin:16px 0">${otp}</div>
+                <p style="color:#888;font-size:13px">This code expires in 5 minutes.</p>
+            </div>
+        `;
+        await this.sendEmail(contact, subject, html);
+        if (!contact.includes('@')) {
+            console.log(`\n==================================================\n   LOGIN OTP for ${contact}: [ ${otp} ]\n==================================================\n`);
+        }
 
         // Try to verify if it's email or phone to guess type
         const type = contact.includes('@') ? NotificationType.EMAIL : NotificationType.SMS;

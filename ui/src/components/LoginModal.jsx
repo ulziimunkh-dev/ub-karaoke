@@ -5,7 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import PolicyDialog from './public/PolicyDialog';
 
 const LoginModal = ({ onClose }) => {
-    const { login, registerCustomer, loginWithOtp, requestLoginOtp, verifyAccount, forgotPassword, resetPassword } = useData();
+    const { login, registerCustomer, loginWithOtp, requestLoginOtp, verifyAccount, forgotPassword, resetPassword, resendVerification } = useData();
     const { t } = useLanguage();
 
     // Modes: 'login', 'signup', 'forgot_password'
@@ -48,7 +48,7 @@ const LoginModal = ({ onClose }) => {
                     if (step === 1) {
                         await requestLoginOtp(formData.identifier);
                         setStep(2);
-                        setMessage(`OTP sent to ${formData.identifier}. check backend console.`);
+                        setMessage(`OTP sent to ${formData.identifier}. Please check your ${formData.identifier.includes('@') ? 'email inbox' : 'phone'}.`);
                     } else {
                         const user = await loginWithOtp(formData.identifier, formData.code);
                         if (user) handleUserRouting(user);
@@ -61,8 +61,12 @@ const LoginModal = ({ onClose }) => {
                         phone: !formData.identifier.includes('@') ? formData.identifier : undefined,
                         password: formData.password
                     });
-                    setStep(2);
-                    setMessage('Account created. Please enter verification code from backend console.');
+                    // Auto-login after signup
+                    const user = await login(formData.identifier, formData.password);
+                    if (user) {
+                        alert(`Account created! A verification code has been sent to ${formData.identifier}. You can verify your account from your profile.`);
+                        handleUserRouting(user);
+                    }
                 } else {
                     await verifyAccount(formData.code);
                     alert('Verified! Please login.');
@@ -73,7 +77,7 @@ const LoginModal = ({ onClose }) => {
                 if (step === 1) {
                     await forgotPassword(formData.identifier);
                     setStep(2);
-                    setMessage('Reset token sent. Check backend console.');
+                    setMessage('A password reset link has been sent. Please check your email.');
                 } else {
                     await resetPassword(formData.resetToken, formData.newPassword);
                     alert('Password reset successful. Please login.');
@@ -201,13 +205,6 @@ const LoginModal = ({ onClose }) => {
                                 {step === 1 ? (
                                     <>
                                         <input
-                                            placeholder="Full Name"
-                                            value={formData.name}
-                                            onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
-                                            required
-                                        />
-                                        <input
                                             placeholder="Email or Phone Number"
                                             value={formData.identifier}
                                             onChange={e => setFormData({ ...formData, identifier: e.target.value })}
@@ -252,13 +249,31 @@ const LoginModal = ({ onClose }) => {
                                         </div>
                                     </>
                                 ) : (
-                                    <input
-                                        placeholder="Verification Code"
-                                        value={formData.code}
-                                        onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                        className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest font-mono"
-                                        required
-                                    />
+                                    <>
+                                        <input
+                                            placeholder="Enter 6-digit Verification Code"
+                                            value={formData.code}
+                                            onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest font-mono text-lg"
+                                            maxLength={6}
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    setError('');
+                                                    await resendVerification(formData.identifier);
+                                                    setMessage(`A new verification code has been sent to ${formData.identifier}.`);
+                                                } catch (err) {
+                                                    setError(err.response?.data?.message || 'Failed to resend code');
+                                                }
+                                            }}
+                                            className="w-full text-sm text-[#eb79b2] hover:text-white hover:underline transition-colors bg-transparent border-none cursor-pointer py-1"
+                                        >
+                                            Didn't receive a code? Resend
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         )}

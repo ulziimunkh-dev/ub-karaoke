@@ -21,6 +21,12 @@ export class AuthController {
         return this.authService.verifyAccount(code);
     }
 
+    @Post('resend-verification')
+    @ApiOperation({ summary: 'Resend verification code' })
+    async resendVerification(@Body('identifier') identifier: string) {
+        return this.authService.resendVerificationCode(identifier);
+    }
+
     @Post('login-otp-request')
     async requestOtp(@Body('identifier') identifier: string) {
         return this.authService.requestLoginOtp(identifier);

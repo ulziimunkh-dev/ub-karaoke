@@ -2,6 +2,8 @@ import {
     Injectable,
     UnauthorizedException,
     ConflictException,
+    BadRequestException,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -39,12 +41,38 @@ export class AuthService {
             throw new ConflictException('Email or Phone already registered');
         }
 
+        // Auto-derive name and username if not provided
+        const identifier = signupDto.email || signupDto.phone || '';
+        if (!signupDto.name) {
+            signupDto.name = signupDto.email
+                ? signupDto.email.split('@')[0]
+                : signupDto.phone || 'User';
+        }
+        if (!signupDto.username) {
+            const now = new Date();
+            const dt = now.getFullYear().toString()
+                + String(now.getMonth() + 1).padStart(2, '0')
+                + String(now.getDate()).padStart(2, '0')
+                + String(now.getHours()).padStart(2, '0')
+                + String(now.getMinutes()).padStart(2, '0')
+                + String(now.getSeconds()).padStart(2, '0');
+            signupDto.username = 'userName' + dt;
+        }
+
+        // Generate 6-digit verification code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const codeExpiry = new Date();
+        codeExpiry.setMinutes(codeExpiry.getMinutes() + 10);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(signupDto.password, 10);
         // Create user
         const user = this.usersRepository.create({
             ...signupDto,
             password: hashedPassword,
+            isVerified: false,
+            verificationCode,
+            verificationCodeExpiry: codeExpiry,
         });
 
         const savedUser = await this.usersRepository.save(user);
@@ -53,8 +81,11 @@ export class AuthService {
         savedUser.createdBy = savedUser.id;
         await this.usersRepository.save(savedUser);
 
-        // Send (mock) Verification
-        // await this.notificationsService.sendVerificationCode(savedUser.email || savedUser.phone, verificationCode);
+        // Send verification code via email or console
+        const contact = savedUser.email || savedUser.phone;
+        if (contact) {
+            await this.notificationsService.sendVerificationCode(contact, verificationCode);
+        }
 
         // Log Audit
         await this.auditService.log({
@@ -65,13 +96,74 @@ export class AuthService {
             details: { email: savedUser.email, phone: savedUser.phone }
         });
 
-        // Return user without password
-        const { password, ...result } = savedUser;
+        // Return user without password or verification internals
+        const { password, verificationCode: vc, ...result } = savedUser;
         return result; // No token yet, must verify
     }
 
-    // Account verification and OTP login temporarily disabled due to schema changes
-    async verifyAccount(code: string) { return { message: 'Disabled' }; }
+    async verifyAccount(code: string) {
+        const user = await this.usersRepository.findOne({
+            where: { verificationCode: code },
+        });
+
+        if (!user) {
+            throw new BadRequestException('Invalid verification code');
+        }
+
+        if (user.verificationCodeExpiry && new Date() > user.verificationCodeExpiry) {
+            throw new BadRequestException('Verification code has expired. Please request a new one.');
+        }
+
+        user.isVerified = true;
+        user.verificationCode = null;
+        user.verificationCodeExpiry = null;
+        await this.usersRepository.save(user);
+
+        await this.auditService.log({
+            action: 'ACCOUNT_VERIFIED',
+            resource: 'User',
+            resourceId: user.id,
+            userId: user.id,
+            details: { email: user.email, phone: user.phone }
+        });
+
+        return { message: 'Account verified successfully. You can now log in.' };
+    }
+
+    async resendVerificationCode(identifier: string) {
+        const user = await this.usersRepository.findOne({
+            where: [
+                { email: identifier },
+                { phone: identifier },
+            ],
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        if (user.isVerified) {
+            return { message: 'Account is already verified.' };
+        }
+
+        // Generate new code
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const codeExpiry = new Date();
+        codeExpiry.setMinutes(codeExpiry.getMinutes() + 10);
+
+        user.verificationCode = verificationCode;
+        user.verificationCodeExpiry = codeExpiry;
+        await this.usersRepository.save(user);
+
+        const contact = user.email || user.phone;
+        if (contact) {
+            await this.notificationsService.sendVerificationCode(contact, verificationCode);
+        }
+
+        return { message: 'A new verification code has been sent.' };
+    }
+
+    // OTP login, forgot password, reset password — still disabled
     async requestLoginOtp(identifier: string) { return { message: 'Disabled' }; }
     async loginWithOtp(identifier: string, code: string) { return { message: 'Disabled' }; }
     async forgotPassword(email: string) { return { message: 'Disabled' }; }
@@ -144,6 +236,9 @@ export class AuthService {
         if (!user.isActive) {
             throw new UnauthorizedException('Account is deactivated');
         }
+
+        // Note: Unverified customers are allowed to log in.
+        // Verification is prompted in the user's profile.
 
         // Generate JWT
         const payload = {

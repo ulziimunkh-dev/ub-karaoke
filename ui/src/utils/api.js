@@ -86,6 +86,10 @@ export const api = {
         const response = await apiInstance.post('/auth/verify', { code });
         return response.data;
     },
+    resendVerification: async (identifier) => {
+        const response = await apiInstance.post('/auth/resend-verification', { identifier });
+        return response.data;
+    },
     requestLoginOtp: async (identifier) => {
         const response = await apiInstance.post('/auth/login-otp-request', { identifier });
         return response.data;

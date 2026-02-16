@@ -911,6 +911,7 @@ export const DataProvider = ({ children }) => {
                 requestLoginOtp: api.requestLoginOtp,
                 forgotPassword: api.forgotPassword,
                 resetPassword: api.resetPassword,
+                resendVerification: api.resendVerification,
                 updateProfile,
                 addUser,
                 updateUser,
