@@ -25,19 +25,12 @@ import imgStandard from '../../assets/defaults/karaoke_standard.png';
 import imgVIP from '../../assets/defaults/karaoke_vip.png';
 import imgParty from '../../assets/defaults/karaoke_party.png';
 
-const STOCK_IMAGES = [
-    { id: 'standard', url: imgStandard, label: t('standardRoom') },
-    { id: 'vip', url: imgVIP, label: t('vipLounge') },
-    { id: 'party', url: imgParty, label: t('partyHall') },
-    { id: 'minimal', url: imgMinimal, label: t('minimalSmall') }
-];
-
-const ImagePicker = ({ selectedImage, onSelect, label }) => {
+const ImagePicker = ({ selectedImage, onSelect, label, images }) => {
     return (
         <div className="mb-5">
             <label className="block mb-2 text-sm text-text-muted font-medium">{label}</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {STOCK_IMAGES.map(img => (
+                {images.map(img => (
                     <div
                         key={img.id}
                         onClick={() => onSelect(img.url)}
@@ -60,6 +53,13 @@ const VenueManagement = () => {
     const { venues, activeVenueId, updateVenue, updateVenueStatus, addVenue, deleteVenue, addRoom, updateRoom, deleteRoom, updateRoomStatus, updateRoomSortOrders, addRoomPricing, removeRoomPricing, currentUser, organizations, roomTypes, roomFeatures, refreshData } = useData();
     const { t } = useLanguage();
     const toast = useRef(null);
+
+    const STOCK_IMAGES = [
+        { id: 'standard', url: imgStandard, label: t('standardRoom') },
+        { id: 'vip', url: imgVIP, label: t('vipLounge') },
+        { id: 'party', url: imgParty, label: t('partyHall') },
+        { id: 'minimal', url: imgMinimal, label: t('minimalSmall') }
+    ];
 
     // Venue Modal State
     const [isVenueModalOpen, setIsVenueModalOpen] = useState(false);
@@ -753,6 +753,7 @@ const VenueManagement = () => {
 
                         <ImagePicker
                             label=""
+                            images={STOCK_IMAGES}
                             selectedImage={venueForm.featuredImage}
                             onSelect={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
                         />
@@ -840,6 +841,7 @@ const VenueManagement = () => {
                                     <p className="text-[10px] text-gray-500 text-center mb-3 uppercase tracking-widest">- OR STOCK GALLERY -</p>
                                     <ImagePicker
                                         label=""
+                                        images={STOCK_IMAGES}
                                         selectedImage={roomForm.images[0]}
                                         onSelect={(url) => setRoomForm({ ...roomForm, images: [url] })}
                                     />
