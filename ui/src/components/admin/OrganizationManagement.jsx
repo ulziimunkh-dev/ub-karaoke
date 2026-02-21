@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Button } from 'primereact/button';
@@ -14,6 +15,7 @@ import { api } from '../../utils/api';
 
 const OrganizationManagement = () => {
     const { organizations, setOrganizations, updateOrganization, updateOrganizationStatus, refreshData } = useData();
+    const { t } = useLanguage();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState(null);
     const [orgForm, setOrgForm] = useState({

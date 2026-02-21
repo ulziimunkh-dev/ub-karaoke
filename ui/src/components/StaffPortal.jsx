@@ -309,7 +309,7 @@ const StaffPortal = () => {
                     >
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="m-0 text-lg font-black text-white">{room.name}</h3>
-                            <Tag value={t(room.status.toLowerCase()) || room.status} severity={getStatusSeverity(room.status)} />
+                            <Tag value={t((room.status || 'Available').toLowerCase()) || room.status || 'Available'} severity={getStatusSeverity(room.status || 'Available')} />
                         </div>
 
                         <div className="flex items-center gap-2 mb-3">
@@ -529,7 +529,7 @@ const StaffPortal = () => {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <Tag value={t(booking.status?.toLowerCase()) || booking.status} severity={getStatusSeverity(booking.status)} className="mb-1" />
+                                            <Tag value={t((booking.status || 'Pending').toLowerCase()) || booking.status || 'Pending'} severity={getStatusSeverity(booking.status || 'Pending')} className="mb-1" />
                                             <p className="text-[10px] text-gray-500 m-0 text-white font-mono">{booking.customerPhone || t('noContact')}</p>
                                         </div>
                                     </div>

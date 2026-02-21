@@ -1,5 +1,5 @@
-import React from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
@@ -7,6 +7,7 @@ import { Divider } from 'primereact/divider';
 
 const Reports = () => {
     const { bookings, users, venues } = useData();
+    const { t } = useLanguage();
 
     // 1. Revenue Analysis
     const revenueByDate = bookings.reduce((acc, b) => {

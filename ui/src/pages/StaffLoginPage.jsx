@@ -23,7 +23,7 @@ const StaffLoginPage = () => {
     }, []);
 
     const { login, currentUser } = useData();
-    const { toggleLanguage, language } = useLanguage();
+    const { toggleLanguage, language, t } = useLanguage();
     const navigate = useNavigate();
 
     React.useEffect(() => {

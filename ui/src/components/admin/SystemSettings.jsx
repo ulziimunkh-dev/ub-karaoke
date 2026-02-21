@@ -10,9 +10,11 @@ import { Dialog } from 'primereact/dialog';
 import { Dropdown } from 'primereact/dropdown';
 import { Calendar } from 'primereact/calendar';
 import { Tag } from 'primereact/tag';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const SystemSettings = () => {
     const { settings, setSettings, promos, addPromotion, deletePromotion } = useData();
+    const { t } = useLanguage();
     const [tempSettings, setTempSettings] = useState(settings);
     const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
     const [newPromo, setNewPromo] = useState({

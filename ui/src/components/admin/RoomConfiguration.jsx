@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -8,6 +8,7 @@ import { InputText } from 'primereact/inputtext';
 
 const RoomConfiguration = () => {
     const { roomTypes, roomFeatures, addRoomType, updateRoomType, deleteRoomType, addRoomFeature, updateRoomFeature, deleteRoomFeature } = useData();
+    const { t } = useLanguage();
 
     // --- TYPES STATE ---
     const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);

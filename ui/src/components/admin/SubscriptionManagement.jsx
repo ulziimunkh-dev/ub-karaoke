@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
@@ -10,6 +11,7 @@ import { api } from '../../utils/api';
 
 const SubscriptionManagement = () => {
     const { currentUser } = useData();
+    const { t } = useLanguage();
     const [org, setOrg] = useState(null);
     const [plans, setPlans] = useState([]);
     const [loading, setLoading] = useState(true);

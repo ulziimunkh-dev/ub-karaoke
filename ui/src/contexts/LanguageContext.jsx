@@ -2110,7 +2110,9 @@ export const LanguageProvider = ({ children }) => {
     const [language, setLanguage] = useState('mn'); // Default to Mongolian
 
     const t = (key, params = {}) => {
+        if (!key) return '';
         let text = dictionaries[language][key] || key;
+        if (typeof text !== 'string') return text;
         Object.keys(params).forEach(param => {
             text = text.replace(`{${param}}`, params[param]);
         });
