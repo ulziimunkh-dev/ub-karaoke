@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useData } from '../../contexts/DataContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const BookingManager = () => {
     const { bookings, venues, approveBooking, rejectBooking, createManualBooking } = useData();
+    const { t } = useLanguage();
     const [showModal, setShowModal] = useState(false);
 
     // Manual Booking Form State
@@ -19,13 +21,13 @@ const BookingManager = () => {
     });
 
     const handleApprove = async (id) => {
-        if (window.confirm('Approve this booking?')) {
+        if (window.confirm(t('approveBookingConfirm'))) {
             await approveBooking(id);
         }
     };
 
     const handleReject = async (id) => {
-        if (window.confirm('Reject this booking?')) {
+        if (window.confirm(t('rejectBookingConfirm'))) {
             await rejectBooking(id);
         }
     };
@@ -43,7 +45,7 @@ const BookingManager = () => {
             const room = venue?.rooms.find(r => r.id === Number(formData.roomId));
 
             if (!room) {
-                alert('Invalid room selection');
+                alert(t('invalidRoomSelection'));
                 return;
             }
 
@@ -57,9 +59,9 @@ const BookingManager = () => {
                 totalPrice
             });
             setShowModal(false);
-            alert('Booking Created & Confirmed!');
+            alert(t('bookingCreatedSuccess'));
         } catch (error) {
-            alert('Failed to create booking. Check availability.');
+            alert(t('bookingCreateFailed'));
         }
     };
 
@@ -68,9 +70,9 @@ const BookingManager = () => {
     return (
         <div style={{ padding: '20px', color: 'white' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h2>Booking Management</h2>
+                <h2>{t('bookingsManagement')}</h2>
                 <button onClick={() => setShowModal(true)} className="btn btn-primary" style={{ padding: '10px 20px' }}>
-                    + New Manual Booking
+                    + {t('manualReservation')}
                 </button>
             </div>
 
@@ -79,12 +81,12 @@ const BookingManager = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                         <tr style={{ borderBottom: '1px solid #444' }}>
-                            <th style={{ padding: '10px' }}>ID</th>
-                            <th style={{ padding: '10px' }}>Customer</th>
-                            <th style={{ padding: '10px' }}>Room</th>
-                            <th style={{ padding: '10px' }}>Date/Time</th>
-                            <th style={{ padding: '10px' }}>Status</th>
-                            <th style={{ padding: '10px' }}>Actions</th>
+                            <th style={{ padding: '10px' }}>{t('id')}</th>
+                            <th style={{ padding: '10px' }}>{t('customer')}</th>
+                            <th style={{ padding: '10px' }}>{t('roomSingular')}</th>
+                            <th style={{ padding: '10px' }}>{t('date')}/{t('time')}</th>
+                            <th style={{ padding: '10px' }}>{t('status')}</th>
+                            <th style={{ padding: '10px' }}>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,14 +113,14 @@ const BookingManager = () => {
                                                     booking.status === 'REJECTED' ? '#F44336' : '#9E9E9E',
                                         color: booking.status === 'PENDING' ? 'black' : 'white'
                                     }}>
-                                        {booking.status}
+                                        {t(booking.status.toLowerCase())}
                                     </span>
                                 </td>
                                 <td style={{ padding: '10px' }}>
                                     {booking.status === 'PENDING' && (
                                         <div style={{ display: 'flex', gap: '10px' }}>
-                                            <button onClick={() => handleApprove(booking.id)} className="btn btn-primary" style={{ padding: '5px 10px', fontSize: '0.8rem' }}>Approve</button>
-                                            <button onClick={() => handleReject(booking.id)} className="btn btn-outline" style={{ padding: '5px 10px', fontSize: '0.8rem', color: '#F44336', borderColor: '#F44336' }}>Reject</button>
+                                            <button onClick={() => handleApprove(booking.id)} className="btn btn-primary" style={{ padding: '5px 10px', fontSize: '0.8rem' }}>{t('approve')}</button>
+                                            <button onClick={() => handleReject(booking.id)} className="btn btn-outline" style={{ padding: '5px 10px', fontSize: '0.8rem', color: '#F44336', borderColor: '#F44336' }}>{t('reject')}</button>
                                         </div>
                                     )}
                                 </td>
@@ -135,17 +137,17 @@ const BookingManager = () => {
                     background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
                 }}>
                     <div style={{ background: '#1e1e1e', padding: '30px', borderRadius: '10px', width: '500px', maxWidth: '90%' }}>
-                        <h3>New Manual Booking</h3>
+                        <h3>{t('newManualBooking')}</h3>
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <input
-                                placeholder="Customer Name"
+                                placeholder={t('fullName')}
                                 value={formData.customerName}
                                 onChange={e => setFormData({ ...formData, customerName: e.target.value })}
                                 required
                                 style={{ padding: '10px', background: '#333', border: '1px solid #444', color: 'white' }}
                             />
                             <input
-                                placeholder="Phone Number"
+                                placeholder={t('phoneNumber')}
                                 value={formData.customerPhone}
                                 onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
                                 required
@@ -157,7 +159,7 @@ const BookingManager = () => {
                                 onChange={e => setFormData({ ...formData, venueId: e.target.value, roomId: '' })}
                                 style={{ padding: '10px', background: '#333', border: '1px solid #444', color: 'white' }}
                             >
-                                <option value="">Select Venue</option>
+                                <option value="">{t('selectVenue')}</option>
                                 {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                             </select>
 
@@ -168,7 +170,7 @@ const BookingManager = () => {
                                 style={{ padding: '10px', background: '#333', border: '1px solid #444', color: 'white' }}
                                 disabled={!formData.venueId}
                             >
-                                <option value="">Select Room</option>
+                                <option value="">{t('selectRoom')}</option>
                                 {selectedVenue?.rooms.map(r => <option key={r.id} value={r.id}>{r.name} - {r.pricePerHour}/hr</option>)}
                             </select>
 
@@ -190,7 +192,7 @@ const BookingManager = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                <label>Duration (h):</label>
+                                <label>{t('durationHours')}:</label>
                                 <input
                                     type="number"
                                     min="1"
@@ -201,8 +203,8 @@ const BookingManager = () => {
                                 />
                             </div>
 
-                            <button type="submit" className="btn btn-primary">Create & Confirm</button>
-                            <button type="button" onClick={() => setShowModal(false)} className="btn btn-text">Cancel</button>
+                            <button type="submit" className="btn btn-primary">{t('createAndConfirm')}</button>
+                            <button type="button" onClick={() => setShowModal(false)} className="btn btn-text">{t('cancel')}</button>
                         </form>
                     </div>
                 </div>

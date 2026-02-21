@@ -42,7 +42,7 @@ const Finance = () => {
     };
 
     const statusBodyTemplate = (rowData) => {
-        return <Tag value={rowData.status} severity={getStatusSeverity(rowData.status)} />;
+        return <Tag value={t(rowData.status?.toLowerCase())} severity={getStatusSeverity(rowData.status)} />;
     };
 
     const getStatusSeverity = (status) => {
@@ -62,13 +62,13 @@ const Finance = () => {
 
     const handleRequestPayout = async () => {
         if (selectedEarnings.length === 0) {
-            toast.current.show({ severity: 'warn', summary: 'Selection Required', detail: 'Please select earnings to payout' });
+            toast.current.show({ severity: 'warn', summary: t('selectionRequired'), detail: t('payoutItemsSelection') });
             return;
         }
 
         const defaultAccount = payoutAccounts.find(a => a.isDefault) || payoutAccounts[0];
         if (!defaultAccount) {
-            toast.current.show({ severity: 'error', summary: 'No Account', detail: 'Please add a payout account first' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('addPayoutAccountFirst') });
             return;
         }
 
@@ -84,10 +84,10 @@ const Finance = () => {
             });
             setIsPayoutModalOpen(false);
             setSelectedEarnings([]);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Payout requested successfully' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutRequestedSuccess') });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to request payout' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutRequestFailed') });
         }
     };
 
@@ -95,20 +95,20 @@ const Finance = () => {
         try {
             await addPayoutAccount(accountForm);
             setIsAccountModalOpen(false);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Payout account added' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutAccountAdded') });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add account' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutAccountAddFailed') });
         }
     };
 
     const handleUpdatePayoutStatus = async (id, status) => {
         try {
             await updatePayoutStatus(id, status);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: `Payout marked as ${status}` });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutMarkedAs', { status: t(status.toLowerCase()) }) });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Update failed' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('updateFailed') });
         }
     };
 
@@ -117,8 +117,8 @@ const Finance = () => {
             <Toast ref={toast} />
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-2xl font-bold text-white m-0">Finance & Settlement</h2>
-                    <p className="text-gray-500 text-sm">Manage earnings, payouts and bank accounts</p>
+                    <h2 className="text-2xl font-bold text-white m-0">{t('financeSettlement')}</h2>
+                    <p className="text-gray-500 text-sm">{t('financeSettlementDesc')}</p>
                 </div>
                 <div className="flex gap-2">
                     <Button
@@ -126,17 +126,17 @@ const Finance = () => {
                         outlined
                         onClick={() => refreshData?.()}
                         className="p-button-sm h-10 w-10"
-                        tooltip="Refresh"
+                        tooltip={t('refresh')}
                         tooltipOptions={{ position: 'bottom' }}
                     />
                     <Button
-                        label="Add Bank Account"
+                        label={t('addBankAccount')}
                         icon="pi pi-plus"
                         className="p-button-outlined p-button-sm"
                         onClick={() => setIsAccountModalOpen(true)}
                     />
                     <Button
-                        label="Request Payout"
+                        label={t('requestPayout')}
                         icon="pi pi-money-bill"
                         className="p-button-primary p-button-sm"
                         onClick={handleRequestPayout}
@@ -149,26 +149,26 @@ const Finance = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl">
                     <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Net Earnings</span>
+                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('totalNetEarnings')}</span>
                         <span className="text-2xl font-black text-[#4caf50]">{formatCurrency(totalEarnings)}</span>
                     </div>
                 </Card>
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl">
                     <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Available for Payout</span>
+                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('availableForPayout')}</span>
                         <span className="text-2xl font-black text-[#ff9800]">{formatCurrency(pendingEarnings)}</span>
                     </div>
                 </Card>
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl">
                     <div className="flex flex-col">
-                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">Total Paid Out</span>
+                        <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('totalPaidOut')}</span>
                         <span className="text-2xl font-black text-[#b000ff]">{formatCurrency(totalPayouts)}</span>
                     </div>
                 </Card>
             </div>
 
             <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)} className="custom-tabview">
-                <TabPanel header="Earnings" leftIcon="pi pi-chart-line mr-2">
+                <TabPanel header={t('earningsTab')} leftIcon="pi pi-chart-line mr-2">
                     <DataTable
                         value={earnings}
                         selection={selectedEarnings}
@@ -180,25 +180,25 @@ const Finance = () => {
                         responsiveLayout="stack"
                     >
                         <Column selectionMode="multiple" headerStyle={{ width: '3em' }}></Column>
-                        <Column field="id" header="ID" body={(r) => `#E-${r.id}`} className="text-xs text-gray-500"></Column>
-                        <Column field="createdAt" header="Date" body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
-                        <Column field="venueId" header="Venue" body={(r) => venues.find(v => v.id === r.venueId)?.name || 'N/A'}></Column>
-                        <Column field="grossAmount" header="Gross" body={(r) => formatCurrency(r.grossAmount)}></Column>
-                        <Column field="commissionAmount" header="Comm." body={(r) => formatCurrency(r.commissionAmount)} className="text-red-400"></Column>
-                        <Column field="netAmount" header="Net" body={(r) => <span className="font-bold text-green-400">{formatCurrency(r.netAmount)}</span>}></Column>
-                        <Column field="status" header="Status" body={statusBodyTemplate}></Column>
+                        <Column field="id" header={t('id')} body={(r) => `#E-${r.id}`} className="text-xs text-gray-500"></Column>
+                        <Column field="createdAt" header={t('date')} body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
+                        <Column field="venueId" header={t('venue')} body={(r) => venues.find(v => v.id === r.venueId)?.name || t('na')}></Column>
+                        <Column field="grossAmount" header={t('gross')} body={(r) => formatCurrency(r.grossAmount)}></Column>
+                        <Column field="commissionAmount" header={t('comm')} body={(r) => formatCurrency(r.commissionAmount)} className="text-red-400"></Column>
+                        <Column field="netAmount" header={t('net')} body={(r) => <span className="font-bold text-green-400">{formatCurrency(r.netAmount)}</span>}></Column>
+                        <Column field="status" header={t('status')} body={statusBodyTemplate}></Column>
                     </DataTable>
                 </TabPanel>
 
-                <TabPanel header="Payouts" leftIcon="pi pi-send mr-2">
+                <TabPanel header={t('payoutsTab')} leftIcon="pi pi-send mr-2">
                     <DataTable value={payouts} paginator rows={10} className="mt-4">
-                        <Column field="id" header="ID" body={(r) => `#P-${r.id}`} className="text-xs text-gray-500"></Column>
-                        <Column field="createdAt" header="Date" body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
-                        <Column field="totalAmount" header="Amount" body={(r) => <span className="font-bold">{formatCurrency(r.totalAmount)}</span>}></Column>
-                        <Column field="payoutAccount" header="Bank Account" body={(r) => r.payoutAccount ? `${r.payoutAccount.bankName} (${r.payoutAccount.accountNumber})` : 'N/A'}></Column>
-                        <Column field="status" header="Status" body={statusBodyTemplate}></Column>
+                        <Column field="id" header={t('id')} body={(r) => `#P-${r.id}`} className="text-xs text-gray-500"></Column>
+                        <Column field="createdAt" header={t('date')} body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
+                        <Column field="totalAmount" header={t('amount')} body={(r) => <span className="font-bold">{formatCurrency(r.totalAmount)}</span>}></Column>
+                        <Column field="payoutAccount" header={t('bankAccount')} body={(r) => r.payoutAccount ? `${r.payoutAccount.bankName} (${r.payoutAccount.accountNumber})` : t('na')}></Column>
+                        <Column field="status" header={t('status')} body={statusBodyTemplate}></Column>
                         {isSysAdmin && (
-                            <Column header="Actions" body={(r) => (
+                            <Column header={t('actions')} body={(r) => (
                                 <div className="flex gap-2">
                                     {r.status === 'PENDING' && (
                                         <>
@@ -212,16 +212,16 @@ const Finance = () => {
                     </DataTable>
                 </TabPanel>
 
-                <TabPanel header="Bank Accounts" leftIcon="pi pi-building mr-2">
+                <TabPanel header={t('bankAccountsTab')} leftIcon="pi pi-building mr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                         {payoutAccounts.map(account => (
                             <Card key={account.id} className="relative bg-[#1e1e2d] border border-white/5">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h4 className="m-0 text-white">{account.bankName}</h4>
-                                        <p className="text-gray-500 text-xs mt-1">Owner: {account.accountHolder}</p>
+                                        <p className="text-gray-500 text-xs mt-1">{t('owner')}: {account.accountHolder}</p>
                                     </div>
-                                    {account.isDefault && <Tag value="Default" severity="info" />}
+                                    {account.isDefault && <Tag value={t('default')} severity="info" />}
                                 </div>
                                 <h3 className="text-xl font-mono tracking-wider m-0 text-gray-300">{account.accountNumber}</h3>
                             </Card>
@@ -231,58 +231,58 @@ const Finance = () => {
             </TabView>
 
             {/* Payout Request Modal */}
-            <Dialog header="Request Payout" visible={isPayoutModalOpen} className="w-[400px]" onHide={() => setIsPayoutModalOpen(false)}>
+            <Dialog header={t('requestPayout')} visible={isPayoutModalOpen} className="w-[400px]" onHide={() => setIsPayoutModalOpen(false)}>
                 <div className="flex flex-col gap-4">
                     <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
-                        <p className="text-sm text-blue-200 m-0">You are requesting a payout for {selectedEarnings.length} earning items.</p>
+                        <p className="text-sm text-blue-200 m-0">{t('requestPayoutItems', { count: selectedEarnings.length })}</p>
                         <h2 className="text-2xl font-black text-white mt-1">
                             {formatCurrency(selectedEarnings.reduce((sum, e) => sum + Number(e.netAmount), 0))}
                         </h2>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Select Bank Account</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('selectBankAccount')}</label>
                         <Dropdown
                             value={payoutForm.payoutAccountId}
                             options={payoutAccounts}
                             optionLabel="bankName"
                             optionValue="id"
-                            placeholder="Select Account"
+                            placeholder={t('selectAccountLabel')}
                             className="w-full"
                             onChange={(e) => setPayoutForm({ ...payoutForm, payoutAccountId: e.value })}
                         />
                     </div>
 
                     <div className="flex justify-end gap-2 mt-4">
-                        <Button label="Cancel" className="p-button-text" onClick={() => setIsPayoutModalOpen(false)} />
-                        <Button label="Submit Request" className="p-button-primary" onClick={submitPayoutRequest} />
+                        <Button label={t('cancel')} className="p-button-text" onClick={() => setIsPayoutModalOpen(false)} />
+                        <Button label={t('submitRequest')} className="p-button-primary" onClick={submitPayoutRequest} />
                     </div>
                 </div>
             </Dialog>
 
             {/* Bank Account Modal */}
-            <Dialog header="Add Payout Account" visible={isAccountModalOpen} className="w-[450px]" onHide={() => setIsAccountModalOpen(false)}>
+            <Dialog header={t('addPayoutAccount')} visible={isAccountModalOpen} className="w-[450px]" onHide={() => setIsAccountModalOpen(false)}>
                 <div className="flex flex-col gap-4 py-2">
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Bank Name</label>
-                        <InputText value={accountForm.bankName} onChange={e => setAccountForm({ ...accountForm, bankName: e.target.value })} placeholder="e.g. Khan Bank" />
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('bankName')}</label>
+                        <InputText value={accountForm.bankName} onChange={e => setAccountForm({ ...accountForm, bankName: e.target.value })} placeholder={t('bankPlaceholder')} />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Account Holder Name</label>
-                        <InputText value={accountForm.accountHolder} onChange={e => setAccountForm({ ...accountForm, accountHolder: e.target.value })} placeholder="e.g. John Doe" />
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('accountHolderName')}</label>
+                        <InputText value={accountForm.accountHolder} onChange={e => setAccountForm({ ...accountForm, accountHolder: e.target.value })} placeholder={t('holderPlaceholder')} />
                     </div>
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Account Number</label>
-                        <InputText value={accountForm.accountNumber} onChange={e => setAccountForm({ ...accountForm, accountNumber: e.target.value })} placeholder="Enter number" />
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('accountNumber')}</label>
+                        <InputText value={accountForm.accountNumber} onChange={e => setAccountForm({ ...accountForm, accountNumber: e.target.value })} placeholder={t('numberPlaceholder')} />
                     </div>
                     <div className="flex items-center gap-2 mt-2">
                         <Checkbox checked={accountForm.isDefault} onChange={e => setAccountForm({ ...accountForm, isDefault: e.checked })} id="isDefault" />
-                        <label htmlFor="isDefault" className="text-sm">Set as default payout account</label>
+                        <label htmlFor="isDefault" className="text-sm">{t('setAsDefaultPayout')}</label>
                     </div>
 
                     <div className="flex justify-end gap-2 mt-6">
-                        <Button label="Cancel" className="p-button-text" onClick={() => setIsAccountModalOpen(false)} />
-                        <Button label="Save Account" className="p-button-primary" onClick={handleAddAccount} />
+                        <Button label={t('cancel')} className="p-button-text" onClick={() => setIsAccountModalOpen(false)} />
+                        <Button label={t('saveAccount')} className="p-button-primary" onClick={handleAddAccount} />
                     </div>
                 </div>
             </Dialog>

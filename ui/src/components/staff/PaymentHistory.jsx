@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const PaymentHistory = () => {
+    const { t } = useLanguage();
     const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -24,20 +26,20 @@ const PaymentHistory = () => {
     return (
         <div style={{ padding: '20px', color: 'white' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <h2>Payment History</h2>
-                <button onClick={loadPayments} className="btn btn-outline" style={{ padding: '5px 15px' }}>Refresh</button>
+                <h2>{t('paymentHistory')}</h2>
+                <button onClick={loadPayments} className="btn btn-outline" style={{ padding: '5px 15px' }}>{t('refresh')}</button>
             </div>
 
-            {loading ? <p>Loading...</p> : (
+            {loading ? <p>{t('loading')}</p> : (
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #444' }}>
-                                <th style={{ padding: '10px' }}>Date</th>
-                                <th style={{ padding: '10px' }}>Amount</th>
-                                <th style={{ padding: '10px' }}>Method</th>
-                                <th style={{ padding: '10px' }}>Status</th>
-                                <th style={{ padding: '10px' }}>Booking ID</th>
+                                <th style={{ padding: '10px' }}>{t('date')}</th>
+                                <th style={{ padding: '10px' }}>{t('amount')}</th>
+                                <th style={{ padding: '10px' }}>{t('method')}</th>
+                                <th style={{ padding: '10px' }}>{t('status')}</th>
+                                <th style={{ padding: '10px' }}>{t('bookingId')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -57,12 +59,12 @@ const PaymentHistory = () => {
                                             {payment.method}
                                         </span>
                                     </td>
-                                    <td style={{ padding: '10px' }}>{payment.status}</td>
+                                    <td style={{ padding: '10px' }}>{t(payment.status.toLowerCase())}</td>
                                     <td style={{ padding: '10px' }}>#{payment.bookingId}</td>
                                 </tr>
                             ))}
                             {payments.length === 0 && (
-                                <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center' }}>No payments found</td></tr>
+                                <tr><td colSpan="5" style={{ padding: '20px', textAlign: 'center' }}>{t('noPaymentsFound')}</td></tr>
                             )}
                         </tbody>
                     </table>

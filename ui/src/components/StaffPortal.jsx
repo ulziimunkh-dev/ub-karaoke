@@ -59,11 +59,11 @@ const StaffPortal = () => {
 
     const submitManualBooking = async () => {
         if (!manualBookingData.startTime) {
-            toast.current.show({ severity: 'warn', summary: 'Missing Info', detail: 'Please fill in start time.' });
+            toast.current.show({ severity: 'warn', summary: t('missingInfo'), detail: t('fillStartTime') });
             return;
         }
 
-        const finalCustomerName = manualBookingData.customerName.trim() || 'Walk-in Guest';
+        const finalCustomerName = manualBookingData.customerName.trim() || t('walkInGuest');
 
         try {
             const today = new Date().toISOString().split('T')[0];
@@ -94,19 +94,19 @@ const StaffPortal = () => {
                 totalPrice: (Number(selectedRoom.hourlyRate) || 15000) * Number(manualBookingData.hours)
             });
 
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Walk-in booking created.' });
+            toast.current.show({ severity: 'success', summary: t('done'), detail: t('walkinBookingCreated') });
             setIsManualBookingOpen(false);
             // Refresh logic usually handled by context socket or poll, assuming useData updates locally
         } catch (e) {
             console.error(e);
             // Extract meaningful error message
-            let errorMessage = 'Failed to create booking.';
+            let errorMessage = t('bookingFailed');
             if (e.response?.data?.message) {
                 errorMessage = Array.isArray(e.response.data.message)
                     ? e.response.data.message.join(', ')
                     : e.response.data.message;
             }
-            toast.current.show({ severity: 'error', summary: 'Error', detail: errorMessage });
+            toast.current.show({ severity: 'error', summary: t('error') || 'Error', detail: errorMessage });
         }
     };
 
@@ -177,9 +177,9 @@ const StaffPortal = () => {
                 await updateBookingStatus(activeBooking.id, 'CHECKED_IN');
                 await updateRoomStatus(selectedVenue.id, selectedRoom.id, 'Occupied');
                 setIsActionModalOpen(false);
-                toast.current.show({ severity: 'success', summary: 'Checked In', detail: `${selectedRoom.name} is now occupied.` });
+                toast.current.show({ severity: 'success', summary: t('checkedIn'), detail: t('roomNowOccupied', { name: selectedRoom.name }) });
             } catch (error) {
-                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Check-in failed' });
+                toast.current.show({ severity: 'error', summary: t('error'), detail: t('checkInFailed') });
             }
         }
     };
@@ -190,21 +190,21 @@ const StaffPortal = () => {
                 await updateBookingStatus(activeBooking.id, 'COMPLETED');
                 await updateRoomStatus(selectedVenue.id, selectedRoom.id, 'Cleaning');
                 setIsActionModalOpen(false);
-                toast.current.show({ severity: 'success', summary: 'Checked Out', detail: `${selectedRoom.name} is now awaiting cleaning.` });
+                toast.current.show({ severity: 'success', summary: t('completed'), detail: t('roomNowCleaning', { name: selectedRoom.name }) });
             } catch (error) {
-                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Check-out failed' });
+                toast.current.show({ severity: 'error', summary: t('error'), detail: t('checkOutFailed') });
             }
         }
     };
 
     const handleQuickOrder = (item) => {
         addOrder(activeBooking.id, [item]);
-        toast.current.show({ severity: 'info', summary: 'Item Added', detail: `${item.name} added to order.` });
+        toast.current.show({ severity: 'info', summary: t('itemAdded') || t('itemAddedMn'), detail: `${item.name} ${t('addedToOrder') || t('addedToOrderMn')}` });
     };
 
     const handleFinishCleaning = async (room) => {
         await updateRoomStatus(selectedVenue.id, room.id, 'Available');
-        toast.current.show({ severity: 'success', summary: 'Ready', detail: `${room.name} is now available.` });
+        toast.current.show({ severity: 'success', summary: t('done'), detail: t('roomNowAvailable', { name: room.name }) });
     };
 
     const getStatusSeverity = (status) => {
@@ -218,13 +218,13 @@ const StaffPortal = () => {
     };
 
     const posItems = [
-        { name: 'Sengur (Bottle)', price: 7000, category: 'Drinks' },
-        { name: 'Heineken (Bottle)', price: 9000, category: 'Drinks' },
-        { name: 'Coca Cola 0.5L', price: 3500, category: 'Drinks' },
-        { name: 'Water 0.5L', price: 2000, category: 'Drinks' },
-        { name: 'Mixed Nuts', price: 15000, category: 'Snacks' },
-        { name: 'Fruit Platter', price: 45000, category: 'Food' },
-        { name: 'French Fries', price: 12000, category: 'Food' },
+        { name: t('sengurBottle'), price: 7000, category: t('drinks') },
+        { name: t('heinekenBottle'), price: 9000, category: t('drinks') },
+        { name: t('coke05'), price: 3500, category: t('drinks') },
+        { name: t('water05'), price: 2000, category: t('drinks') },
+        { name: t('mixedNuts'), price: 15000, category: t('snacks') },
+        { name: t('fruitPlatter'), price: 45000, category: t('food') },
+        { name: t('frenchFries'), price: 12000, category: t('food') },
     ];
 
     const formatTime = (dateString, timeString) => {
@@ -249,17 +249,17 @@ const StaffPortal = () => {
             <div className="flex justify-between items-center mb-6 bg-[#1e1e2d] p-4 rounded-xl border border-white/5">
                 <div>
                     <h2 className="text-xl font-black text-white m-0 uppercase tracking-tighter">
-                        Room Dashboard <span className="text-[#b000ff]">POS</span>
+                        {t('roomDashboard')} <span className="text-[#b000ff]">POS</span>
                     </h2>
                     <div className="flex items-center gap-2 mt-1">
                         <p className="text-gray-500 text-xs font-bold uppercase tracking-widest m-0">
-                            Viewing {selectedVenue?.name}
+                            {t('viewing')} {selectedVenue?.name}
                         </p>
                         <span className="text-gray-700">|</span>
                         <Button
                             icon={`pi ${selectedVenue?.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
                             className={`p-button-rounded p-button-text p-button-sm w-6 h-6 ${selectedVenue?.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
-                            tooltip={selectedVenue?.isBookingEnabled === false ? "Enable Venue (Go Online)" : "Disable Venue (Go Offline)"}
+                            tooltip={selectedVenue?.isBookingEnabled === false ? t('reOpen') : t('closeBranch')}
                             onClick={() => updateVenue(selectedVenue?.id, { isBookingEnabled: selectedVenue?.isBookingEnabled === false })}
                         />
                     </div>
@@ -280,10 +280,10 @@ const StaffPortal = () => {
                         </div>
                         <div className="hidden md:block text-right">
                             <p className="text-white text-xs font-bold m-0 leading-tight">
-                                {currentUser?.firstName || currentUser?.username || 'Staff'}
+                                {currentUser?.firstName || currentUser?.username || t('staff')}
                             </p>
                             <p className="text-[10px] text-gray-500 font-mono m-0 leading-tight uppercase">
-                                {currentUser?.role || 'Staff'}
+                                {currentUser?.role || t('staff')}
                             </p>
                         </div>
                     </div>
@@ -295,7 +295,7 @@ const StaffPortal = () => {
                             logout();
                             navigate('/staff/login');
                         }}
-                        tooltip={`Sign Out (${currentUser?.firstName || 'Staff'})`}
+                        tooltip={`${t('signOut')} (${currentUser?.firstName || t('staff')})`}
                     />
                 </div>
             </div>
@@ -309,7 +309,7 @@ const StaffPortal = () => {
                     >
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="m-0 text-lg font-black text-white">{room.name}</h3>
-                            <Tag value={room.status} severity={getStatusSeverity(room.status)} />
+                            <Tag value={t(room.status.toLowerCase()) || room.status} severity={getStatusSeverity(room.status)} />
                         </div>
 
                         <div className="flex items-center gap-2 mb-3">
@@ -317,20 +317,20 @@ const StaffPortal = () => {
                             <Button
                                 icon={`pi ${room.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
                                 className={`p-button-rounded p-button-text p-button-sm w-8 h-8 ${room.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
-                                tooltip={room.isBookingEnabled === false ? "Enable Online Booking" : "Disable Online Booking"}
+                                tooltip={room.isBookingEnabled === false ? t('reOpen') : t('closeBranch')}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     updateRoom(selectedVenue.id, room.id, { isBookingEnabled: room.isBookingEnabled === false }); // Toggle
                                 }}
                             />
                             <span className="text-[10px] text-gray-500 uppercase font-bold">
-                                {room.isBookingEnabled === false ? 'Offline' : 'Online'}
+                                {room.isBookingEnabled === false ? t('inactive') : t('active')}
                             </span>
                         </div>
 
                         {getActiveBooking(selectedVenue.id, room.id) ? (
                             <div className="flex flex-col gap-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Active Booking</span>
+                                <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">{t('customer')}</span>
                                 <span className="text-sm font-bold text-white truncate">
                                     {getActiveBooking(selectedVenue.id, room.id).customerName}
                                 </span>
@@ -340,13 +340,13 @@ const StaffPortal = () => {
                             </div>
                         ) : (
                             <div className="h-10 flex items-center">
-                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">No active session</span>
+                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">{t('noActiveSession')}</span>
                             </div>
                         )}
 
                         {room.status === 'Cleaning' && (
                             <div className="mt-4 pt-4 border-t border-white/5 text-center">
-                                <span className="text-[10px] text-orange-400 font-black uppercase heartbeat">Tap to finish cleaning</span>
+                                <span className="text-[10px] text-orange-400 font-black uppercase heartbeat">{t('tapToFinishCleaning')}</span>
                             </div>
                         )}
                     </Card>
@@ -355,7 +355,7 @@ const StaffPortal = () => {
 
             {/* Room Action Modal */}
             <Dialog
-                header={`Room Control: ${selectedRoom?.name}`}
+                header={`${t('roomControl')}: ${selectedRoom?.name}`}
                 visible={isActionModalOpen}
                 className="w-full max-w-4xl"
                 onHide={() => setIsActionModalOpen(false)}
@@ -368,7 +368,7 @@ const StaffPortal = () => {
                             onClick={() => setModalTab(tab)}
                             className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${modalTab === tab ? 'bg-[#b000ff] text-white shadow-lg' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
                         >
-                            {tab}
+                            {t(tab)}
                         </button>
                     ))}
                 </div>
@@ -379,23 +379,23 @@ const StaffPortal = () => {
                         <div>
                             <div className="bg-black/20 p-6 rounded-2xl border border-white/5 mb-6">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest">Current Status</h4>
-                                    <Tag value={selectedRoom?.status} severity={getStatusSeverity(selectedRoom?.status)} />
+                                    <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest">{t('currentStatus')}</h4>
+                                    <Tag value={t(selectedRoom?.status?.toLowerCase()) || selectedRoom?.status} severity={getStatusSeverity(selectedRoom?.status)} />
                                 </div>
 
                                 {activeBooking ? (
                                     <div className="space-y-4">
                                         <div>
-                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Customer</p>
+                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">{t('customer')}</p>
                                             <p className="text-xl font-black text-white m-0">{activeBooking.customerName}</p>
                                         </div>
                                         <div className="flex gap-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">Start</p>
+                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">{t('startTime')}</p>
                                                 <p className="text-sm font-bold text-white m-0">{formatTime(activeBooking.startTime)}</p>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">Duration</p>
+                                                <p className="text-xs text-gray-500 font-bold uppercase m-0">{t('duration').split(' ')[0]}</p>
                                                 <p className="text-sm font-bold text-white m-0">
                                                     {getDuration(activeBooking.startTime, activeBooking.endTime).replace(/[()]/g, '')}
                                                 </p>
@@ -403,7 +403,7 @@ const StaffPortal = () => {
                                         </div>
                                         <Divider className="border-white/5" />
                                         <div className="flex justify-between items-end">
-                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">Total Bill</p>
+                                            <p className="text-xs text-gray-500 font-bold uppercase m-0">{t('totalBill')}</p>
                                             <p className="text-3xl font-black text-green-400 m-0">
                                                 {Number(activeBooking.totalPrice).toLocaleString()}₮
                                             </p>
@@ -412,9 +412,9 @@ const StaffPortal = () => {
                                 ) : (
                                     <div className="text-center py-8">
                                         <i className="pi pi-calendar-times text-4xl text-gray-700 mb-3" />
-                                        <p className="text-gray-500 font-bold uppercase text-xs">No Active Booking Found</p>
+                                        <p className="text-gray-500 font-bold uppercase text-xs">{t('noActiveBookingFound')}</p>
                                         <Button
-                                            label="Create Manual Walk-in"
+                                            label={t('createManualWalkin')}
                                             icon="pi pi-plus"
                                             className="p-button-outlined p-button-sm mt-4 hover:bg-[#b000ff]/10 hover:text-[#b000ff] hover:border-[#b000ff]"
                                             onClick={() => handleManualBooking(selectedRoom)}
@@ -425,23 +425,23 @@ const StaffPortal = () => {
 
                             <div className="flex flex-col gap-3">
                                 {activeBooking?.status === 'CONFIRMED' && (
-                                    <Button label="CHECK-IN GUEST" icon="pi pi-sign-in" className="p-button-lg p-button-success font-black h-16 shadow-lg shadow-green-500/20" onClick={handleCheckIn} />
+                                    <Button label={t('checkInGuest')} icon="pi pi-sign-in" className="p-button-lg p-button-success font-black h-16 shadow-lg shadow-green-500/20" onClick={handleCheckIn} />
                                 )}
                                 {activeBooking?.status === 'CHECKED_IN' && (
-                                    <Button label="COMPLETE & CHECK-OUT" icon="pi pi-sign-out" className="p-button-lg p-button-danger font-black h-16 shadow-lg shadow-red-500/20" onClick={handleCheckOut} />
+                                    <Button label={t('completeCheckOut')} icon="pi pi-sign-out" className="p-button-lg p-button-danger font-black h-16 shadow-lg shadow-red-500/20" onClick={handleCheckOut} />
                                 )}
                             </div>
                         </div>
 
                         {/* POS Actions */}
                         <div className="bg-[#1e1e2d] p-6 rounded-2xl border border-white/5">
-                            <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest mb-4">Point of Sale (Quick Services)</h4>
+                            <h4 className="m-0 text-gray-500 uppercase text-xs font-black tracking-widest mb-4">{t('posQuickServices')}</h4>
 
                             {activeBooking?.status === 'CHECKED_IN' ? (
                                 <div className="flex flex-col gap-6">
                                     <div className="grid grid-cols-2 gap-3">
                                         <Button
-                                            label="+ 1 Hour"
+                                            label={t('addOneHour')}
                                             icon="pi pi-clock"
                                             className="p-button-outlined p-button-info p-button-sm"
                                             onClick={async () => {
@@ -460,18 +460,18 @@ const StaffPortal = () => {
                                                         totalPrice: newPrice
                                                     });
 
-                                                    toast.current.show({ severity: 'success', summary: 'Extended', detail: 'Booking extended by 1 hour.' });
+                                                    toast.current.show({ severity: 'success', summary: t('extended'), detail: t('bookingExtended') });
                                                 } catch (e) {
                                                     console.error(e);
-                                                    toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to extend booking.' });
+                                                    toast.current.show({ severity: 'error', summary: t('error') || 'Error', detail: t('bookingFailed') });
                                                 }
                                             }}
                                         />
-                                        <Button label="Extra Mic" icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
+                                        <Button label={t('extraMic')} icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
                                     </div>
 
                                     <div>
-                                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">Popular Items</p>
+                                        <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">{t('popularItems')}</p>
                                         <div className="grid grid-cols-2 gap-2">
                                             {posItems.map(item => (
                                                 <button
@@ -489,7 +489,7 @@ const StaffPortal = () => {
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-center py-12">
                                     <i className="pi pi-lock text-4xl text-gray-800 mb-4" />
-                                    <p className="text-gray-600 text-sm font-bold italic">Check-in guest to enable POS services.</p>
+                                    <p className="text-gray-600 text-sm font-bold italic">{t('checkInToEnablePOS')}</p>
                                 </div>
                             )}
                         </div>
@@ -504,7 +504,7 @@ const StaffPortal = () => {
                                     onClick={() => setScheduleFilter(filter)}
                                     className={`px-4 py-2 rounded-full text-xs font-bold uppercase whitespace-nowrap transition-all border ${scheduleFilter === filter ? 'bg-white text-black border-white' : 'bg-transparent text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'}`}
                                 >
-                                    {filter}
+                                    {t(filter === 'month' ? 'monthLabel' : filter)}
                                 </button>
                             ))}
                         </div>
@@ -529,15 +529,15 @@ const StaffPortal = () => {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <Tag value={booking.status} severity={getStatusSeverity(booking.status)} className="mb-1" />
-                                            <p className="text-[10px] text-gray-500 m-0 text-white font-mono">{booking.customerPhone || 'No Phone'}</p>
+                                            <Tag value={t(booking.status?.toLowerCase()) || booking.status} severity={getStatusSeverity(booking.status)} className="mb-1" />
+                                            <p className="text-[10px] text-gray-500 m-0 text-white font-mono">{booking.customerPhone || t('noContact')}</p>
                                         </div>
                                     </div>
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-50">
                                     <i className="pi pi-calendar-times text-4xl mb-2" />
-                                    <p className="text-xs font-bold uppercase">No bookings found</p>
+                                    <p className="text-xs font-bold uppercase">{t('noBookingsFound') || t('noBookingsFoundMn')}</p>
                                 </div>
                             )}
                         </div>
@@ -547,7 +547,7 @@ const StaffPortal = () => {
 
             {/* Manual Booking Modal */}
             <Dialog
-                header="New Walk-in Reservation"
+                header={t('newWalkinReservation')}
                 visible={isManualBookingOpen}
                 onHide={() => setIsManualBookingOpen(false)}
                 className="w-full md:w-[400px]"
@@ -559,33 +559,33 @@ const StaffPortal = () => {
             >
                 <div className="flex flex-col gap-4 mt-2 h-full overflow-y-auto" style={{ maxHeight: '60vh' }}>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Room</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('rooms').slice(0, -1)}</label>
                         <p className="font-bold text-white text-lg m-0">{selectedRoom?.name}</p>
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Guest Name (Optional)</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('guestNameOptional')}</label>
                         <InputText
                             value={manualBookingData.customerName}
                             onChange={(e) => setManualBookingData({ ...manualBookingData, customerName: e.target.value })}
                             className="w-full"
-                            placeholder="Defaults to 'Walk-in Guest'"
+                            placeholder={t('walkInGuest')}
                             autoFocus
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone (Optional)</label>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('phoneOptional')}</label>
                         <InputText
                             value={manualBookingData.phoneNumber}
                             onChange={(e) => setManualBookingData({ ...manualBookingData, phoneNumber: e.target.value })}
                             className="w-full"
-                            placeholder="e.g. 9911..."
+                            placeholder={t('phonePlaceholder')}
                             keyfilter="int"
                             inputMode="numeric"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Start Time</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('startTime')}</label>
                             <InputText
                                 type="time"
                                 value={manualBookingData.startTime}
@@ -594,7 +594,7 @@ const StaffPortal = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Duration (Hrs)</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('duration').split(' ')[0]} (Hrs)</label>
                             <InputNumber
                                 value={manualBookingData.hours}
                                 onValueChange={(e) => setManualBookingData({ ...manualBookingData, hours: e.value })}
@@ -608,13 +608,14 @@ const StaffPortal = () => {
                     </div>
                     <Divider />
                     <Button
-                        label="Create Reservation"
+                        label={t('createReservation')}
                         icon="pi pi-check"
                         className="w-full p-button-success font-bold"
                         onClick={submitManualBooking}
                     />
                 </div>
             </Dialog>
+
 
             {/* Profile Modal */}
             <ProfileModal

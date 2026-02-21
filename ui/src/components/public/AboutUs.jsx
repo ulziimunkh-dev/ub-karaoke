@@ -81,7 +81,7 @@ const AboutUs = () => {
                             </div>
                             <div className="flex flex-col items-center">
                                 <i className="pi pi-phone mb-2 text-xl md:text-2xl text-white"></i>
-                                <span>+976 7700-1234</span>
+                                <span>+976 8976 7700</span>
                             </div>
                             <div className="flex flex-col items-center">
                                 <i className="pi pi-map-marker mb-2 text-xl md:text-2xl text-white"></i>

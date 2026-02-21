@@ -119,7 +119,7 @@ const ManagerDashboard = ({ onNavigate }) => {
                             <Button
                                 icon="pi pi-cog"
                                 className="p-button-text p-button-rounded text-gray-400 hover:text-[#eb79b2] shrink-0"
-                                tooltip={t('editOrgSettings') || 'Edit Organization Settings'}
+                                tooltip={t('editOrgSettings')}
                                 tooltipOptions={{ position: 'left' }}
                                 onClick={() => setShowOrgSettings(true)}
                             />
@@ -224,7 +224,7 @@ const ManagerDashboard = ({ onNavigate }) => {
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center">
                             <i className="pi pi-building text-white text-sm"></i>
                         </div>
-                        <span className="text-white font-bold">{t('editOrgSettings') || 'Organization Settings'}</span>
+                        <span className="text-white font-bold">{t('editOrgSettings')}</span>
                     </div>
                 }
                 visible={showOrgSettings}
@@ -248,7 +248,7 @@ const ManagerDashboard = ({ onNavigate }) => {
                             />
                             <span className="text-[10px] text-gray-600 italic whitespace-nowrap">
                                 <i className="pi pi-lock text-[10px] mr-1"></i>
-                                {t('assignedBySysadmin') || 'Assigned by System Admin'}
+                                {t('assignedBySysadmin')}
                             </span>
                         </div>
                     </div>
@@ -266,13 +266,13 @@ const ManagerDashboard = ({ onNavigate }) => {
 
                     {/* Description */}
                     <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">{t('description') || 'Description'}</label>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">{t('description')}</label>
                         <InputTextarea
                             value={orgForm.description}
                             onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })}
                             className="w-full bg-black/20 border-white/10 rounded-xl text-white"
                             rows={3}
-                            placeholder={t('orgDescPlaceholder') || 'Brief description of your organization...'}
+                            placeholder={t('orgDescPlaceholder')}
                             autoResize
                         />
                     </div>
@@ -301,12 +301,12 @@ const ManagerDashboard = ({ onNavigate }) => {
 
                     {/* Address */}
                     <div>
-                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">{t('address') || 'Address'}</label>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold text-gray-500 mb-2">{t('address')}</label>
                         <InputText
                             value={orgForm.address}
                             onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })}
                             className="w-full h-11 bg-black/20 border-white/10 rounded-xl text-white"
-                            placeholder={t('addressPlaceholder') || 'Organization address...'}
+                            placeholder={t('addressPlaceholder')}
                         />
                     </div>
 
@@ -318,7 +318,7 @@ const ManagerDashboard = ({ onNavigate }) => {
                             onClick={() => setShowOrgSettings(false)}
                         />
                         <Button
-                            label={saving ? (t('saving') || 'Saving...') : (t('saveChanges') || 'Save Changes')}
+                            label={saving ? t('saving') : t('saveChanges')}
                             icon={saving ? 'pi pi-spin pi-spinner' : 'pi pi-check'}
                             className="px-6 h-11 font-bold rounded-xl bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white shadow-lg shadow-[#b000ff]/20"
                             onClick={handleSaveOrg}

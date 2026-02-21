@@ -44,7 +44,7 @@ const AdminPage = () => {
         // Logged-in customer trying to access /admin
         console.warn('Unauthorized access to /admin - Redirecting to /');
         setTimeout(() => navigate('/'), 100);
-        return <div style={{ color: 'white', padding: '20px' }}>Redirecting to home... (Role: {currentUser.role})</div>;
+        return <div style={{ color: 'white', padding: '20px' }}>{t('redirectingToHome')} (Role: {currentUser.role})</div>;
     }
 
     // Role-based Layout Switch
@@ -56,8 +56,8 @@ const AdminPage = () => {
     const navItems = [
         { id: 'dashboard', label: t('dashboard'), icon: '📊' },
         ...(currentUser.role === 'sysadmin' ? [
-            { id: 'organizations', label: t('organizations'), icon: '🏛️' },
-            { id: 'plans', label: t('plans'), icon: '📑' }
+            { id: 'organizations', label: t('orgsLabel'), icon: '🏛️' },
+            { id: 'plans', label: t('plansLabel'), icon: '📑' }
         ] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? t('venuesAndRooms') : t('branchesAndRooms'), icon: '🏢' },
         { id: 'bookings', label: t('bookings'), icon: '📅' },
@@ -200,7 +200,7 @@ const AdminPage = () => {
                         <div className="flex flex-wrap items-center gap-4 bg-black/20 p-2 rounded-xl border border-white/5">
                             {currentUser.role === 'sysadmin' && (
                                 <div className="flex items-center gap-2">
-                                    <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Org:</span>
+                                    <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">{t('orgsLabel')}:</span>
                                     <Dropdown
                                         value={selectedOrgId}
                                         options={organizations.map(org => ({ label: org.name, value: org.id }))}
@@ -208,7 +208,7 @@ const AdminPage = () => {
                                             setSelectedOrgId(e.value);
                                             setActiveVenueId(null);
                                         }}
-                                        placeholder="All Organizations"
+                                        placeholder={t('allOrganizations')}
                                         className="w-48 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
                                         filter
                                         showClear
@@ -216,7 +216,7 @@ const AdminPage = () => {
                                 </div>
                             )}
                             <div className="flex items-center gap-2">
-                                <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">Switch venue:</span>
+                                <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">{t('venue')}:</span>
                                 <Dropdown
                                     value={activeVenueId}
                                     options={currentUser.role === 'sysadmin'
@@ -224,7 +224,7 @@ const AdminPage = () => {
                                         : venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
                                     }
                                     onChange={(e) => setActiveVenueId(e.value)}
-                                    placeholder="Select Branch Context"
+                                    placeholder={t('selectBranchContext')}
                                     className="w-64 h-10 bg-black/40 border-white/10 rounded-lg text-sm"
                                     filter
                                     showClear={currentUser.role === 'sysadmin'}
@@ -252,10 +252,10 @@ const AdminPage = () => {
             {/* Bottom Navigation (Mobile Only) */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#1a1a24]/90 backdrop-blur-xl border-t border-white/5 px-2 py-3 flex justify-around items-center z-50">
                 {[
-                    { id: 'dashboard', label: 'Dash', icon: '📊' },
-                    { id: 'venues', label: 'Venues', icon: '🏢' },
-                    { id: 'staffs', label: 'Staff', icon: '👥' },
-                    { id: 'settings', label: 'Settings', icon: '⚙️' }
+                    { id: 'dashboard', label: t('dashboard'), icon: '📊' },
+                    { id: 'venues', label: t('venues'), icon: '🏢' },
+                    { id: 'staffs', label: t('staff'), icon: '👥' },
+                    { id: 'settings', label: t('settings'), icon: '⚙️' }
                 ].map(item => (
                     <button
                         key={item.id}

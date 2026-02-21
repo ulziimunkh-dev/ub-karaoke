@@ -30,7 +30,7 @@ const SubscriptionManagement = () => {
             setPlans(plansData);
         } catch (error) {
             console.error(error);
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to load subscription data' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('failedToLoadSubscription') });
         } finally {
             setLoading(false);
         }
@@ -48,11 +48,11 @@ const SubscriptionManagement = () => {
     };
 
     const getStatusLabel = () => {
-        if (!org?.planId) return 'NO ACTIVE PLAN';
+        if (!org?.planId) return t('noActivePlan');
         const severity = getStatusSeverity();
-        if (severity === 'danger') return 'EXPIRED';
-        if (severity === 'warning') return 'EXPIRING SOON';
-        return 'ACTIVE';
+        if (severity === 'danger') return t('expired');
+        if (severity === 'warning') return t('expiringSoon');
+        return t('active');
     };
 
     const processPayment = async () => {
@@ -64,11 +64,11 @@ const SubscriptionManagement = () => {
                     planId: paymentModal.plan.id,
                     durationMonths: paymentModal.duration
                 });
-                toast.current.show({ severity: 'success', summary: 'Success', detail: 'Subscription updated successfully!' });
+                toast.current.show({ severity: 'success', summary: t('success'), detail: t('subscriptionUpdatedSuccess') });
                 setPaymentModal(null);
                 loadData();
             } catch (error) {
-                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Payment failed. Please try again.' });
+                toast.current.show({ severity: 'error', summary: t('error'), detail: t('paymentFailed') });
             } finally {
                 setIsProcessing(false);
             }
@@ -82,8 +82,8 @@ const SubscriptionManagement = () => {
             <Toast ref={toast} />
 
             <div className="mb-8">
-                <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">Plan & Subscription</h2>
-                <p className="text-gray-500 text-sm mt-1 font-medium">Manage your organization's business tier and billing</p>
+                <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">{t('planSubscription')}</h2>
+                <p className="text-gray-500 text-sm mt-1 font-medium">{t('manageSubDesc')}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -93,11 +93,11 @@ const SubscriptionManagement = () => {
                         <Tag value={getStatusLabel()} severity={getStatusSeverity()} className="animate-pulse" />
                     </div>
 
-                    <h3 className="m-0 text-gray-500 uppercase text-[10px] font-black tracking-widest mb-4">Current Subscription</h3>
+                    <h3 className="m-0 text-gray-500 uppercase text-[10px] font-black tracking-widest mb-4">{t('currentSubscription')}</h3>
                     <div className="flex flex-col gap-2 mb-6">
-                        <h1 className="m-0 text-3xl font-black text-white tracking-tighter">{org?.plan?.name || 'Standard/Free'}</h1>
+                        <h1 className="m-0 text-3xl font-black text-white tracking-tighter">{org?.plan?.name || t('standardFree')}</h1>
                         <p className="m-0 text-[#eb79b2] font-black text-lg">
-                            {org?.plan?.monthlyFee > 0 ? `${Number(org.plan.monthlyFee).toLocaleString()}₮ / month` : 'Custom Pricing'}
+                            {org?.plan?.monthlyFee > 0 ? `${Number(org.plan.monthlyFee).toLocaleString()}₮ / ${t('monthLabel').toLowerCase()}` : t('customPricing')}
                         </p>
                     </div>
 
@@ -105,23 +105,23 @@ const SubscriptionManagement = () => {
 
                     <div className="flex flex-col gap-4">
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Valid Until</span>
-                            <span className="text-white font-bold">{org?.planEndsAt ? new Date(org.planEndsAt).toLocaleDateString() : 'N/A'}</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">{t('validUntil')}</span>
+                            <span className="text-white font-bold">{org?.planEndsAt ? new Date(org.planEndsAt).toLocaleDateString() : t('na')}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Plan ID</span>
-                            <span className="text-gray-400 font-mono text-xs">{org?.plan?.code || 'N/A'}</span>
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">{t('planId')}</span>
+                            <span className="text-gray-400 font-mono text-xs">{org?.plan?.code || t('na')}</span>
                         </div>
                     </div>
                 </Card>
 
                 {/* Quota/Limit Card */}
                 <Card className="lg:col-span-2 bg-[#1a1a24] border border-white/5">
-                    <h3 className="m-0 text-gray-500 uppercase text-[10px] font-black tracking-widest mb-6">Plan Quotas & Features</h3>
+                    <h3 className="m-0 text-gray-500 uppercase text-[10px] font-black tracking-widest mb-6">{t('planQuotas')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-bold text-white">Branch Capacity</span>
+                                <span className="text-sm font-bold text-white">{t('branchCapacity')}</span>
                                 <span className="text-xs text-gray-500 font-black">{org?.venues?.length || 0} / {org?.plan?.maxBranches || '∞'}</span>
                             </div>
                             <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
@@ -130,20 +130,20 @@ const SubscriptionManagement = () => {
                                     style={{ width: `${org?.plan?.maxBranches ? (org.venues?.length / org.plan.maxBranches) * 100 : 100}%` }}
                                 ></div>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-2 italic">* Total venues active in the system</p>
+                            <p className="text-[10px] text-gray-500 mt-2 italic">{t('totalVenuesNote')}</p>
                         </div>
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-3">
                                 <i className="pi pi-check-circle text-[#eb79b2]"></i>
-                                <span className="text-sm text-gray-300">Commission Rate: <span className="text-white font-bold">{org?.plan?.commissionRate}%</span></span>
+                                <span className="text-sm text-gray-300">{t('commissionRateLabel')}: <span className="text-white font-bold">{org?.plan?.commissionRate}%</span></span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <i className="pi pi-check-circle text-[#eb79b2]"></i>
-                                <span className="text-sm text-gray-300">Online Bookings: <span className={`font-bold ${org?.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>{org?.status === 'active' ? 'ENABLED' : 'DISABLED'}</span></span>
+                                <span className="text-sm text-gray-300">{t('onlineBookings')}: <span className={`font-bold ${org?.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>{org?.status === 'active' ? t('enabled') : t('disabled')}</span></span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <i className="pi pi-check-circle text-[#eb79b2]"></i>
-                                <span className="text-sm text-gray-300">Priority Support: <span className="text-white font-bold">{org?.plan?.code === 'FRANCHISE' ? 'YES' : 'NO'}</span></span>
+                                <span className="text-sm text-gray-300">{t('prioritySupport')}: <span className="text-white font-bold">{org?.plan?.code === 'FRANCHISE' ? t('yesLabel') : t('noLabel')}</span></span>
                             </div>
                         </div>
                     </div>
@@ -152,8 +152,8 @@ const SubscriptionManagement = () => {
 
             {/* Select Extension/Upgrade */}
             <div className="mb-6">
-                <h3 className="m-0 text-white font-black text-xl tracking-tight uppercase">Extend or Upgrade Plan</h3>
-                <p className="text-gray-500 text-sm font-medium">Choose a plan duration or switch to a higher tier for more features</p>
+                <h3 className="m-0 text-white font-black text-xl tracking-tight uppercase">{t('extendOrUpgrade')}</h3>
+                <p className="text-gray-500 text-sm font-medium">{t('choosePlanDesc')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -170,32 +170,32 @@ const SubscriptionManagement = () => {
 
                             <h3 className="m-0 text-xl font-bold text-white mb-2">{p.name}</h3>
                             <p className="m-0 text-2xl font-black text-white mb-6">
-                                {p.monthlyFee.toLocaleString()}₮ <span className="text-xs text-gray-500 font-medium">/ month</span>
+                                {p.monthlyFee.toLocaleString()}₮ <span className="text-xs text-gray-500 font-medium">/ {t('monthLabel').toLowerCase()}</span>
                             </p>
 
                             <ul className="list-none p-0 m-0 mb-8 flex flex-col gap-3">
                                 <li className="flex items-center gap-2 text-xs text-gray-400">
                                     <i className="pi pi-check text-[8px] text-[#eb79b2] font-black"></i>
-                                    Up to {p.maxBranches || 'Unlimited'} Branches
+                                    {t('unlimitedBranches', { count: p.maxBranches || t('unlimitedLabel') })}
                                 </li>
                                 <li className="flex items-center gap-2 text-xs text-gray-400">
                                     <i className="pi pi-check text-[8px] text-[#eb79b2] font-black"></i>
-                                    {p.commissionRate}% Commission Rate
+                                    {t('commissionRateDetail', { rate: p.commissionRate })}
                                 </li>
                                 <li className="flex items-center gap-2 text-xs text-gray-400">
                                     <i className="pi pi-check text-[8px] text-[#eb79b2] font-black"></i>
-                                    All core management features
+                                    {t('coreFeaturesInclude')}
                                 </li>
                             </ul>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <Button
-                                    label="1 Month"
+                                    label={t('oneMonth')}
                                     className="p-button-sm p-button-outlined border-white/10 text-white font-bold hover:bg-[#eb79b2] hover:border-[#eb79b2]"
                                     onClick={() => setPaymentModal({ plan: p, duration: 1 })}
                                 />
                                 <Button
-                                    label="6 Months"
+                                    label={t('sixMonths')}
                                     className="p-button-sm p-button-outlined border-white/10 text-white font-bold hover:bg-[#eb79b2] hover:border-[#eb79b2]"
                                     onClick={() => setPaymentModal({ plan: p, duration: 6 })}
                                 />
@@ -207,7 +207,7 @@ const SubscriptionManagement = () => {
 
             {/* Payment Modal */}
             <Dialog
-                header="Secure Subscription Payment"
+                header={t('securePayment')}
                 visible={!!paymentModal}
                 onHide={() => !isProcessing && setPaymentModal(null)}
                 style={{ width: '400px' }}
@@ -224,24 +224,24 @@ const SubscriptionManagement = () => {
                                 </div>
                             </div>
                             <div className="text-center">
-                                <h3 className="m-0 text-white font-bold text-xl mb-2">Processing Payment...</h3>
-                                <p className="m-0 text-gray-500 text-sm">Communicating with banking gateway</p>
+                                <h3 className="m-0 text-white font-bold text-xl mb-2">{t('processingPayment')}</h3>
+                                <p className="m-0 text-gray-500 text-sm">{t('commGateway')}</p>
                             </div>
                         </div>
                     ) : (
                         <>
                             <div className="bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Plan Selection</span>
+                                    <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">{t('planSelection')}</span>
                                     <span className="text-white font-bold">{paymentModal?.plan?.name}</span>
                                 </div>
                                 <div className="flex justify-between items-center mb-4">
-                                    <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">Duration</span>
-                                    <span className="text-white font-bold">{paymentModal?.duration} Months</span>
+                                    <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">{t('duration')}</span>
+                                    <span className="text-white font-bold">{paymentModal?.duration} {paymentModal?.duration === 1 ? t('monthLabel') : t('monthLabel') + 's'}</span>
                                 </div>
                                 <Divider className="my-3 opacity-10" />
                                 <div className="flex justify-between items-center">
-                                    <span className="text-white font-bold">Total Amount</span>
+                                    <span className="text-white font-bold">{t('totalAmount')}</span>
                                     <span className="text-2xl font-black text-[#eb79b2]">
                                         {(paymentModal?.plan?.monthlyFee * paymentModal?.duration || 0).toLocaleString()}₮
                                     </span>
@@ -249,11 +249,11 @@ const SubscriptionManagement = () => {
                             </div>
 
                             <p className="text-[10px] text-gray-500 text-center mb-6 leading-relaxed uppercase tracking-widest font-bold">
-                                BY CLICKING CONFIRM, YOU AUTHORIZE THE MOCK PAYMENT SYSTEM TO EXTEND YOUR SUBSCRIPTION FOR {paymentModal?.duration} MONTHS.
+                                {t('paymentDisclaimer', { duration: paymentModal?.duration })}
                             </p>
 
                             <Button
-                                label="Proceed to Payment"
+                                label={t('proceedToPayment')}
                                 icon="pi pi-shield"
                                 className="w-full h-14 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold rounded-xl shadow-[0_10px_20px_rgba(176,0,255,0.3)] hover:shadow-[0_15px_30px_rgba(176,0,255,0.4)] transition-all"
                                 onClick={processPayment}

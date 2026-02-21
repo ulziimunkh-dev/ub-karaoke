@@ -67,12 +67,12 @@ const RoomConfiguration = () => {
             {/* ROOM TYPES */}
             <div className="bg-white/5 p-4 rounded-xl">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-white m-0">Room Types</h3>
+                    <h3 className="text-xl font-bold text-white m-0">{t('roomTypes')}</h3>
                     <Button icon="pi pi-plus" rounded size="small" onClick={() => openTypeModal()} />
                 </div>
                 <DataTable value={roomTypes} className="text-sm">
-                    <Column field="name" header="Name" />
-                    <Column field="description" header="Description" />
+                    <Column field="name" header={t('name')} />
+                    <Column field="description" header={t('description')} />
                     <Column body={(rowData) => (
                         <div className="flex gap-2 justify-end">
                             <Button icon="pi pi-pencil" text rounded size="small" onClick={() => openTypeModal(rowData)} />
@@ -85,12 +85,12 @@ const RoomConfiguration = () => {
             {/* ROOM FEATURES */}
             <div className="bg-white/5 p-4 rounded-xl">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-white m-0">Features / Amenities</h3>
+                    <h3 className="text-xl font-bold text-white m-0">{t('featuresAmenities')}</h3>
                     <Button icon="pi pi-plus" rounded size="small" onClick={() => openFeatureModal()} />
                 </div>
                 <DataTable value={roomFeatures} className="text-sm">
-                    <Column body={(rowData) => <span className="text-2xl">{rowData.icon}</span>} header="Icon" style={{ width: '3rem' }} />
-                    <Column field="name" header="Name" />
+                    <Column body={(rowData) => <span className="text-2xl">{rowData.icon}</span>} header={t('icon')} style={{ width: '3rem' }} />
+                    <Column field="name" header={t('name')} />
                     <Column body={(rowData) => (
                         <div className="flex gap-2 justify-end">
                             <Button icon="pi pi-pencil" text rounded size="small" onClick={() => openFeatureModal(rowData)} />
@@ -101,32 +101,32 @@ const RoomConfiguration = () => {
             </div>
 
             {/* TYPE DIALOG */}
-            <Dialog header={editingType ? 'Edit Type' : 'Add Type'} visible={isTypeModalOpen} onHide={() => setIsTypeModalOpen(false)} className="w-[400px]">
+            <Dialog header={editingType ? t('editType') : t('addType')} visible={isTypeModalOpen} onHide={() => setIsTypeModalOpen(false)} className="w-[400px]">
                 <form onSubmit={handleSaveType} className="flex flex-col gap-4 mt-2">
                     <div>
-                        <label className="block text-sm font-bold mb-1">Name</label>
+                        <label className="block text-sm font-bold mb-1">{t('name')}</label>
                         <InputText value={typeForm.name} onChange={(e) => setTypeForm({ ...typeForm, name: e.target.value })} required className="w-full" placeholder="e.g. VIP Suite" />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold mb-1">Description</label>
+                        <label className="block text-sm font-bold mb-1">{t('description')}</label>
                         <InputText value={typeForm.description} onChange={(e) => setTypeForm({ ...typeForm, description: e.target.value })} className="w-full" placeholder="Short description..." />
                     </div>
-                    <Button label="Save" type="submit" />
+                    <Button label={t('save')} type="submit" />
                 </form>
             </Dialog>
 
             {/* FEATURE DIALOG */}
-            <Dialog header={editingFeature ? 'Edit Feature' : 'Add Feature'} visible={isFeatureModalOpen} onHide={() => setIsFeatureModalOpen(false)} className="w-[400px]">
+            <Dialog header={editingFeature ? t('editFeature') : t('addFeature')} visible={isFeatureModalOpen} onHide={() => setIsFeatureModalOpen(false)} className="w-[400px]">
                 <form onSubmit={handleSaveFeature} className="flex flex-col gap-4 mt-2">
                     <div>
-                        <label className="block text-sm font-bold mb-1">Name</label>
+                        <label className="block text-sm font-bold mb-1">{t('name')}</label>
                         <InputText value={featureForm.name} onChange={(e) => setFeatureForm({ ...featureForm, name: e.target.value })} required className="w-full" placeholder="e.g. Pool Table" />
                     </div>
                     <div>
-                        <label className="block text-sm font-bold mb-1">Icon (Emoji)</label>
+                        <label className="block text-sm font-bold mb-1">{t('iconLabel')}</label>
                         <InputText value={featureForm.icon} onChange={(e) => setFeatureForm({ ...featureForm, icon: e.target.value })} className="w-full" placeholder="🎱" />
                     </div>
-                    <Button label="Save" type="submit" />
+                    <Button label={t('save')} type="submit" />
                 </form>
             </Dialog>
 

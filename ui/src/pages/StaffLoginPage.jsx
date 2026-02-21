@@ -41,7 +41,7 @@ const StaffLoginPage = () => {
         if (mode === 'setup') {
             if (orgCode) {
                 localStorage.setItem('device_org_code', orgCode.toUpperCase());
-                setMessage('Device configured successfully');
+                setMessage(t('deviceConfigSuccess'));
                 setTimeout(() => {
                     setMode('login');
                     setMessage('');
@@ -59,13 +59,13 @@ const StaffLoginPage = () => {
                 if (user.role === 'sysadmin' || user.role === 'manager' || user.role === 'staff') {
                     navigate('/dashboard');
                 } else {
-                    setError('Access Denied: Only staff and managers can access this portal.');
+                    setError(t('accessDeniedStaff'));
                 }
             } else {
-                setError('Invalid credentials.');
+                setError(t('invalidCredentials'));
             }
         } catch (err) {
-            setError('Invalid credentials or network error.');
+            setError(t('invalidCredentials'));
         } finally {
             setIsLoading(false);
         }
@@ -84,7 +84,7 @@ const StaffLoginPage = () => {
                         <button
                             onClick={() => setMode(mode === 'login' ? 'setup' : 'login')}
                             className="absolute right-0 top-0 text-white/20 hover:text-white transition-colors"
-                            title={mode === 'login' ? "Device Setup" : "Back to Login"}
+                            title={mode === 'login' ? t('deviceConfig') : t('back')}
                         >
                             {mode === 'login' ? '⚙️' : '✕'}
                         </button>
@@ -94,10 +94,10 @@ const StaffLoginPage = () => {
                             <span className="text-3xl font-black tracking-tighter logo-text-animated">KARAOKE</span>
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">
-                            {mode === 'login' ? 'Management Portal' : 'Device Configuration'}
+                            {mode === 'login' ? t('staffPortalTitle') : t('deviceConfig')}
                         </h3>
                         <p className="text-gray-400 text-sm">
-                            {mode === 'login' ? 'Welcome back, please sign in.' : 'Configure this device for your organization.'}
+                            {mode === 'login' ? t('staffLoginWelcome') : t('orgSetupHelp')}
                         </p>
                     </div>
 
@@ -123,16 +123,16 @@ const StaffLoginPage = () => {
                                     <div className="w-16 h-2 bg-white/20 rounded-full"></div>
                                 </div>
                                 <div className="text-center mb-8">
-                                    <h3 className="text-xl font-bold text-white mb-2">Device Configuration</h3>
-                                    <p className="text-gray-400 text-sm">Configure this device for your organization.</p>
+                                    <h3 className="text-xl font-bold text-white mb-2">{t('deviceConfig')}</h3>
+                                    <p className="text-gray-400 text-sm">{t('orgSetupHelp')}</p>
                                 </div>
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-200 text-sm">
-                                        <p className="font-bold mb-1 text-xs">ℹ️ One-Time Setup</p>
-                                        Enter your Organization Code here. Access to this device will be restricted to this organization.
+                                        <p className="font-bold mb-1 text-xs">ℹ️ {t('oneTimeSetup')}</p>
+                                        {t('orgCodeSetupDesc')}
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Organization Code</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('orgCodeLabel')}</label>
                                         <input
                                             type="text"
                                             value={orgCode}
@@ -149,17 +149,17 @@ const StaffLoginPage = () => {
                                             onClick={() => {
                                                 localStorage.removeItem('device_org_code');
                                                 setOrgCode('');
-                                                setMessage('Configuration cleared');
+                                                setMessage(t('configCleared'));
                                             }}
                                             className="flex-1 h-12 rounded-xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
                                         >
-                                            Clear
+                                            {t('delete')}
                                         </button>
                                         <button
                                             type="submit"
                                             className="flex-1 h-12 bg-[#b000ff] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] transition-all flex items-center justify-center gap-2"
                                         >
-                                            Save
+                                            {t('save')}
                                         </button>
                                     </div>
                                 </form>
@@ -172,11 +172,11 @@ const StaffLoginPage = () => {
                             // SETUP FORM - DESKTOP ONLY (hidden on mobile via the block above taking precedence)
                             <div className="space-y-6 hidden lg:block">
                                 <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-200 text-sm">
-                                    <p className="font-bold mb-1">ℹ️ One-Time Setup</p>
-                                    Enter your Organization Code here. Access to this device will be restricted to this organization.
+                                    <p className="font-bold mb-1">ℹ️ {t('oneTimeSetup')}</p>
+                                    {t('orgCodeSetupDesc')}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Organization Code</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('orgCodeLabel')}</label>
                                     <input
                                         type="text"
                                         value={orgCode}
@@ -192,17 +192,17 @@ const StaffLoginPage = () => {
                                         onClick={() => {
                                             localStorage.removeItem('device_org_code');
                                             setOrgCode('');
-                                            setMessage('Configuration cleared');
+                                            setMessage(t('configCleared'));
                                         }}
                                         className="flex-1 h-12 rounded-xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-all"
                                     >
-                                        Clear
+                                        {t('delete')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 h-12 bg-[#b000ff] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] transition-all"
                                     >
-                                        Save
+                                        {t('save')}
                                     </button>
                                 </div>
                             </div>
@@ -212,36 +212,36 @@ const StaffLoginPage = () => {
                                 {localStorage.getItem('device_org_code') ? (
                                     <div className="text-center">
                                         <span className="inline-block px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-mono mb-4">
-                                            🔒 Configured for: {localStorage.getItem('device_org_code')}
+                                            🔒 {t('configuredFor')} {localStorage.getItem('device_org_code')}
                                         </span>
                                     </div>
                                 ) : (
                                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-center mb-4">
-                                        <p className="text-yellow-200 text-sm mb-2">⚠️ Device Not Configured</p>
+                                        <p className="text-yellow-200 text-sm mb-2">⚠️ {t('deviceNotConfigured')}</p>
                                         <button
                                             type="button"
                                             onClick={() => setMode('setup')}
                                             className="text-xs font-bold uppercase tracking-wide text-yellow-400 hover:text-white transition-colors underline"
                                         >
-                                            Click here to setup Organization
+                                            {t('clickToSetupOrg')}
                                         </button>
                                     </div>
                                 )}
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Username</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('username')}</label>
                                     <input
                                         type="text"
                                         value={identifier}
                                         onChange={(e) => setIdentifier(e.target.value)}
-                                        placeholder="Username"
+                                        placeholder={t('username')}
                                         className="w-full h-12 px-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Password/Pin</label>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('passwordPin')}</label>
                                     <input
                                         type="password"
                                         value={password}
@@ -257,7 +257,7 @@ const StaffLoginPage = () => {
                                     disabled={isLoading}
                                     className={`w-full h-12 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-xl shadow-[0_0_25px_rgba(176,0,255,0.4)] hover:shadow-[0_0_35px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    {isLoading ? 'Processing...' : 'Secure Login'}
+                                    {isLoading ? t('processing') : t('secureLogin')}
                                 </button>
                             </>
                         )}
@@ -265,10 +265,11 @@ const StaffLoginPage = () => {
 
                     <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
                         <button onClick={toggleLanguage} className="hover:text-white transition-colors uppercase font-bold">
-                            LANGUAGE: {language === 'en' ? 'ENGLISH' : 'MN'}
+                            {t('language')}: {language === 'en' ? 'ENGLISH' : 'MN'}
                         </button>
-                        <a href="/" className="hover:text-white transition-colors uppercase font-bold">Public Website</a>
+                        <a href="/" className="hover:text-white transition-colors uppercase font-bold">{t('publicSite')}</a>
                     </div>
+
                 </div>
             </div>
             <style>{`

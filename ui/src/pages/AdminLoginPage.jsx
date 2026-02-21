@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useData } from '../contexts/DataContext';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AdminLoginPage = () => {
     const navigate = useNavigate();
+    const { t } = useLanguage();
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -30,13 +32,13 @@ const AdminLoginPage = () => {
                 if (user.role === 'sysadmin' || user.role === 'admin') {
                     navigate('/dashboard');
                 } else {
-                    setError('Access Denied. System Administrators only.');
+                    setError(t('accessDeniedSysadminOnly'));
                 }
             } else {
-                setError('Invalid credentials');
+                setError(t('invalidCredentials'));
             }
         } catch (err) {
-            setError(err.message || 'Login failed');
+            setError(err.message || t('loginFailed'));
         } finally {
             setIsLoading(false);
         }
@@ -54,10 +56,10 @@ const AdminLoginPage = () => {
                 <div className="bg-[#0f0f12] border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
                     <div className="text-center mb-8">
                         <div className="flex justify-center items-center gap-2 mb-2">
-                            <span className="text-3xl font-black tracking-tighter text-white">SYSTEM</span>
-                            <span className="text-3xl font-black tracking-tighter text-[#b000ff]">ADMIN</span>
+                            <span className="text-3xl font-black tracking-tighter text-white uppercase">{t('systemAdminTitle').split(' ')[0]}</span>
+                            <span className="text-3xl font-black tracking-tighter text-[#b000ff] uppercase">{t('systemAdminTitle').split(' ')[1]}</span>
                         </div>
-                        <p className="text-gray-500 text-sm">UB Karaoke Platform Control</p>
+                        <p className="text-gray-500 text-sm">{t('platformControl')}</p>
                     </div>
 
                     {error && (
@@ -68,19 +70,19 @@ const AdminLoginPage = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Username</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('username')}</label>
                             <input
                                 type="text"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
-                                placeholder="Username"
+                                placeholder={t('username')}
                                 className="w-full h-12 px-4 bg-black/20 border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Password</label>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">{t('password')}</label>
                             <input
                                 type="password"
                                 value={password}
@@ -96,12 +98,12 @@ const AdminLoginPage = () => {
                             disabled={isLoading}
                             className={`w-full h-12 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            {isLoading ? 'Logging in...' : 'Login'}
+                            {isLoading ? t('loggingIn') : t('login')}
                         </button>
                     </form>
 
                     <div className="mt-8 text-center">
-                        <a href="/" className="text-gray-600 text-xs hover:text-[#b000ff] transition-colors">Return to PUBLIC WEBSITE</a>
+                        <a href="/" className="text-gray-600 text-xs hover:text-[#b000ff] transition-colors">{t('returnToPublic')}</a>
                     </div>
                 </div>
             </div>

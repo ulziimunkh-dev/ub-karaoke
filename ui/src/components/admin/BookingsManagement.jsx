@@ -75,27 +75,27 @@ const BookingsManagement = () => {
     const handleApprove = async (booking) => {
         try {
             await approveBooking(booking.id);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Booking approved successfully' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('bookingApproved') });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to approve booking' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: error.message || t('approveFailed') });
         }
     };
 
     const handleReject = async (booking) => {
         try {
             await rejectBooking(booking.id);
-            toast.current.show({ severity: 'warn', summary: 'Rejected', detail: 'Booking has been rejected' });
+            toast.current.show({ severity: 'warn', summary: t('rejected'), detail: t('bookingRejected') });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: error.message || 'Failed to reject booking' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: error.message || t('rejectFailed') });
         }
     };
 
     const formatDateTime = (dateStr) => {
         if (!dateStr) return '-';
         const date = new Date(dateStr);
-        return date.toLocaleString('en-US', {
+        return date.toLocaleString(t('locale') === 'mn' ? 'mn-MN' : 'en-US', {
             month: 'short',
             day: 'numeric',
             hour: '2-digit',
@@ -106,7 +106,7 @@ const BookingsManagement = () => {
 
     const customerTemplate = (rowData) => (
         <div>
-            <p className="text-white font-bold m-0 text-sm">{rowData.customerName || 'Unknown'}</p>
+            <p className="text-white font-bold m-0 text-sm">{rowData.customerName || t('unknown')}</p>
             <div className="flex flex-col gap-0.5">
                 {rowData.customerPhone && (
                     <p className="text-gray-400 text-xs m-0 flex items-center gap-1">
@@ -121,7 +121,7 @@ const BookingsManagement = () => {
                     </p>
                 )}
                 {!rowData.customerPhone && !rowData.customerEmail && (
-                    <p className="text-gray-600 text-xs m-0 italic">No contact</p>
+                    <p className="text-gray-600 text-xs m-0 italic">{t('noContact')}</p>
                 )}
             </div>
         </div>
@@ -132,8 +132,8 @@ const BookingsManagement = () => {
         const room = venue?.rooms?.find(r => r.id === rowData.roomId);
         return (
             <div>
-                <p className="text-white font-bold m-0 text-xs">{venue?.name || 'Unknown Venue'}</p>
-                <p className="text-[#b000ff] text-xs m-0">{room?.name || 'Unknown Room'}</p>
+                <p className="text-white font-bold m-0 text-xs">{venue?.name || t('unknownVenue')}</p>
+                <p className="text-[#b000ff] text-xs m-0">{room?.name || t('unknownRoom')}</p>
             </div>
         );
     };
@@ -146,7 +146,7 @@ const BookingsManagement = () => {
     );
 
     const statusTemplate = (rowData) => (
-        <Tag value={rowData.status} severity={getStatusSeverity(rowData.status)} />
+        <Tag value={t(rowData.status?.toLowerCase())} severity={getStatusSeverity(rowData.status)} />
     );
 
     const priceTemplate = (rowData) => (
@@ -165,13 +165,13 @@ const BookingsManagement = () => {
                         <Button
                             icon="pi pi-check"
                             className="p-button-success p-button-sm p-button-rounded"
-                            tooltip="Approve"
+                            tooltip={t('approve')}
                             onClick={() => handleApprove(rowData)}
                         />
                         <Button
                             icon="pi pi-times"
                             className="p-button-danger p-button-sm p-button-rounded"
-                            tooltip="Reject"
+                            tooltip={t('reject')}
                             onClick={() => handleReject(rowData)}
                         />
                     </>
@@ -179,7 +179,7 @@ const BookingsManagement = () => {
                 <Button
                     icon="pi pi-eye"
                     className="p-button-info p-button-sm p-button-rounded p-button-text"
-                    tooltip="View Details"
+                    tooltip={t('viewDetails')}
                     onClick={() => {
                         setSelectedBooking(rowData);
                         setShowDetailsModal(true);
@@ -194,17 +194,17 @@ const BookingsManagement = () => {
             <div className="flex gap-3 items-center">
                 <Dropdown
                     value={selectedVenue}
-                    options={[{ name: 'All Venues', id: null }, ...orgVenues]}
+                    options={[{ name: t('allVenues'), id: null }, ...orgVenues]}
                     onChange={(e) => setSelectedVenue(e.value?.id ? e.value : null)}
                     optionLabel="name"
-                    placeholder="Filter by Venue"
+                    placeholder={t('filterByVenue')}
                     className="w-48"
                 />
                 <Dropdown
                     value={statusFilter}
                     options={statusOptions}
                     onChange={(e) => setStatusFilter(e.value)}
-                    placeholder="Filter by Status"
+                    placeholder={t('filterByStatus')}
                     className="w-40"
                 />
             </div>
@@ -241,7 +241,7 @@ const BookingsManagement = () => {
                         outlined
                         onClick={() => refreshData?.()}
                         className="h-10 w-10"
-                        tooltip="Refresh"
+                        tooltip={t('refresh')}
                         tooltipOptions={{ position: 'bottom' }}
                     />
                 </div>
@@ -272,7 +272,7 @@ const BookingsManagement = () => {
 
             {/* Booking Details Modal */}
             <Dialog
-                header="Booking Details"
+                header={t('bookingDetails')}
                 visible={showDetailsModal}
                 onHide={() => setShowDetailsModal(false)}
                 className="w-full max-w-lg"
@@ -283,10 +283,10 @@ const BookingsManagement = () => {
                         {/* Customer Contact Section */}
                         <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                             <p className="text-xs text-gray-500 uppercase font-bold mb-3 flex items-center gap-2">
-                                <i className="pi pi-user" /> Customer Contact
+                                <i className="pi pi-user" /> {t('customerContact')}
                             </p>
                             <div className="space-y-2">
-                                <p className="text-white font-bold text-lg m-0">{selectedBooking.customerName || 'Unknown'}</p>
+                                <p className="text-white font-bold text-lg m-0">{selectedBooking.customerName || t('unknown')}</p>
                                 {selectedBooking.customerPhone && (
                                     <p className="text-gray-300 text-sm m-0 flex items-center gap-2">
                                         <i className="pi pi-phone text-green-400" />
@@ -304,7 +304,7 @@ const BookingsManagement = () => {
                                     </p>
                                 )}
                                 {!selectedBooking.customerPhone && !selectedBooking.customerEmail && (
-                                    <p className="text-gray-500 text-sm italic m-0">No contact information available</p>
+                                    <p className="text-gray-500 text-sm italic m-0">{t('noContactInfo')}</p>
                                 )}
                             </div>
                         </div>
@@ -312,30 +312,30 @@ const BookingsManagement = () => {
                         {/* Booking Details Grid */}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Start Time</p>
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('startTime')}</p>
                                 <p className="text-white">{formatDateTime(selectedBooking.startTime)}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">End Time</p>
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('endTime')}</p>
                                 <p className="text-white">{formatDateTime(selectedBooking.endTime)}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Status</p>
-                                <Tag value={selectedBooking.status} severity={getStatusSeverity(selectedBooking.status)} />
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('status')}</p>
+                                <Tag value={t(selectedBooking.status?.toLowerCase())} severity={getStatusSeverity(selectedBooking.status)} />
                             </div>
                             <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">Total Price</p>
+                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('totalPrice')}</p>
                                 <p className="text-green-400 font-bold text-xl">{Number(selectedBooking.totalPrice || 0).toLocaleString()}₮</p>
                             </div>
                             {selectedBooking.source && (
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">Source</p>
+                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('source')}</p>
                                     <Tag value={selectedBooking.source} severity="info" />
                                 </div>
                             )}
                             {selectedBooking.notes && (
                                 <div className="col-span-2">
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">Notes</p>
+                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('notes')}</p>
                                     <p className="text-gray-300 text-sm">{selectedBooking.notes}</p>
                                 </div>
                             )}
@@ -344,7 +344,7 @@ const BookingsManagement = () => {
                         {(selectedBooking.status?.toUpperCase() === 'PENDING' || selectedBooking.status?.toUpperCase() === 'RESERVED') && (
                             <div className="flex gap-3 pt-4 border-t border-white/10">
                                 <Button
-                                    label="Approve"
+                                    label={t('approve')}
                                     icon="pi pi-check"
                                     className="p-button-success flex-1"
                                     onClick={() => {
@@ -353,7 +353,7 @@ const BookingsManagement = () => {
                                     }}
                                 />
                                 <Button
-                                    label="Reject"
+                                    label={t('reject')}
                                     icon="pi pi-times"
                                     className="p-button-danger flex-1"
                                     onClick={() => {

@@ -11,8 +11,10 @@ import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import AvatarGalleryPicker from '../common/AvatarGalleryPicker';
 import { api } from '../../utils/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const StaffManagement = () => {
+    const { t } = useLanguage();
     const { staffs, addStaff, updateStaff, toggleStaffStatus, currentUser, organizations, refreshData } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -27,12 +29,12 @@ const StaffManagement = () => {
         e.preventDefault();
         try {
             await addStaff({ ...newUser, isActive: true });
-            toast.current.show({ severity: 'success', summary: 'Staff Created', detail: 'New staff member added successfully', life: 3000 });
+            toast.current.show({ severity: 'success', summary: t('staffCreated'), detail: t('staffCreatedDetail'), life: 3000 });
             setNewUser({ username: '', password: '', role: 'staff', name: '', organizationId: '', phone: '', email: '', avatar: '' });
             setIsModalOpen(false);
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to add staff', life: 3000 });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: error.response?.data?.message || t('staffCreateFailed'), life: 3000 });
         }
     };
 
@@ -40,12 +42,12 @@ const StaffManagement = () => {
         e.preventDefault();
         try {
             await updateStaff(editingStaff.id, editingStaff);
-            toast.current.show({ severity: 'success', summary: 'Staff Updated', detail: 'Staff member updated successfully', life: 3000 });
+            toast.current.show({ severity: 'success', summary: t('staffUpdated'), detail: t('staffUpdatedDetail'), life: 3000 });
             setIsEditModalOpen(false);
             setEditingStaff(null);
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: error.response?.data?.message || 'Failed to update staff', life: 3000 });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: error.response?.data?.message || t('staffUpdateFailed'), life: 3000 });
         }
     };
 
@@ -56,29 +58,29 @@ const StaffManagement = () => {
 
     const confirmResetPassword = async () => {
         if (!newPassword) {
-            toast.current.show({ severity: 'warn', summary: 'Warning', detail: 'Please enter a new password', life: 3000 });
+            toast.current.show({ severity: 'warn', summary: t('warning'), detail: t('enterNewPassword'), life: 3000 });
             return;
         }
         try {
             await updateStaff(resetPasswordUser.id, { password: newPassword });
-            toast.current.show({ severity: 'success', summary: 'Password Reset', detail: `Password for ${resetPasswordUser.name} has been reset successfully`, life: 3000 });
+            toast.current.show({ severity: 'success', summary: t('passwordResetSuccess'), detail: t('staffUpdatedDetail'), life: 3000 });
             setResetPasswordUser(null);
             setNewPassword('');
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to reset password', life: 3000 });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('staffUpdateFailed'), life: 3000 });
         }
     };
 
     const statusBodyTemplate = (rowData) => {
-        return <Tag value={rowData.isActive ? 'Active' : 'Inactive'} severity={rowData.isActive ? 'success' : 'danger'} className="px-2 py-1" />;
+        return <Tag value={rowData.isActive ? t('active') : t('inactive')} severity={rowData.isActive ? 'success' : 'danger'} className="px-2 py-1" />;
     };
 
     const roleBodyTemplate = (rowData) => {
         const roleConfig = {
-            manager: { label: 'Branch Manager', color: '#E91E63' },
-            staff: { label: 'Staff Member', color: '#2196F3' },
-            sysadmin: { label: 'System Admin', color: '#673AB7' }
+            manager: { label: t('branchManager'), color: '#E91E63' },
+            staff: { label: t('staffMember'), color: '#2196F3' },
+            sysadmin: { label: t('systemAdmin'), color: '#673AB7' }
         };
         const config = roleConfig[rowData.role] || { label: rowData.role, color: '#9E9E9E' };
 
@@ -92,7 +94,7 @@ const StaffManagement = () => {
 
     const organizationBodyTemplate = (rowData) => {
         const org = rowData.orgInfo || rowData.organization;
-        return org?.name || (rowData.role === 'sysadmin' ? 'Global' : 'N/A');
+        return org?.name || (rowData.role === 'sysadmin' ? t('global') : 'N/A');
     };
 
     const actionBodyTemplate = (rowData) => {
@@ -103,13 +105,13 @@ const StaffManagement = () => {
             <div className="flex gap-3 flex-wrap">
                 {canManage && !isSelf && (
                     <Button
-                        label={rowData.isActive ? 'Deactivate' : 'Activate'}
+                        label={rowData.isActive ? t('deactivate') : t('activate')}
                         onClick={() => {
                             toggleStaffStatus(rowData.id);
                             toast.current.show({
                                 severity: 'success',
-                                summary: 'Status Updated',
-                                detail: `Staff member ${rowData.isActive ? 'deactivated' : 'activated'} successfully`,
+                                summary: t('statusUpdated'),
+                                detail: t('staffStatusDetail', { status: rowData.isActive ? t('deactivated') : t('activated') }),
                                 life: 3000
                             });
                         }}
@@ -121,7 +123,7 @@ const StaffManagement = () => {
                 )}
                 <Button
                     icon="pi pi-pencil"
-                    label="Edit"
+                    label={t('edit')}
                     onClick={() => {
                         setEditingStaff({ ...rowData });
                         setIsEditModalOpen(true);
@@ -133,7 +135,7 @@ const StaffManagement = () => {
                 />
                 <Button
                     icon="pi pi-lock-open"
-                    label="Reset"
+                    label={t('reset')}
                     onClick={() => handleResetPassword(rowData)}
                     outlined
                     size="small"
@@ -165,19 +167,19 @@ const StaffManagement = () => {
             <ConfirmDialog />
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold m-0 select-none">Staff Management</h2>
-                    <p className="text-gray-500 text-sm mt-1">Manage users and roles across your organization</p>
+                    <h2 className="text-2xl font-bold m-0 select-none">{t('staffManagement')}</h2>
+                    <p className="text-gray-500 text-sm mt-1">{t('manageUsersRoles')}</p>
                 </div>
                 <div className="flex gap-3">
                     {currentUser.role === 'sysadmin' && (
                         <Dropdown
                             value={selectedOrganization}
                             options={[
-                                { label: 'All Organizations', value: null },
+                                { label: t('allOrganizations'), value: null },
                                 ...organizations.map(org => ({ label: org.name, value: org.id }))
                             ]}
                             onChange={(e) => setSelectedOrganization(e.value)}
-                            placeholder="Filter by Organization"
+                            placeholder={t('filterByOrganization')}
                             className="w-64 h-10 flex items-center bg-white border border-gray-200 rounded-lg"
                         />
                     )}
@@ -186,11 +188,11 @@ const StaffManagement = () => {
                         outlined
                         onClick={() => refreshData?.()}
                         className="h-10 w-10"
-                        tooltip="Refresh"
+                        tooltip={t('refresh')}
                         tooltipOptions={{ position: 'bottom' }}
                     />
                     <Button
-                        label="Add Staff"
+                        label={t('addStaff')}
                         icon="pi pi-plus"
                         onClick={() => setIsModalOpen(true)}
                         className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 select-none border-0"
@@ -210,7 +212,7 @@ const StaffManagement = () => {
                     selectionMode={null}
                     dataKey="id"
                 >
-                    <Column field="name" header="Name" body={(rowData) => (
+                    <Column field="name" header={t('fullName')} body={(rowData) => (
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center text-white font-bold overflow-hidden border-2 border-white/20">
                                 {rowData.avatar ? (
@@ -222,12 +224,12 @@ const StaffManagement = () => {
                             <span>{rowData.name}</span>
                         </div>
                     )} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column field="username" header="Username" sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column field="email" header="Email" sortable style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column field="role" header="Role" body={roleBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column header="Organization" body={organizationBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column header="Status" body={statusBodyTemplate} style={{ width: '10%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column header="Actions" body={actionBodyTemplate} style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="username" header={t('username')} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="email" header={t('email')} sortable style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="role" header={t('role')} body={roleBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column header={t('organization')} body={organizationBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column header={t('status')} body={statusBodyTemplate} style={{ width: '10%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column header={t('actions')} body={actionBodyTemplate} style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                 </DataTable>
             </div>
 
@@ -242,7 +244,7 @@ const StaffManagement = () => {
                                     <h3 className="text-base font-bold text-gray-900 mb-1">{staff.name}</h3>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-gray-500 font-mono">@{staff.username}</span>
-                                        <Tag value={staff.isActive ? 'Active' : 'Inactive'} severity={staff.isActive ? 'success' : 'danger'} className="text-[10px] px-2 py-1 origin-left" />
+                                        <Tag value={staff.isActive ? t('active') : t('inactive')} severity={staff.isActive ? 'success' : 'danger'} className="text-[10px] px-2 py-1 origin-left" />
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -252,11 +254,11 @@ const StaffManagement = () => {
 
                             <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-4">
                                 <div className="flex justify-between items-center mb-1">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Organization</span>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('organization')}</span>
                                     <span className="text-xs text-gray-700 font-bold">{orgName}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Email</span>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('email')}</span>
                                     <span className="text-xs text-gray-700 font-medium truncate max-w-[150px]">{staff.email}</span>
                                 </div>
                             </div>
@@ -268,7 +270,7 @@ const StaffManagement = () => {
                                         setEditingStaff({ ...staff });
                                         setIsEditModalOpen(true);
                                     }}
-                                    label="Edit"
+                                    label={t('edit')}
                                     outlined
                                     size="small"
                                     severity="info"
@@ -276,7 +278,7 @@ const StaffManagement = () => {
                                 />
                                 <Button
                                     icon="pi pi-lock-open"
-                                    label="Reset"
+                                    label={t('reset')}
                                     onClick={() => handleResetPassword(staff)}
                                     outlined
                                     size="small"
@@ -290,8 +292,8 @@ const StaffManagement = () => {
                                             toggleStaffStatus(staff.id);
                                             toast.current.show({
                                                 severity: 'success',
-                                                summary: 'Status Updated',
-                                                detail: `Staff member ${staff.isActive ? 'deactivated' : 'activated'} successfully`,
+                                                summary: t('statusUpdated'),
+                                                detail: t('staffStatusDetail', { status: staff.isActive ? t('deactivated') : t('activated') }),
                                                 life: 3000
                                             });
                                         }}
@@ -308,13 +310,13 @@ const StaffManagement = () => {
                 {displayStaffs.length === 0 && (
                     <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                         <i className="pi pi-users text-4xl text-gray-300 mb-3"></i>
-                        <p className="text-gray-500 font-medium">No staff found</p>
+                        <p className="text-gray-500 font-medium">{t('noStaffFoundLabel')}</p>
                     </div>
                 )}
             </div>
 
             <Dialog
-                header="Add New Staff Member"
+                header={t('addNewStaffMember')}
                 visible={isModalOpen}
                 modal
                 onHide={() => setIsModalOpen(false)}
@@ -330,51 +332,51 @@ const StaffManagement = () => {
                         />
                     </div>
                     <div className="field grid grid-cols-1">
-                        <label htmlFor="name" className="mb-3 font-semibold text-sm text-gray-700 select-none">Full Name</label>
+                        <label htmlFor="name" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('fullName')}</label>
                         <InputText
                             id="name"
                             value={newUser.name}
                             onChange={e => setNewUser({ ...newUser, name: e.target.value })}
-                            placeholder="Enter full name"
+                            placeholder={t('enterFullName')}
                             className="w-full h-10 p-3 bg-white border-0 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                             required
                         />
                     </div>
                     <div className="field grid grid-cols-1">
-                        <label htmlFor="username" className="mb-3 font-semibold text-sm text-gray-700 select-none">Username</label>
+                        <label htmlFor="username" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('username')}</label>
                         <InputText
                             id="username"
                             value={newUser.username}
                             onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-                            placeholder="Enter username"
+                            placeholder={t('enterUsername')}
                             className="w-full h-10 p-3 bg-white border-0 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                             required
                         />
                     </div>
                     <div className="field grid grid-cols-1">
-                        <label htmlFor="password" className="mb-3 font-semibold text-sm text-gray-700 select-none">Password</label>
+                        <label htmlFor="password" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('password')}</label>
                         <InputText
                             id="password"
                             type="password"
                             value={newUser.password}
                             onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                            placeholder="Enter password"
+                            placeholder={t('enterPassword')}
                             className="w-full h-10 p-3 bg-white border-0 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                             required
                         />
                     </div>
                     <div className="field grid grid-cols-1">
-                        <label htmlFor="role" className="mb-3 font-semibold text-sm text-gray-700 select-none">Role</label>
+                        <label htmlFor="role" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('role')}</label>
                         <Dropdown
                             id="role"
                             value={newUser.role}
                             options={[
-                                { label: 'Staff Member', value: 'staff' },
-                                { label: 'Branch Manager', value: 'manager' },
-                                ...(currentUser.role === 'sysadmin' ? [{ label: 'System Admin', value: 'sysadmin' }] : [])
+                                { label: t('staffMember'), value: 'staff' },
+                                { label: t('branchManager'), value: 'manager' },
+                                ...(currentUser.role === 'sysadmin' ? [{ label: t('systemAdmin'), value: 'sysadmin' }] : [])
                             ]}
                             onChange={e => setNewUser({ ...newUser, role: e.value })}
-                            placeholder="Select Role"
+                            placeholder={t('selectRoleLabel')}
                             className="w-full"
                             pt={{
                                 input: { className: 'h-10 flex items-center justify-center border-0 bg-white rounded-lg focus:ring-2 focus:ring-[#b000ff]' }
@@ -384,23 +386,23 @@ const StaffManagement = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="field">
-                            <label htmlFor="phone" className="mb-2 block font-semibold text-sm text-gray-700 select-none">Phone Number</label>
+                            <label htmlFor="phone" className="mb-2 block font-semibold text-sm text-gray-700 select-none">{t('phoneNumber')}</label>
                             <InputText
                                 id="phone"
                                 value={newUser.phone}
                                 onChange={e => setNewUser({ ...newUser, phone: e.target.value })}
-                                placeholder="Enter phone"
+                                placeholder={t('enterPhone')}
                                 className="w-full h-10 p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                                 required
                             />
                         </div>
                         <div className="field">
-                            <label htmlFor="email" className="mb-2 block font-semibold text-sm text-gray-700 select-none">Email</label>
+                            <label htmlFor="email" className="mb-2 block font-semibold text-sm text-gray-700 select-none">{t('email')}</label>
                             <InputText
                                 id="email"
                                 value={newUser.email}
                                 onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                placeholder="Enter email"
+                                placeholder={t('enterEmail')}
                                 className="w-full h-10 p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                                 required
                             />
@@ -408,13 +410,13 @@ const StaffManagement = () => {
                     </div>
                     {currentUser.role === 'sysadmin' && newUser.role !== 'sysadmin' && (
                         <div className="field grid grid-cols-1">
-                            <label htmlFor="organization" className="mb-3 font-semibold text-sm text-gray-700 select-none">Organization</label>
+                            <label htmlFor="organization" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('organization')}</label>
                             <Dropdown
                                 id="organization"
                                 value={newUser.organizationId}
                                 options={organizations.map(org => ({ label: org.name, value: org.id }))}
                                 onChange={e => setNewUser({ ...newUser, organizationId: e.value })}
-                                placeholder="Select Organization"
+                                placeholder={t('selectOrganization')}
                                 className="w-full border border-gray-200 h-10 flex items-center"
                                 required
                             />
@@ -422,14 +424,14 @@ const StaffManagement = () => {
                     )}
                     <div className="flex justify-end gap-3 mt-10">
                         <Button
-                            label="Cancel"
+                            label={t('cancel')}
                             severity="secondary"
                             outlined
                             onClick={() => setIsModalOpen(false)}
                             className="h-10 px-6 select-none"
                         />
                         <Button
-                            label="Create Staff"
+                            label={t('createStaff')}
                             type="submit"
                             className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 select-none"
                         />
@@ -438,7 +440,7 @@ const StaffManagement = () => {
             </Dialog>
 
             <Dialog
-                header="Edit Staff Member"
+                header={t('editStaffMember')}
                 visible={isEditModalOpen}
                 modal
                 onHide={() => setIsEditModalOpen(false)}
@@ -455,7 +457,7 @@ const StaffManagement = () => {
                             />
                         </div>
                         <div className="field grid grid-cols-1">
-                            <label htmlFor="edit_name" className="mb-2 font-semibold text-sm text-gray-700">Full Name</label>
+                            <label htmlFor="edit_name" className="mb-2 font-semibold text-sm text-gray-700">{t('fullName')}</label>
                             <InputText
                                 id="edit_name"
                                 value={editingStaff.name}
@@ -466,7 +468,7 @@ const StaffManagement = () => {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="field">
-                                <label htmlFor="edit_phone" className="mb-2 block font-semibold text-sm text-gray-700">Phone</label>
+                                <label htmlFor="edit_phone" className="mb-2 block font-semibold text-sm text-gray-700">{t('phone')}</label>
                                 <InputText
                                     id="edit_phone"
                                     value={editingStaff.phone}
@@ -476,7 +478,7 @@ const StaffManagement = () => {
                                 />
                             </div>
                             <div className="field">
-                                <label htmlFor="edit_email" className="mb-2 block font-semibold text-sm text-gray-700">Email</label>
+                                <label htmlFor="edit_email" className="mb-2 block font-semibold text-sm text-gray-700">{t('email')}</label>
                                 <InputText
                                     id="edit_email"
                                     value={editingStaff.email}
@@ -487,14 +489,14 @@ const StaffManagement = () => {
                             </div>
                         </div>
                         <div className="field">
-                            <label htmlFor="edit_role" className="mb-2 block font-semibold text-sm text-gray-700">Role</label>
+                            <label htmlFor="edit_role" className="mb-2 block font-semibold text-sm text-gray-700">{t('role')}</label>
                             <Dropdown
                                 id="edit_role"
                                 value={editingStaff.role}
                                 options={[
-                                    { label: 'Staff Member', value: 'staff' },
-                                    { label: 'Branch Manager', value: 'manager' },
-                                    ...(currentUser.role === 'sysadmin' ? [{ label: 'System Admin', value: 'sysadmin' }] : [])
+                                    { label: t('staffMember'), value: 'staff' },
+                                    { label: t('branchManager'), value: 'manager' },
+                                    ...(currentUser.role === 'sysadmin' ? [{ label: t('systemAdmin'), value: 'sysadmin' }] : [])
                                 ]}
                                 onChange={e => setEditingStaff({ ...editingStaff, role: e.value })}
                                 className="w-full border border-gray-200 h-10 flex items-center"
@@ -502,15 +504,15 @@ const StaffManagement = () => {
                             />
                         </div>
                         <div className="flex justify-end gap-3 mt-6">
-                            <Button label="Cancel" severity="secondary" outlined onClick={() => setIsEditModalOpen(false)} />
-                            <Button label="Save Changes" type="submit" className="bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white border-0" />
+                            <Button label={t('cancel')} severity="secondary" outlined onClick={() => setIsEditModalOpen(false)} />
+                            <Button label={t('saveChanges')} type="submit" className="bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white border-0" />
                         </div>
                     </form>
                 )}
             </Dialog>
 
             <Dialog
-                header={`Reset Password for ${resetPasswordUser?.name}`}
+                header={t('resetPasswordFor', { name: resetPasswordUser?.name })}
                 visible={!!resetPasswordUser}
                 modal
                 onHide={() => setResetPasswordUser(null)}
@@ -520,27 +522,27 @@ const StaffManagement = () => {
             >
                 <div className="flex flex-col gap-6">
                     <div className="field grid grid-cols-1">
-                        <label htmlFor="newPassword" className="mb-3 font-semibold text-sm text-gray-700 select-none">New Password</label>
+                        <label htmlFor="newPassword" className="mb-3 font-semibold text-sm text-gray-700 select-none">{t('newPasswordLabel')}</label>
                         <InputText
                             id="newPassword"
                             type="password"
                             value={newPassword}
                             onChange={e => setNewPassword(e.target.value)}
-                            placeholder="Enter new password"
+                            placeholder={t('enterNewPassword')}
                             className="w-full h-10 p-3 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#b000ff]"
                             required
                         />
                     </div>
                     <div className="flex justify-end gap-3 mt-10">
                         <Button
-                            label="Cancel"
+                            label={t('cancel')}
                             severity="secondary"
                             outlined
                             onClick={() => setResetPasswordUser(null)}
                             className="h-10 px-6 select-none"
                         />
                         <Button
-                            label="Reset Password"
+                            label={t('resetPassword')}
                             onClick={confirmResetPassword}
                             className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 select-none border-0"
                         />

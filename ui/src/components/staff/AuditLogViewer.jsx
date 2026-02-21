@@ -6,8 +6,10 @@ import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 import { Card } from 'primereact/card';
 import { Dropdown } from 'primereact/dropdown';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AuditLogViewer = () => {
+    const { t } = useLanguage();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedAction, setSelectedAction] = useState(null);
@@ -80,11 +82,11 @@ const AuditLogViewer = () => {
         <div className="audit-viewer">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">System Audit Logs</h2>
-                    <p className="text-gray-500 text-sm mt-1 font-medium italic">Immutable trail of administrative platform activities</p>
+                    <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">{t('auditLogs')}</h2>
+                    <p className="text-gray-500 text-sm mt-1 font-medium italic">{t('auditLogsDesc')}</p>
                 </div>
                 <Button
-                    label="Refresh Stream"
+                    label={t('refreshStream')}
                     icon="pi pi-refresh"
                     onClick={loadLogs}
                     loading={loading}
@@ -94,15 +96,15 @@ const AuditLogViewer = () => {
 
             {/* Event Filter */}
             <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">Filter by Event:</span>
+                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{t('filterByEvent')}</span>
                 <Dropdown
                     value={selectedAction}
                     options={[
-                        { label: 'All Events', value: null },
+                        { label: t('allEvents'), value: null },
                         ...([...new Set(logs.map(l => l.action?.toUpperCase()))].filter(Boolean).sort().map(a => ({ label: a, value: a })))
                     ]}
                     onChange={(e) => setSelectedAction(e.value)}
-                    placeholder="All Events"
+                    placeholder={t('allEvents')}
                     className="w-48 text-sm"
                 />
             </div>
@@ -119,11 +121,11 @@ const AuditLogViewer = () => {
                     className="p-datatable-sm select-none"
                     responsiveLayout="scroll"
                 >
-                    <Column field="createdAt" header="Timestamp" body={dateBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '150px' }}></Column>
-                    <Column field="action" header="Activity" body={actionBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '120px' }}></Column>
-                    <Column field="user.username" header="Actor" body={userBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
-                    <Column field="resource" header="Target Entity" body={resourceBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
-                    <Column field="details" header="Event Metadata" body={detailsBodyTemplate} headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="createdAt" header={t('timestamp')} body={dateBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '150px' }}></Column>
+                    <Column field="action" header={t('activity')} body={actionBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '120px' }}></Column>
+                    <Column field="user.username" header={t('actor')} body={userBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="resource" header={t('targetEntity')} body={resourceBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="details" header={t('eventMetadata')} body={detailsBodyTemplate} headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
                 </DataTable>
             </Card>
 

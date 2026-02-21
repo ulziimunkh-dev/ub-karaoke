@@ -11,8 +11,10 @@ const Reports = () => {
     // 1. Revenue Analysis
     const revenueByDate = bookings.reduce((acc, b) => {
         if (['CONFIRMED', 'PAID', 'COMPLETED', 'CHECKED_IN'].includes(b.status.toUpperCase())) {
-            const dateStr = b.date || new Date(b.createdAt).toISOString().split('T')[0];
-            acc[dateStr] = (acc[dateStr] || 0) + Number(b.totalPrice || b.total || 0);
+            const dateStr = b.date || (b.createdAt ? new Date(b.createdAt).toISOString().split('T')[0] : null);
+            if (dateStr) {
+                acc[dateStr] = (acc[dateStr] || 0) + Number(b.totalPrice || b.total || 0);
+            }
         }
         return acc;
     }, {});
@@ -22,7 +24,7 @@ const Reports = () => {
 
     // 2. Top Rooms
     const roomStats = bookings.reduce((acc, b) => {
-        const roomName = b.room?.name || 'Unknown Room';
+        const roomName = b.room?.name || t('unknownRoom');
         if (!acc[roomName]) acc[roomName] = { revenue: 0, count: 0 };
         acc[roomName].count += 1;
         if (['CONFIRMED', 'PAID', 'COMPLETED'].includes(b.status.toUpperCase())) {
@@ -44,13 +46,13 @@ const Reports = () => {
         <div className="reports-page">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">Reports & Analytics</h2>
-                    <p className="text-gray-500 text-sm mt-1 font-medium">Business performance and operation insights</p>
+                    <h2 className="text-2xl font-black text-white m-0 uppercase tracking-tighter">{t('reportsAnalytics')}</h2>
+                    <p className="text-gray-500 text-sm mt-1 font-medium">{t('reportsAnalyticsDesc')}</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button label="Daily" className="p-button-sm p-button-outlined" />
-                    <Button label="Monthly" className="p-button-sm p-button-primary" />
-                    <Button icon="pi pi-download" label="Export PDF" className="p-button-sm p-button-secondary p-button-outlined" />
+                    <Button label={t('daily')} className="p-button-sm p-button-outlined" />
+                    <Button label={t('monthly')} className="p-button-sm p-button-primary" />
+                    <Button icon="pi pi-download" label={t('exportPdf')} className="p-button-sm p-button-secondary p-button-outlined" />
                 </div>
             </div>
 
@@ -59,7 +61,7 @@ const Reports = () => {
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl lg:col-span-2" header={
                     <div className="p-4 border-b border-white/5">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
-                            <i className="pi pi-chart-bar text-[#4caf50]"></i> Revenue Trend (Last 7 Days)
+                            <i className="pi pi-chart-bar text-[#4caf50]"></i> {t('revenueTrend')}
                         </h3>
                     </div>
                 }>
@@ -80,7 +82,7 @@ const Reports = () => {
                                         </div>
                                     </div>
                                     <span className="text-[10px] text-gray-500 font-bold mt-3 uppercase tracking-tighter">
-                                        {new Date(date).toLocaleDateString(undefined, { weekday: 'short' })}
+                                        {new Date(date).toLocaleDateString(t('locale') === 'mn' ? 'mn-MN' : 'en-US', { weekday: 'short' })}
                                     </span>
                                     <span className="text-[8px] text-gray-600">
                                         {date.slice(5)}
@@ -95,7 +97,7 @@ const Reports = () => {
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl" header={
                     <div className="p-4 border-b border-white/5">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
-                            <i className="pi pi-star-fill text-[#ff9800]"></i> Top Operating Rooms
+                            <i className="pi pi-star-fill text-[#ff9800]"></i> {t('topOperatingRooms')}
                         </h3>
                     </div>
                 }>
@@ -108,7 +110,7 @@ const Reports = () => {
                                     </div>
                                     <div>
                                         <p className="m-0 text-sm font-bold text-white">{name}</p>
-                                        <p className="m-0 text-[10px] text-gray-500 font-bold uppercase">{stats.count} Total Bookings</p>
+                                        <p className="m-0 text-[10px] text-gray-500 font-bold uppercase">{t('totalBookingsStat', { count: stats.count })}</p>
                                     </div>
                                 </div>
                                 <span className="text-sm font-black text-green-400">
@@ -123,7 +125,7 @@ const Reports = () => {
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl" header={
                     <div className="p-4 border-b border-white/5">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
-                            <i className="pi pi-users text-[#b000ff]"></i> Representative Performance
+                            <i className="pi pi-users text-[#b000ff]"></i> {t('repPerformance')}
                         </h3>
                     </div>
                 }>
@@ -136,12 +138,12 @@ const Reports = () => {
                                     </div>
                                     <div>
                                         <p className="m-0 text-sm font-bold text-white">{staff.name}</p>
-                                        <p className="m-0 text-[10px] text-gray-500 font-bold uppercase">{staff.bookings} Bookings Assisted</p>
+                                        <p className="m-0 text-[10px] text-gray-500 font-bold uppercase">{t('bookingsAssistedStat', { count: staff.bookings })}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="m-0 text-sm font-black text-[#eb79b2]">{Number(staff.revenue).toLocaleString()}₮</p>
-                                    <Tag value="MVP" severity="warning" className="text-[8px] transform scale-75 origin-right" />
+                                    <Tag value={t('mvp')} severity="warning" className="text-[8px] transform scale-75 origin-right" />
                                 </div>
                             </div>
                         ))}

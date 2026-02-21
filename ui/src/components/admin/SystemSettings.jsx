@@ -26,17 +26,17 @@ const SystemSettings = () => {
 
     const handleSave = () => {
         setSettings(tempSettings);
-        toast.current.show({ severity: 'success', summary: 'Settings Saved', detail: 'System configuration updated successfully' });
+        toast.current.show({ severity: 'success', summary: t('settingsSaved'), detail: t('settingsSavedDetail') });
     };
 
     const handleAddPromo = async () => {
         try {
             if (!newPromo.code || !newPromo.value) {
-                toast.current.show({ severity: 'warn', summary: 'Validation Error', detail: 'Please fill all fields' });
+                toast.current.show({ severity: 'warn', summary: t('validationError'), detail: t('fillAllFields') });
                 return;
             }
             await addPromotion(newPromo);
-            toast.current.show({ severity: 'success', summary: 'Promotion Added', detail: `Code ${newPromo.code} created` });
+            toast.current.show({ severity: 'success', summary: t('promoAdded'), detail: t('promoCodeCreated', { code: newPromo.code }) });
             setIsPromoModalOpen(false);
             setNewPromo({
                 code: '',
@@ -46,16 +46,16 @@ const SystemSettings = () => {
                 validTo: new Date(new Date().setMonth(new Date().getMonth() + 1))
             });
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add promotion' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('promoAddFailed') });
         }
     };
 
     const handleDeletePromo = async (id) => {
         try {
             await deletePromotion(id);
-            toast.current.show({ severity: 'success', summary: 'Promotion Deleted', detail: 'Code removed' });
+            toast.current.show({ severity: 'success', summary: t('promoDeleted'), detail: t('promoRemoved') });
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to delete promotion' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('promoDeleteFailed') });
         }
     };
 
@@ -64,8 +64,8 @@ const SystemSettings = () => {
             <Toast ref={toast} />
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h2 className="text-2xl font-bold m-0 text-white">System Settings</h2>
-                    <p className="text-gray-500 text-sm mt-1">Configure global platform parameters and promotional offers</p>
+                    <h2 className="text-2xl font-bold m-0 text-white">{t('systemSettings')}</h2>
+                    <p className="text-gray-500 text-sm mt-1">{t('systemSettingsDesc')}</p>
                 </div>
             </div>
 
@@ -74,39 +74,39 @@ const SystemSettings = () => {
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl" header={
                     <div className="p-4 border-b border-white/5">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
-                            <i className="pi pi-dollar text-[#b000ff]"></i> Financial Configuration
+                            <i className="pi pi-dollar text-[#b000ff]"></i> {t('financialConfig')}
                         </h3>
                     </div>
                 }>
                     <div className="flex flex-col gap-6 pt-2">
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">VAT Tax Rate</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">{t('vatRate')}</label>
                             <InputNumber
                                 value={tempSettings.taxRate}
                                 onValueChange={e => setTempSettings({ ...tempSettings, taxRate: e.value })}
                                 minFractionDigits={2}
                                 maxFractionDigits={4}
-                                suffix=" (Multiplier)"
+                                suffix={t('multiplierSuffix')}
                                 className="w-full"
                             />
-                            <small className="text-gray-600 px-1 italic">Example: 0.10 for 10% VAT</small>
+                            <small className="text-gray-600 px-1 italic">{t('vatExample')}</small>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Service Charge</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">{t('serviceCharge')}</label>
                             <InputNumber
                                 value={tempSettings.serviceCharge}
                                 onValueChange={e => setTempSettings({ ...tempSettings, serviceCharge: e.value })}
                                 minFractionDigits={2}
                                 maxFractionDigits={4}
-                                suffix=" (Multiplier)"
+                                suffix={t('multiplierSuffix')}
                                 className="w-full"
                             />
-                            <small className="text-gray-600 px-1 italic">Example: 0.05 for 5% charge</small>
+                            <small className="text-gray-600 px-1 italic">{t('chargeExample')}</small>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Currency Symbol</label>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">{t('currencySymbol')}</label>
                             <InputText
                                 value={tempSettings.currency}
                                 onChange={e => setTempSettings({ ...tempSettings, currency: e.target.value })}
@@ -118,7 +118,7 @@ const SystemSettings = () => {
 
                         <div className="flex justify-end pt-2">
                             <Button
-                                label="Save Financial Settings"
+                                label={t('saveFinancialSettings')}
                                 icon="pi pi-check"
                                 className="p-button-primary px-8 h-12 font-bold shadow-lg shadow-[#b000ff]/20"
                                 onClick={handleSave}
@@ -131,16 +131,16 @@ const SystemSettings = () => {
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl" header={
                     <div className="p-4 border-b border-white/5 flex justify-between items-center">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
-                            <i className="pi pi-ticket text-[#eb79b2]"></i> Active Promo Codes
+                            <i className="pi pi-ticket text-[#eb79b2]"></i> {t('activePromoCodes')}
                         </h3>
-                        <Button icon="pi pi-plus" label="Add New" className="p-button-sm p-button-outlined" onClick={() => setIsPromoModalOpen(true)} />
+                        <Button icon="pi pi-plus" label={t('addNew')} className="p-button-sm p-button-outlined" onClick={() => setIsPromoModalOpen(true)} />
                     </div>
                 }>
                     <div className="flex flex-col gap-4 pt-2">
                         {promos.length === 0 && (
                             <div className="text-center py-8 text-gray-600">
                                 <i className="pi pi-info-circle text-2xl mb-2"></i>
-                                <p className="m-0 italic">No active promotions currently configured.</p>
+                                <p className="m-0 italic">{t('noActivePromos')}</p>
                             </div>
                         )}
                         {promos.map((promo, idx) => (
@@ -149,13 +149,13 @@ const SystemSettings = () => {
                                     <div className="flex items-center gap-2">
                                         <span className="font-black text-[#ff9800] tracking-wider uppercase">{promo.code}</span>
                                         <Tag
-                                            value={promo.discountType === 'PERCENT' ? `${promo.value}% OFF` : `-${Number(promo.value).toLocaleString()}₮`}
+                                            value={promo.discountType === 'PERCENT' ? `${promo.value}% ${t('off')}` : `-${Number(promo.value).toLocaleString()}₮`}
                                             severity="success"
                                             className="text-[10px]"
                                         />
                                     </div>
                                     <span className="text-[10px] text-gray-500 font-bold uppercase">
-                                        Valid: {new Date(promo.validFrom).toLocaleDateString()} - {new Date(promo.validTo).toLocaleDateString()}
+                                        {t('validRange', { start: new Date(promo.validFrom).toLocaleDateString(), end: new Date(promo.validTo).toLocaleDateString() })}
                                     </span>
                                 </div>
                                 <div className="flex gap-2">
@@ -172,20 +172,20 @@ const SystemSettings = () => {
             </div>
 
             <Dialog
-                header="Add New Promo Code"
+                header={t('addNewPromoCode')}
                 visible={isPromoModalOpen}
                 onHide={() => setIsPromoModalOpen(false)}
                 className="w-full max-w-md"
                 footer={
                     <div className="flex gap-2 justify-end">
-                        <Button label="Cancel" onClick={() => setIsPromoModalOpen(false)} className="p-button-text" />
-                        <Button label="Create Promotion" onClick={handleAddPromo} className="p-button-primary" />
+                        <Button label={t('cancel')} onClick={() => setIsPromoModalOpen(false)} className="p-button-text" />
+                        <Button label={t('createPromotion')} onClick={handleAddPromo} className="p-button-primary" />
                     </div>
                 }
             >
                 <div className="flex flex-col gap-4 pt-4">
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500">PROMO CODE</label>
+                        <label className="text-xs font-bold text-gray-500">{t('promoCodeLabel')}</label>
                         <InputText
                             value={newPromo.code}
                             onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
@@ -195,19 +195,19 @@ const SystemSettings = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500">TYPE</label>
+                            <label className="text-xs font-bold text-gray-500">{t('type')}</label>
                             <Dropdown
                                 value={newPromo.discountType}
                                 options={[
-                                    { label: 'Percentage (%)', value: 'PERCENT' },
-                                    { label: 'Fixed Amount (₮)', value: 'FIXED' }
+                                    { label: t('percentage'), value: 'PERCENT' },
+                                    { label: t('fixedAmount'), value: 'FIXED' }
                                 ]}
                                 onChange={e => setNewPromo({ ...newPromo, discountType: e.value })}
                                 className="bg-black/20"
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500">VALUE</label>
+                            <label className="text-xs font-bold text-gray-500">{t('value')}</label>
                             <InputNumber
                                 value={newPromo.value}
                                 onValueChange={e => setNewPromo({ ...newPromo, value: e.value })}
@@ -218,7 +218,7 @@ const SystemSettings = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500">START DATE</label>
+                            <label className="text-xs font-bold text-gray-500">{t('startDate')}</label>
                             <Calendar
                                 value={newPromo.validFrom}
                                 onChange={e => setNewPromo({ ...newPromo, validFrom: e.value })}
@@ -227,7 +227,7 @@ const SystemSettings = () => {
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold text-gray-500">END DATE</label>
+                            <label className="text-xs font-bold text-gray-500">{t('endDate')}</label>
                             <Calendar
                                 value={newPromo.validTo}
                                 onChange={e => setNewPromo({ ...newPromo, validTo: e.value })}

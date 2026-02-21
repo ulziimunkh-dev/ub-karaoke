@@ -26,10 +26,10 @@ import imgVIP from '../../assets/defaults/karaoke_vip.png';
 import imgParty from '../../assets/defaults/karaoke_party.png';
 
 const STOCK_IMAGES = [
-    { id: 'standard', url: imgStandard, label: 'Standard Room' },
-    { id: 'vip', url: imgVIP, label: 'VIP Lounge' },
-    { id: 'party', url: imgParty, label: 'Party Hall' },
-    { id: 'minimal', url: imgMinimal, label: 'Minimal/Small' }
+    { id: 'standard', url: imgStandard, label: t('standardRoom') },
+    { id: 'vip', url: imgVIP, label: t('vipLounge') },
+    { id: 'party', url: imgParty, label: t('partyHall') },
+    { id: 'minimal', url: imgMinimal, label: t('minimalSmall') }
 ];
 
 const ImagePicker = ({ selectedImage, onSelect, label }) => {
@@ -133,7 +133,7 @@ const VenueManagement = () => {
         return (
             <div className="flex items-center gap-2">
                 <Tag
-                    value={isEnabled ? 'Booking ON' : 'Booking OFF'}
+                    value={isEnabled ? t('bookingOn') : t('bookingOff')}
                     severity={isEnabled ? 'success' : 'warning'}
                     className="text-[9px] px-1.5"
                 />
@@ -152,10 +152,10 @@ const VenueManagement = () => {
                     text
                     size="small"
                     onClick={() => updateRoomStatus(selectedVenue.id, rowData.id, !isActive)}
-                    tooltip={isActive ? 'Deactivate Room' : 'Activate Room'}
+                    tooltip={isActive ? t('deactivateRoom') : t('activateRoom')}
                 />
                 <span className={`text-xs ${isActive ? 'text-green-400' : 'text-red-400'}`}>
-                    {isActive ? t('active') || 'Active' : t('inactive') || 'Inactive'}
+                    {isActive ? t('active') : t('inactive')}
                 </span>
             </div>
         );
@@ -170,7 +170,7 @@ const VenueManagement = () => {
                     size="small"
                     className="h-9 w-9"
                     onClick={() => handleEditRoom(rowData)}
-                    tooltip="Edit Room"
+                    tooltip={t('editRoom')}
                 />
                 <Button
                     icon="pi pi-trash"
@@ -179,7 +179,7 @@ const VenueManagement = () => {
                     size="small"
                     className="h-9 w-9"
                     onClick={() => handleDeleteRoom(rowData.id)}
-                    tooltip="Delete Room"
+                    tooltip={t('deleteRoom')}
                 />
             </div>
         );
@@ -208,21 +208,21 @@ const VenueManagement = () => {
 
         try {
             await addRoomPricing(roomId, payload);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule added' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('pricingRuleAdded') });
             setPricingForm(prev => ({ ...prev, isSpecificDate: false, dateRange: null }));
             refreshData?.();
         } catch (e) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to add rule' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('failedToAddRule') });
         }
     };
 
     const handleDeletePricing = async (pricingId) => {
         try {
             await removeRoomPricing(pricingId);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Pricing rule removed' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('pricingRuleRemoved') });
             refreshData?.();
         } catch (e) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to remove rule' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('failedToRemoveRule') });
         }
     };
 
@@ -321,8 +321,8 @@ const VenueManagement = () => {
         const venueData = {
             name: venueForm.name,
             district: venueForm.district,
-            description: venueForm.description || "Premium karaoke experience in Ulaanbaatar.",
-            phone: venueForm.phone || "+976 99000000",
+            description: venueForm.description || t('venueDescriptionPlaceholder'),
+            phone: venueForm.phone || t('venuePhonePlaceholder'),
             priceRange: venueForm.priceRange,
             openingHours: openingHoursObj,
             address: venueForm.address,
@@ -340,10 +340,10 @@ const VenueManagement = () => {
 
         if (editingVenue) {
             await updateVenue(editingVenue.id, venueData);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue updated successfully' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('venueUpdatedSuccess') });
         } else {
             await addVenue(venueData);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Venue added successfully' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('venueAddedSuccess') });
         }
         setIsVenueModalOpen(false);
         refreshData?.();
@@ -352,11 +352,11 @@ const VenueManagement = () => {
     const handleDeleteVenue = (venueId) => {
         confirmDialog({
             message: t('areYouSure'),
-            header: 'Delete Confirmation',
+            header: t('deleteConfirmation'),
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 await deleteVenue(venueId);
-                toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Venue removed successfully' });
+                toast.current.show({ severity: 'success', summary: t('deleted'), detail: t('venueRemovedSuccess') });
                 refreshData?.();
             }
         });
@@ -367,8 +367,8 @@ const VenueManagement = () => {
         await updateVenueStatus(venue.id, newIsActive);
         toast.current.show({
             severity: 'info',
-            summary: 'Status Updated',
-            detail: `Venue marked as ${newIsActive ? 'active' : 'inactive'}`
+            summary: t('statusUpdated'),
+            detail: newIsActive ? t('venueStatusActive') : t('venueStatusInactive')
         });
     };
 
@@ -415,10 +415,10 @@ const VenueManagement = () => {
         if (editingRoom) {
             await updateRoom(selectedVenue.id, editingRoom.id, payload);
             setEditingRoom(null);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room updated' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('roomUpdated') });
         } else {
             await addRoom(selectedVenue.id, payload);
-            toast.current.show({ severity: 'success', summary: 'Success', detail: 'Room added' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('roomAdded') });
         }
         setIsRoomModalOpen(false);
         refreshData?.();
@@ -436,11 +436,11 @@ const VenueManagement = () => {
     const handleDeleteRoom = (roomId) => {
         confirmDialog({
             message: t('areYouSure'),
-            header: 'Delete Confirmation',
+            header: t('deleteConfirmation'),
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 await deleteRoom(selectedVenue.id, roomId);
-                toast.current.show({ severity: 'success', summary: 'Deleted', detail: 'Room removed' });
+                toast.current.show({ severity: 'success', summary: t('deleted'), detail: t('venueRemovedSuccess') });
                 refreshData?.();
             }
         });
@@ -453,10 +453,10 @@ const VenueManagement = () => {
         }));
         try {
             await updateRoomSortOrders(selectedVenue.id, newOrder);
-            toast.current.show({ severity: 'success', summary: 'Sorted', detail: 'Room order updated' });
+            toast.current.show({ severity: 'success', summary: t('sorted'), detail: t('roomOrderUpdated') });
             refreshData?.();
         } catch (error) {
-            toast.current.show({ severity: 'error', summary: 'Error', detail: 'Failed to update order' });
+            toast.current.show({ severity: 'error', summary: t('error'), detail: t('failedToUpdateOrder') });
         }
     };
 
@@ -478,7 +478,7 @@ const VenueManagement = () => {
                     />
                     {['sysadmin', 'admin'].includes(currentUser.role) && (
                         <Button
-                            label="Room Settings"
+                            label={t('roomSettings')}
                             icon="pi pi-cog"
                             outlined
                             onClick={() => setIsConfigModalOpen(true)}
@@ -499,11 +499,11 @@ const VenueManagement = () => {
                     <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
                         <i className="pi pi-building text-2xl text-gray-400"></i>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">No Branch Selected</h3>
-                    <p className="text-gray-400 max-w-sm mb-6">Select a branch from the dropdown menu at the top right to manage its rooms and settings.</p>
+                    <h3 className="text-xl font-bold text-white mb-2">{t('noBranchSelected')}</h3>
+                    <p className="text-gray-400 max-w-sm mb-6">{t('selectBranchContext')}</p>
                     {['sysadmin', 'admin'].includes(currentUser.role) && (
                         <Button
-                            label="Add New Branch"
+                            label={t('addBranch')}
                             icon="pi pi-plus"
                             onClick={openAddVenue}
                             className="bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none font-bold px-6 h-11"
@@ -518,7 +518,7 @@ const VenueManagement = () => {
                                 <div className="flex items-center gap-3 mb-2">
                                     <h3 className="text-3xl font-black text-white m-0 tracking-tight">{selectedVenue.name}</h3>
                                     <Tag
-                                        value={selectedVenue.isActive === false ? (t('inactive') || 'Inactive') : (t('active') || 'Active')}
+                                        value={selectedVenue.isActive === false ? t('inactive') : t('active')}
                                         severity={selectedVenue.isActive === false ? 'danger' : 'success'}
                                         className="px-3"
                                     />
@@ -544,13 +544,13 @@ const VenueManagement = () => {
                             <div className="flex gap-2">
                                 <Button
                                     icon="pi pi-pencil"
-                                    label="Edit Details"
+                                    label={t('editDetails')}
                                     onClick={() => openEditVenue(selectedVenue)}
                                     className="p-button-outlined border-white/10 text-white font-bold h-10 px-4"
                                 />
                                 <Button
                                     icon={selectedVenue.isActive === false ? "pi pi-play" : "pi pi-pause"}
-                                    label={selectedVenue.isActive === false ? "Activate" : "Deactivate"}
+                                    label={selectedVenue.isActive === false ? t('activate') : t('deactivate')}
                                     severity={selectedVenue.isActive === false ? "success" : "warning"}
                                     outlined
                                     className="h-10 px-4"
@@ -575,10 +575,10 @@ const VenueManagement = () => {
                                 <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-[#b000ff] to-[#eb79b2] flex items-center justify-center">
                                     <i className="pi pi-th-large text-white text-xs"></i>
                                 </div>
-                                <h4 className="m-0 font-bold uppercase tracking-widest text-xs text-gray-400">Branch Rooms & Inventory</h4>
+                                <h4 className="m-0 font-bold uppercase tracking-widest text-xs text-gray-400">{t('branchRoomsInventory')}</h4>
                             </div>
                             <Button
-                                label="Add Room"
+                                label={t('addRoom')}
                                 icon="pi pi-plus"
                                 onClick={() => {
                                     setEditingRoom(null);
@@ -603,62 +603,62 @@ const VenueManagement = () => {
                             reorderableRows
                             onRowReorder={handleRowReorder}
                             dataKey="id"
-                            emptyMessage="No rooms found for this branch."
+                            emptyMessage={t('noRoomsFound')}
                         >
                             <Column rowReorder style={{ width: '3rem' }} />
-                            <Column field="name" header="Room" className="font-bold text-white"></Column>
-                            <Column header="Type" body={(rowData) => (
+                            <Column field="name" header={t('room')} className="font-bold text-white"></Column>
+                            <Column header={t('type')} body={(rowData) => (
                                 <Tag value={rowData.roomType?.name || rowData.type} severity="info" className="text-[10px] uppercase font-black px-2" />
                             )}></Column>
-                            <Column field="capacity" header="Capacity" body={(rowData) => (
+                            <Column field="capacity" header={t('capacity')} body={(rowData) => (
                                 <span className="flex items-center gap-2 text-sm"><i className="pi pi-users opacity-40"></i> {rowData.capacity}</span>
                             )}></Column>
-                            <Column header="Rate / Hour" body={roomRateBody}></Column>
-                            <Column header="Status" body={roomStatusBody}></Column>
-                            <Column header="Booking" body={roomBookingStatusBody}></Column>
-                            <Column header="Actions" body={roomActionsBody} className="text-right"></Column>
+                            <Column header={t('ratePerHour')} body={roomRateBody}></Column>
+                            <Column header={t('status')} body={roomStatusBody}></Column>
+                            <Column header={t('bookingStatus')} body={roomBookingStatusBody}></Column>
+                            <Column header={t('actions')} body={roomActionsBody} className="text-right"></Column>
                         </DataTable>
                     </div>
                 </div>
             )}
 
-            <Dialog header={editingVenue ? 'Edit Venue' : 'Add Venue'} visible={isVenueModalOpen} className="w-full max-w-[95vw] sm:max-w-[700px]" modal onHide={() => setIsVenueModalOpen(false)}>
+            <Dialog header={editingVenue ? t('editDetails') : t('addBranch')} visible={isVenueModalOpen} className="w-full max-w-[95vw] sm:max-w-[700px]" modal onHide={() => setIsVenueModalOpen(false)}>
                 <form onSubmit={handleSaveVenue} className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
                     <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Venue Name</label>
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('venueName')}</label>
                         <InputText value={venueForm.name} onChange={e => setVenueForm({ ...venueForm, name: e.target.value })} required className="h-11 shadow-sm" />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">District</label>
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('district')}</label>
                         <Dropdown
                             value={venueForm.district}
-                            options={['Sukhbaatar', 'Chingeltei', 'Bayangol', 'Bayanzurkh', 'Khan-Uul', 'Songinokhairkhan']}
+                            options={['Sukhbaatar', 'Chingeltei', 'Bayangol', 'Bayanzurkh', 'Khan-Uul', 'Songinokhairkhan'].map(d => ({ label: t(`district_${d.replace('-', '')}`), value: d }))}
                             onChange={e => setVenueForm({ ...venueForm, district: e.value })}
-                            placeholder="Select District"
+                            placeholder={t('selectDistrict')}
                             className="h-11"
                         />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Phone Contact</label>
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('phoneContact')}</label>
                         <InputText value={venueForm.phone} onChange={e => setVenueForm({ ...venueForm, phone: e.target.value })} required className="h-11 shadow-sm" />
                     </div>
                     <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Physical Address</label>
-                        <InputText value={venueForm.address} onChange={e => setVenueForm({ ...venueForm, address: e.target.value })} required className="h-11 shadow-sm" placeholder="e.g. 1st Floor, Shangri-La Mall" />
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('physicalAddress')}</label>
+                        <InputText value={venueForm.address} onChange={e => setVenueForm({ ...venueForm, address: e.target.value })} required className="h-11 shadow-sm" placeholder={t('addressPlaceholderDetail')} />
                     </div>
                     <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">GMap Location (Lat, Long)</label>
-                        <InputText value={venueForm.gmapLocation} onChange={e => setVenueForm({ ...venueForm, gmapLocation: e.target.value })} placeholder="e.g. 47.9189, 106.9176" className="h-11 shadow-sm" />
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('gmapLocationLabel')}</label>
+                        <InputText value={venueForm.gmapLocation} onChange={e => setVenueForm({ ...venueForm, gmapLocation: e.target.value })} placeholder={t('gmapPlaceholder')} className="h-11 shadow-sm" />
                     </div>
                     <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Description</label>
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('description')}</label>
                         <InputTextarea value={venueForm.description} onChange={e => setVenueForm({ ...venueForm, description: e.target.value })} required rows={2} autoResize className="shadow-sm" />
                     </div>
                     <div className="flex flex-col gap-3 md:col-span-2 bg-white/5 p-4 rounded-xl border border-white/5">
                         <div className="flex justify-between items-center mb-2">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-[#eb79b2]">Opening Hours</label>
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-[#eb79b2]">{t('openingHours')}</label>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-text-muted uppercase">Custom per day</span>
+                                <span className="text-[10px] text-text-muted uppercase">{t('customPerDay')}</span>
                                 <Checkbox
                                     checked={venueForm.useCustomHours}
                                     onChange={e => setVenueForm({ ...venueForm, useCustomHours: e.checked })}
@@ -668,7 +668,7 @@ const VenueManagement = () => {
 
                         {!venueForm.useCustomHours ? (
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] text-text-muted uppercase ml-1">Daily (All Days)</label>
+                                <label className="text-[10px] text-text-muted uppercase ml-1">{t('dailyAllDays')}</label>
                                 <InputText
                                     value={venueForm.openHours}
                                     onChange={e => setVenueForm({ ...venueForm, openHours: e.target.value })}
@@ -697,14 +697,14 @@ const VenueManagement = () => {
                         )}
                     </div>
                     <div className="flex flex-col gap-1.5">
-                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Price Tier</label>
+                        <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('priceTier')}</label>
                         <Dropdown
                             value={venueForm.priceRange}
                             options={[
-                                { label: 'Budget ($)', value: '$' },
-                                { label: 'Standard ($$)', value: '$$' },
-                                { label: 'Premium ($$$)', value: '$$$' },
-                                { label: 'Luxury ($$$$)', value: '$$$$' }
+                                { label: t('budget') + ' ($)', value: '$' },
+                                { label: t('standard') + ' ($$)', value: '$$' },
+                                { label: t('premium') + ' ($$$)', value: '$$$' },
+                                { label: t('luxury') + ' ($$$$)', value: '$$$$' }
                             ]}
                             optionLabel="label"
                             optionValue="value"
@@ -714,41 +714,41 @@ const VenueManagement = () => {
                     </div>
 
                     <div className="bg-white/5 p-4 rounded-xl border border-white/5 md:col-span-2">
-                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">Booking System Settings</h4>
+                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">{t('bookingSystemSettings')}</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs text-text-muted">Allowed Start Time</label>
+                                <label className="text-xs text-text-muted">{t('allowedStartTime')}</label>
                                 <InputText type="time" value={venueForm.bookingWindowStart || ''} onChange={e => setVenueForm({ ...venueForm, bookingWindowStart: e.target.value })} className="p-inputtext-sm" />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs text-text-muted">Allowed End Time</label>
+                                <label className="text-xs text-text-muted">{t('allowedEndTime')}</label>
                                 <InputText type="time" value={venueForm.bookingWindowEnd || ''} onChange={e => setVenueForm({ ...venueForm, bookingWindowEnd: e.target.value })} className="p-inputtext-sm" />
                             </div>
                             <div className="sm:col-span-2 flex flex-col gap-1">
-                                <label className="text-xs text-text-muted">Max Advance Booking (Days)</label>
+                                <label className="text-xs text-text-muted">{t('maxAdvanceBooking')}</label>
                                 <InputNumber value={venueForm.advanceBookingDays} onValueChange={e => setVenueForm({ ...venueForm, advanceBookingDays: e.value })} min={1} max={30} showButtons className="p-inputtext-sm" />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs text-text-muted">Min Booking (Hours)</label>
+                                <label className="text-xs text-text-muted">{t('minBooking')}</label>
                                 <InputNumber value={venueForm.minBookingHours} onValueChange={e => setVenueForm({ ...venueForm, minBookingHours: e.value })} min={0.5} max={12} step={0.5} showButtons className="p-inputtext-sm" />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-xs text-text-muted">Max Booking (Hours)</label>
+                                <label className="text-xs text-text-muted">{t('maxBooking')}</label>
                                 <InputNumber value={venueForm.maxBookingHours} onValueChange={e => setVenueForm({ ...venueForm, maxBookingHours: e.value })} min={1} max={24} step={0.5} showButtons className="p-inputtext-sm" />
                             </div>
                         </div>
                     </div>
 
                     <div className="md:col-span-2">
-                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2] mt-4">Venue Branding</h4>
+                        <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2] mt-4">{t('venueBranding')}</h4>
                         <div className="flex flex-col gap-2 mb-4">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Upload Custom Image</label>
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('uploadCustomImage')}</label>
                             <ImageUpload
                                 label=""
                                 currentImage={venueForm.featuredImage}
                                 onUpload={(url) => setVenueForm({ ...venueForm, featuredImage: url })}
                             />
-                            <p className="text-[10px] text-gray-500 text-center m-0 uppercase tracking-widest">- OR Select Stock Image -</p>
+                            <p className="text-[10px] text-gray-500 text-center m-0 uppercase tracking-widest">- {t('orLabel')} {t('selectStockImage')} -</p>
                         </div>
 
                         <ImagePicker
@@ -760,28 +760,28 @@ const VenueManagement = () => {
 
                     {currentUser.role === 'sysadmin' && (
                         <div className="md:col-span-2 flex flex-col gap-1.5">
-                            <label htmlFor="organization" className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Organization Owner</label>
+                            <label htmlFor="organization" className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('organizationOwner')}</label>
                             <Dropdown
                                 id="organization"
                                 value={venueForm.organizationId}
                                 options={organizations.map(org => ({ label: org.name, value: org.id }))}
                                 onChange={e => setVenueForm({ ...venueForm, organizationId: e.value })}
-                                placeholder="Select Organization"
+                                placeholder={t('selectOrganization')}
                                 className="w-full h-11"
                                 required
                             />
                         </div>
                     )}
                     <div className="md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-white/5">
-                        <Button label="Cancel" icon="pi pi-times" outlined onClick={() => setIsVenueModalOpen(false)} className="h-11 px-6 font-bold" />
-                        <Button label={editingVenue ? "Update Changes" : "Create Venue"} icon="pi pi-check" type="submit" className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg" />
+                        <Button label={t('cancel')} icon="pi pi-times" outlined onClick={() => setIsVenueModalOpen(false)} className="h-11 px-6 font-bold" />
+                        <Button label={editingVenue ? t('updateChanges') : t('createVenue')} icon="pi pi-check" type="submit" className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg" />
                     </div>
                 </form>
             </Dialog>
 
             {/* Room Form Dialog */}
             <Dialog
-                header={editingRoom ? `Edit Room: ${editingRoom.name}` : `Add New Room`}
+                header={editingRoom ? `${t('editRoom')}: ${editingRoom.name}` : t('addRoom')}
                 visible={isRoomModalOpen}
                 className="w-full max-w-[95vw] sm:max-w-[750px]"
                 modal
@@ -790,17 +790,16 @@ const VenueManagement = () => {
                 <div className="flex flex-col gap-6 py-2">
                     <form onSubmit={handleSaveRoom} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         <div className="flex flex-col gap-1.5 md:col-span-2">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Reference Name</label>
-                            <InputText value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} required className="h-11 shadow-sm" placeholder="e.g. VIP Room 301" />
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('roomReferenceName')}</label>
+                            <InputText value={roomForm.name} onChange={e => setRoomForm({ ...roomForm, name: e.target.value })} required className="h-11 shadow-sm" placeholder={t('roomRefPlaceholder')} />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Category</label>
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('roomCategory')}</label>
                             <Dropdown
                                 value={roomForm.roomTypeId}
                                 options={roomTypes}
                                 optionLabel="name"
                                 optionValue="id"
-                                placeholder="Select Room Type"
                                 onChange={e => {
                                     const type = roomTypes.find(t => t.id === e.value);
                                     let newImg = imgStandard;
@@ -809,46 +808,28 @@ const VenueManagement = () => {
                                     else if (type?.name?.includes('Small') || type?.name?.includes('Minimal')) newImg = imgMinimal;
                                     setRoomForm({ ...roomForm, roomTypeId: e.value, images: [newImg] });
                                 }}
+                                placeholder={t('selectRoomType')}
                                 className="h-11 shadow-sm"
+                                required
                             />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Room Capacity</label>
-                            <InputNumber value={roomForm.capacity} onValueChange={e => setRoomForm({ ...roomForm, capacity: e.value })} min={1} required showButtons className="h-11 shadow-sm" />
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('maxCapacity')}</label>
+                            <InputNumber value={roomForm.capacity} onValueChange={e => setRoomForm({ ...roomForm, capacity: e.value })} min={1} max={50} showButtons className="h-11 shadow-sm" />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Standard Base Rate (₮/hr)</label>
-                            <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" required className="h-11 shadow-sm" />
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('ratePerHour')}</label>
+                            <InputNumber value={roomForm.hourlyRate} onValueChange={e => setRoomForm({ ...roomForm, hourlyRate: e.value })} mode="currency" currency="MNT" locale="mn-MN" className="h-11 shadow-sm" required />
                         </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Included Features</label>
-                            <MultiSelect
-                                value={roomForm.roomFeatureIds}
-                                options={roomFeatures}
-                                optionLabel="name"
-                                optionValue="id"
-                                display="chip"
-                                placeholder="Select Features"
-                                onChange={(e) => setRoomForm({ ...roomForm, roomFeatureIds: e.value })}
-                                className="min-h-[44px] shadow-sm"
-                            />
+                        <div className="flex items-center gap-3">
+                            <Checkbox inputId="bookingEnabled" checked={roomForm.isBookingEnabled} onChange={e => setRoomForm({ ...roomForm, isBookingEnabled: e.checked })} />
+                            <label htmlFor="bookingEnabled" className="text-sm font-bold text-white cursor-pointer">{t('enableOnlineBooking')}</label>
                         </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="font-bold text-[10px] uppercase tracking-wider text-[#eb79b2] ml-1">Online Reservation</label>
-                            <div className="flex items-center gap-3 h-11 bg-white/5 px-4 rounded-xl border border-white/5">
-                                <span className="text-xs text-text-muted">Allow customers to book online</span>
-                                <Checkbox
-                                    checked={roomForm.isBookingEnabled}
-                                    onChange={e => setRoomForm({ ...roomForm, isBookingEnabled: e.checked })}
-                                />
-                            </div>
-                        </div>
-
                         <div className="md:col-span-2 bg-white/5 p-4 rounded-xl border border-white/5 mt-2">
-                            <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">Room Presentation</h4>
+                            <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">{t('roomPresentation')}</h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 <div className="flex flex-col gap-2">
-                                    <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">Promotion Image</label>
+                                    <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('promotionImage')}</label>
                                     <ImageUpload
                                         label=""
                                         currentImage={roomForm.images[0]}
@@ -866,172 +847,147 @@ const VenueManagement = () => {
                             </div>
                         </div>
 
-                        {/* Dynamic Pricing Rules Section */}
-                        {editingRoom && selectedVenue?.rooms?.find(r => r.id === editingRoom.id) && (
-                            <div className="md:col-span-2 mt-4 pt-6 border-t border-white/5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-[#00f0ff] flex items-center gap-2">
-                                        <i className="pi pi-bolt text-xs"></i> Dynamic Pricing Rules
-                                    </h4>
+                        <div className="md:col-span-2 pt-4 border-t border-white/5">
+                            <h4 className="m-0 mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[#eb79b2]">{t('roomAmenities')}</h4>
+                            <MultiSelect
+                                value={roomForm.roomFeatureIds}
+                                options={roomFeatures}
+                                onChange={(e) => setRoomForm({ ...roomForm, roomFeatureIds: e.value })}
+                                optionLabel="name"
+                                optionValue="id"
+                                placeholder={t('selectAmenities')}
+                                className="w-full h-11 shadow-sm"
+                                display="chip"
+                            />
+                        </div>
+
+                        <div className="md:col-span-2 flex justify-end gap-3 mt-4 pt-4 border-t border-white/5">
+                            <Button label={t('cancel')} icon="pi pi-times" outlined onClick={() => setIsRoomModalOpen(false)} className="h-11 px-6 font-bold" />
+                            <Button label={editingRoom ? t('updateChanges') : t('addRoom')} icon="pi pi-check" type="submit" className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg" />
+                        </div>
+                    </form>
+
+                    {/* Additional Settings: Flexible Pricing & Calendar */}
+                    {editingRoom && (
+                        <div className="mt-8 pt-8 border-t-2 border-dashed border-white/10">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-[#eb79b2]/10 flex items-center justify-center">
+                                    <i className="pi pi-calendar text-[#eb79b2] text-lg"></i>
                                 </div>
-
-                                <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden mb-6">
-                                    <div className="hidden md:block">
-                                        <DataTable
-                                            value={selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []}
-                                            emptyMessage="No special pricing rules defined for this room."
-                                            size="small"
-                                            className="text-xs pricing-table"
-                                        >
-                                            <Column field="priority" header="PRI" style={{ width: '60px' }} className="font-bold text-gray-500" />
-                                            <Column field="dayType" header="RULE TYPE" body={(rowData) => (
-                                                <Tag value={rowData.startDateTime ? 'SPECIFIC' : rowData.dayType} severity={rowData.startDateTime ? 'warning' : 'info'} className="text-[9px] px-1.5" />
-                                            )} />
-                                            <Column header="TIMING / PERIOD" body={(rowData) => {
-                                                if (rowData.startDateTime) {
-                                                    const start = new Date(rowData.startDateTime);
-                                                    const end = new Date(rowData.endDateTime);
-                                                    return <span className="text-gray-400">{start.toLocaleDateString()} {start.getHours()}:00 - {end.toLocaleDateString()} {end.getHours()}:00</span>;
-                                                }
-                                                return <span className="font-medium text-white">{rowData.startTime?.slice(0, 5)} - {rowData.endTime?.slice(0, 5)}</span>;
-                                            }} />
-                                            <Column field="pricePerHour" header="RATE" body={(rowData) => <span className="font-black text-[#eb79b2]">{Number(rowData.pricePerHour).toLocaleString()}₮</span>} />
-                                            <Column body={(rowData) => (
-                                                <Button icon="pi pi-trash" className="p-button-danger p-button-text p-button-sm hover:bg-red-500/10" onClick={() => handleDeletePricing(rowData.id)} />
-                                            )} style={{ width: '50px' }} />
-                                        </DataTable>
-                                    </div>
-
-                                    <div className="md:hidden flex flex-col gap-2 p-3">
-                                        {(selectedVenue.rooms.find(r => r.id === editingRoom.id)?.pricing || []).map(rule => (
-                                            <div key={rule.id} className="bg-white/5 p-3 rounded-lg border border-white/5 flex justify-between items-center">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <Tag value={rule.priority} severity="warning" className="text-[9px] px-1.5" />
-                                                        <span className="font-bold text-xs text-white uppercase tracking-wider">{rule.startDateTime ? 'Specific' : rule.dayType}</span>
-                                                    </div>
-                                                    <div className="text-[10px] text-gray-500 font-medium">
-                                                        {rule.startDateTime
-                                                            ? `${new Date(rule.startDateTime).toLocaleDateString()} ${new Date(rule.startDateTime).getHours()}:00`
-                                                            : `${rule.startTime?.slice(0, 5)} - ${rule.endTime?.slice(0, 5)}`
-                                                        }
-                                                    </div>
-                                                </div>
-                                                <div className="text-right flex flex-col items-end">
-                                                    <div className="font-black text-[#eb79b2] text-sm mb-1">{Number(rule.pricePerHour).toLocaleString()}₮</div>
-                                                    <Button icon="pi pi-trash" className="p-button-danger p-button-text h-7 w-7 p-0" onClick={() => handleDeletePricing(rule.id)} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <div className="flex gap-2 mb-4">
-                                        <Button
-                                            type="button"
-                                            label="Recurring Strategy"
-                                            size="small"
-                                            icon="pi pi-sync"
-                                            className={`text-[10px] uppercase font-bold px-4 py-2 rounded-lg transition-all ${!pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white border-none' : 'bg-transparent text-gray-500 border-white/10'}`}
-                                            onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: false, priority: 20 }))}
-                                        />
-                                        <Button
-                                            type="button"
-                                            label="Special Event"
-                                            size="small"
-                                            icon="pi pi-calendar"
-                                            className={`text-[10px] uppercase font-bold px-4 py-2 rounded-lg transition-all ${pricingForm.isSpecificDate ? 'bg-[#b000ff] text-white border-none' : 'bg-transparent text-gray-500 border-white/10'}`}
-                                            onClick={() => setPricingForm(p => ({ ...p, isSpecificDate: true, priority: 100 }))}
+                                <div>
+                                    <h3 className="m-0 text-xl font-bold text-white">{t('advancedPricing')}</h3>
+                                    <h5 className="m-0 text-[10px] font-black uppercase tracking-widest text-[#eb79b2]">{t('addPricingRule')}</h5>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-text-muted uppercase">{t('pricingType')}</span>
+                                        <Dropdown
+                                            value={pricingForm.isSpecificDate}
+                                            options={[
+                                                { label: t('happyHourRecurring'), value: false },
+                                                { label: t('specificDate'), value: true }
+                                            ]}
+                                            onChange={(e) => setPricingForm({ ...pricingForm, isSpecificDate: e.value })}
+                                            className="h-8 text-[10px] w-48"
                                         />
                                     </div>
+                                </div>
+                            </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* Form Side */}
+                                <div className="lg:col-span-4 space-y-4">
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/5 p-4 rounded-xl border border-white/5">
                                         {!pricingForm.isSpecificDate ? (
-                                            <>
-                                                <div className="md:col-span-4 flex flex-col gap-1.5">
-                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Repeat Type</label>
-                                                    <Dropdown
-                                                        value={pricingForm.dayType}
-                                                        options={[
-                                                            { label: 'Weekday (Mon-Thu)', value: 'WEEKDAY' },
-                                                            { label: 'Weekend (Fri-Sun)', value: 'WEEKEND' },
-                                                            { label: 'Holiday', value: 'HOLIDAY' },
-                                                            { label: 'Daily (All)', value: 'DAILY' }
-                                                        ]}
-                                                        onChange={(e) => setPricingForm({ ...pricingForm, dayType: e.value })}
-                                                        className="h-10 text-xs"
-                                                    />
-                                                </div>
-                                                <div className="md:col-span-4 flex flex-col gap-1.5">
-                                                    <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Active Time Range</label>
-                                                    <div className="flex items-center gap-2">
-                                                        <InputText type="time" value={pricingForm.startTime} onChange={(e) => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="h-10 text-center text-xs flex-1" />
-                                                        <span className="text-gray-600 font-bold">-</span>
-                                                        <InputText type="time" value={pricingForm.endTime} onChange={(e) => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="h-10 text-center text-xs flex-1" />
-                                                    </div>
-                                                </div>
-                                            </>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] font-bold text-text-muted uppercase">{t('applyTo')}</label>
+                                                <Dropdown
+                                                    value={pricingForm.dayType}
+                                                    options={[
+                                                        { label: t('everyday'), value: 'EVERYDAY' },
+                                                        { label: t('weekdays'), value: 'WEEKDAY' },
+                                                        { label: t('weekends'), value: 'WEEKEND' }
+                                                    ]}
+                                                    onChange={e => setPricingForm({ ...pricingForm, dayType: e.value })}
+                                                    className="h-9 text-xs"
+                                                />
+                                            </div>
                                         ) : (
-                                            <div className="md:col-span-8 flex flex-col gap-1.5">
-                                                <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Specific Period</label>
+                                            <div className="flex flex-col gap-1 sm:col-span-2">
+                                                <label className="text-[10px] font-bold text-text-muted uppercase">{t('dateRange')}</label>
                                                 <Calendar
                                                     value={pricingForm.dateRange}
-                                                    onChange={(e) => setPricingForm({ ...pricingForm, dateRange: e.value })}
+                                                    onChange={e => setPricingForm({ ...pricingForm, dateRange: e.value })}
                                                     selectionMode="range"
                                                     readOnlyInput
-                                                    showTime
-                                                    hourFormat="24"
-                                                    className="h-10 text-xs"
-                                                    placeholder="Click to select dates..."
+                                                    placeholder={t('selectDates')}
+                                                    className="h-9 text-xs"
                                                 />
                                             </div>
                                         )}
 
-                                        <div className="md:col-span-2 flex flex-col gap-1.5">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">Special Rate</label>
-                                            <InputNumber
-                                                value={pricingForm.pricePerHour}
-                                                onValueChange={(e) => setPricingForm({ ...pricingForm, pricePerHour: e.value })}
-                                                mode="currency" currency="MNT" locale="mn-MN"
-                                                className="h-10 text-xs"
-                                            />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('startTime')}</label>
+                                            <InputText type="time" value={pricingForm.startTime} onChange={e => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="h-9 text-xs" />
                                         </div>
-                                        <div className="md:col-span-1 flex flex-col gap-1.5">
-                                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">PRI</label>
-                                            <InputNumber
-                                                value={pricingForm.priority}
-                                                onValueChange={(e) => setPricingForm({ ...pricingForm, priority: e.value })}
-                                                min={1} max={999}
-                                                className="h-10 text-xs"
-                                            />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('endTime')}</label>
+                                            <InputText type="time" value={pricingForm.endTime} onChange={e => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="h-9 text-xs" />
                                         </div>
-                                        <div className="md:col-span-1">
-                                            <Button icon="pi pi-plus" type="button" className="w-full h-10 bg-[#00f0ff] border-none text-black hover:bg-[#00d8e6]" onClick={() => handleAddPricing(editingRoom.id)} />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('specialRatePerHour')}</label>
+                                            <InputNumber value={pricingForm.pricePerHour} onValueChange={e => setPricingForm({ ...pricingForm, pricePerHour: e.value })} className="h-9 text-xs" />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase" title={t('priorityLabel')}>{t('priority')}</label>
+                                            <InputNumber value={pricingForm.priority} onValueChange={e => setPricingForm({ ...pricingForm, priority: e.value })} className="h-9 text-xs" />
+                                        </div>
+                                        <div className="flex items-end">
+                                            <Button
+                                                label={t('save')}
+                                                icon="pi pi-plus"
+                                                onClick={() => handleAddPricing(editingRoom.id)}
+                                                className="h-9 w-full bg-white/10 border-none font-bold text-xs"
+                                            />
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* List Side */}
+                                <div className="lg:col-span-8">
+                                    <DataTable
+                                        value={editingRoom.pricingRules || []}
+                                        className="pricing-datatable text-xs"
+                                        emptyMessage={t('noPricingRules')}
+                                    >
+                                        <Column header={t('schedule')} body={(rowData) => (
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-white">
+                                                    {rowData.isHoliday ? t('holidayEvent') : rowData.dayType}
+                                                </span>
+                                                <span className="text-gray-500 opacity-60">
+                                                    {rowData.startTime} - {rowData.endTime}
+                                                </span>
+                                            </div>
+                                        )} />
+                                        <Column header={t('dates')} body={(rowData) => rowData.startDateTime ?
+                                            `${new Date(rowData.startDateTime).toLocaleDateString()} - ${new Date(rowData.endDateTime).toLocaleDateString()}`
+                                            : t('recurring')} />
+                                        <Column header={t('rate')} body={(rowData) => (
+                                            <span className="font-black text-[#4CAF50]">{rowData.pricePerHour.toLocaleString()}₮</span>
+                                        )} />
+                                        <Column body={(rowData) => (
+                                            <Button
+                                                icon="pi pi-trash"
+                                                text
+                                                severity="danger"
+                                                size="small"
+                                                onClick={() => handleDeletePricing(rowData.id)}
+                                            />
+                                        )} />
+                                    </DataTable>
+                                </div>
                             </div>
-                        )}
-                        <div className="md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-white/5">
-                            <Button
-                                type="button"
-                                label="Cancel"
-                                outlined
-                                className="h-11 px-6 font-bold"
-                                onClick={() => {
-                                    setEditingRoom(null);
-                                    setIsRoomModalOpen(false);
-                                    setRoomForm({ name: '', roomTypeId: null, capacity: 6, hourlyRate: 40000, images: [imgStandard], roomFeatureIds: [], isBookingEnabled: true });
-                                }}
-                            />
-                            <Button
-                                type="submit"
-                                label={editingRoom ? "Update Room" : "Create Room"}
-                                className="h-11 px-10 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg shadow-lg shadow-[#b000ff]/20"
-                            />
                         </div>
-                    </form>
+                    )}
                 </div>
             </Dialog>
 
