@@ -39,10 +39,10 @@ The API is split into domain-specific modules, each following the NestJS pattern
 - **`VenuesModule`**: Branches managed by organizations.
 - **`RoomsModule`**: Booking units within venues, including pricing and availability logic.
 - **`BookingsModule`**: Transactional flow, conflict detection, and status management.
-- **`AccountsModule`**: **[NEW]** Double-entry bookkeeping system (Assets, Liabilities, Revenue, Expenses).
-- **`PaymentsModule`**: **[NEW]** Payment processing (QPay, Cards), refunds, and transaction logging.
+- **`AccountsModule`**: Double-entry bookkeeping system (Assets, Liabilities, Revenue, Expenses).
+- **`PaymentsModule`**: Payment processing (QPay, Cards), refunds, and transaction logging.
 - **`PromotionsModule`**: Management of discount codes and validity.
-- **`NotificationsModule`**: **[NEW]** Handling email/SMS alerts for bookings and system events.
+- **`NotificationsModule`**: Handling email/SMS alerts for bookings and system events.
 - **`PlansModule`**: Configuration of subscription tiers for organizations.
 - **`AuditModule`**: Centralized logging for entity changes.
 
@@ -54,8 +54,8 @@ The system uses **UUIDs** for all primary keys to ensure scalability and securit
 - **Venue**: Represents a karaoke establishment, including metadata like district, address, and operating hours.
 - **Room**: Individual karaoke rooms with specific capacities, rates, types, and features.
 - **Booking**: Records of room reservations with status history.
-- **Account & LedgerEntry**: **[NEW]** Financial records implementing double-entry accounting for auditability.
-- **Payment & Transaction**: **[NEW]** Records of monetary exchanges and gateway responses.
+- **Account & LedgerEntry**: Financial records implementing double-entry accounting for auditability.
+- **Payment & Transaction**: Records of monetary exchanges and gateway responses.
 - **Promotion**: Discount codes with specific values and validity periods.
 - **Review**: Customer-generated feedback and ratings.
 
@@ -86,11 +86,11 @@ The backend is organized into functional modules:
 | **Venues** | CRUD operations for venue details and management. |
 | **Rooms** | Management of room specifications, **pricing**, and **availability**. |
 | **Bookings** | Core booking flow, status transitions, and conflict checks. |
-| **Accounts** | **Financial ledger, balance tracking, and detailed transaction history.** |
-| **Payments** | **Payment gateway integration, transaction recording, and refunds.** |
+| **Accounts** | Financial ledger, balance tracking, and detailed transaction history. |
+| **Payments** | Payment gateway integration, transaction recording, and refunds. |
 | **Promotions** | Management of discount codes and validation logic. |
 | **Reviews** | Handling user feedback and calculating venue ratings. |
-| **Notifications** | **System alerts and user communications.** |
+| **Notifications** | System alerts and user communications. |
 
 ## 4. Security & Authentication
 - **Authentication**: JWT (JSON Web Tokens) are used for secure session management. Supports both password-based and **OTP (One-Time Password)** flows.
@@ -278,6 +278,9 @@ erDiagram
         enum role
         int loyalty_points
         boolean is_active
+        boolean is_verified
+        string verification_code
+        timestamp verification_code_expiry
         timestamp created_at
         timestamp updated_at
     }
@@ -717,3 +720,14 @@ sequenceDiagram
     Service->>System/Staff: Success
     deactivate Service
 ```
+
+## 8.6. Mobile UX Design
+
+The UB Karaoke App follows a **mobile-first** design philosophy, specifically optimized for the customer portal to ensure a premium, native-app-like experience.
+
+### Key UX Features:
+- **Sticky Navigation**: Context-aware headers and action bars that stay accessible during scroll.
+- **Segmented Control Tabs**: Intuitive switching between active bookings, history, rewards, and settings.
+- **Micro-Animations**: Use of CSS transitions and PrimeReact animations to enhance interactivity (e.g., hover scaling, smooth tab transitions).
+- **Native Components**: Custom-styled UI elements using Vanilla CSS to achieve a high-end, dark-mode focused aesthetic.
+- **Deferred Authentication**: Allowing users to browse and select rooms before requiring login, reducing friction in the booking funnel.

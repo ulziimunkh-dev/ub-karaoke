@@ -1,14 +1,14 @@
 # UB Karaoke
 
-UB Karaoke is a comprehensive platform designed for discovering and booking karaoke venues. It features a modern React frontend and a robust NestJS backend.
+UB Karaoke is a comprehensive platform designed for discovering and booking karaoke venues. It features a modern, **mobile-first React frontend** and a robust NestJS backend, providing a premium experience across all devices.
 
 ## Documentation
 
 Comprehensive system and requirement documentation can be found in the `docs` directory:
 
-- [System Design Document](docs/system_design.md)
+- [System Architecture](docs/system_design_architecture.md)
 - [Requirement Documentation](docs/requirements.md)
-- [Full Documentation (Word/Docx)](docs/ub_karaoke_documentation.docx)
+- [Full Documentation (v2)](full_documentation_v2.md)
 
 ## Developer Guide
 

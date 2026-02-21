@@ -53,10 +53,12 @@ The system uses the following core entities:
 - **Booking**: Records of room reservations made by customers.
 - **Promotion**: Discount codes with specific values (PERCENT/FIXED) and validity periods, linked to organizations or venues.
 - **Review**: Customer-generated feedback and ratings for venues.
+- **Verification**: Email/Phone number confirmation for users and staff.
 
 ### Common Metadata (Auditing & Status)
 All major entities include standardized columns for tracking and status management:
 - **`isActive` (Boolean)**: Replaces the legacy `status` string. Used for soft deactivation.
+- **`isVerified` (Boolean)**: Tracks whether a user's contact information has been confirmed.
 - **`createdBy` (Integer)**: ID of the user who created the record.
 - **`updatedBy` (Integer)**: ID of the user who last modified the record.
 - **`createdAt` (Timestamp)**: Automated record creation time.
@@ -138,8 +140,9 @@ graph TD
 ## 1. Functional Requirements
 
 ### 1.1 User Authentication & Profile
-- **Login/Register**: Users must be able to create accounts and log in securely. Supports **OTP (One-Time Password)** login via email/phone for customers.
+- **Login/Register**: Users must be able to create accounts and log in securely. Supports **OTP (One-Time Password)** login via email/phone for customers. Features mandatory **Email/Phone Verification** for account activation.
 - **Profile Management**: Users can update their profile information (name, phone, email).
+- **Mobile-First Experience**: A premium, responsive profile section optimized for mobile devices, featuring sticky headers, segmented controls, and micro-animations.
 - **Loyalty Program**: Customers earn points based on their bookings.
 - **Deferred Login**: Customers can browse venues and rooms without logging in, only requiring authentication at the final booking step.
 
