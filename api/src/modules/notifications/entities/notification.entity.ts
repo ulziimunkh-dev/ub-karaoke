@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
+import { Staff } from '../../staff/entities/staff.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
 
@@ -20,12 +21,19 @@ export class Notification {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ name: 'userId' })
+    @Column({ name: 'userId', nullable: true })
     userId: string;
 
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn({ name: 'userId' })
     user: User;
+
+    @Column({ name: 'staffId', nullable: true })
+    staffId: string;
+
+    @ManyToOne(() => Staff, { nullable: true })
+    @JoinColumn({ name: 'staffId' })
+    staff: Staff;
 
     @Column({ name: 'bookingId', nullable: true })
     bookingId: string;

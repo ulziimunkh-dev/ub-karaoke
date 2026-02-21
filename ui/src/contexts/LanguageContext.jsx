@@ -294,7 +294,36 @@ const dictionaries = {
         bookingFailed: "Booking failed. Please try again.",
         roomAlreadyBooked: "This room is already booked for the selected time.",
         processing: "Processing...",
-        staffBookingRestriction: "Staff must use Admin Panel for manual bookings."
+        staffBookingRestriction: "Staff must use Admin Panel for manual bookings.",
+        // Banner & Timer
+        actionRequired: "Action Required: Complete Booking",
+        completePaymentNow: "Complete Payment Now",
+        holdRoomMessage: "Your room is being held. Please complete transfer to avoid cancellation.",
+        dismissBanner: "Dismiss Banner",
+        expiresIn: "Expires In",
+        hurryMessage: "Hurry! Complete your payment to secure this room.",
+        // Profile Page
+        memberSince: "Member since {year}",
+        pts: "PTS",
+        rewards: "Rewards",
+        history: "History",
+        noAvailableSlots: "No Available Slots",
+        noUpcomingBookings: "No upcoming bookings",
+        roomSelection: "Room Selection",
+        hours: "Hours",
+        payNow: "PAY NOW",
+        timeRemaining: "Time Remaining",
+        noBookingHistory: "No booking history",
+        goldTier: "Gold Tier",
+        currentBalance: "Current Balance",
+        pointsToNextTier: "{points} points to next tier",
+        editProfile: "Edit Profile",
+        fullName: "Full Name",
+        phoneNumber: "Phone Number",
+        pleaseLogin: "Please log in.",
+        backToHome: "Back to Home",
+        profileUpdatedSuccess: "Profile updated successfully!",
+        profileUpdateFailed: "Failed to update profile: "
     },
     mn: {
         appTitle: "UB КАРАОКЕ",
@@ -326,6 +355,7 @@ const dictionaries = {
         date: "Огноо",
         time: "Цаг",
         duration: "Үргэлжлэх цаг",
+        noAvailableSlots: "Боломжит цаг алга байна.",
         total: "Нийт",
         proceedPayment: "Төлбөр төлөх",
         confirmPayment: "Төлбөр баталгаажуулах",
@@ -461,7 +491,7 @@ const dictionaries = {
         completed: "Дууссан",
         cancelled: "Цуцалсан",
         search: "Хайх...",
-        reservationNotes: "Захиалгын тэмдэглэл (сонголттай)",
+        reservationNotes: "Захиалгын тэмдэглэл (Заавал биш)",
         notesPlaceholder: "Захиалгын талаарх тэмдэглэл эсвэл холбоо барих нэмэлт утас/и-мэйл хаягаа энд бичнэ үү...",
         // Login Modal
         customerLogin: "Нэвтрэх",
@@ -577,7 +607,7 @@ const dictionaries = {
         paymentSuccess: "Төлбөр амжилттай!",
         // Cancel Booking
         cancelBookingHeader: "Захиалга цуцлах",
-        cancelBookingMessage: "Та энэ захиалгыг цуцлахдаа итгэлтэй байна уу? Цуцлалтын шимтгэл нэхэмжлэгдэж болно.",
+        cancelBookingMessage: "Та энэ захиалгыг цуцлахдаа итгэлтэй байна уу? Цуцлалтын шимтгэл нэхэмжлэгдэх болно.",
         yesCancel: "Тийм, Цуцлах",
         goBack: "Буцах",
         // Booking Errors
@@ -585,7 +615,36 @@ const dictionaries = {
         bookingFailed: "Захиалга амжилтгүй боллоо. Дахин оролдоно уу.",
         roomAlreadyBooked: "Энэ өрөө сонгосон цагт аль хэдийн захиалагдсан байна.",
         processing: "Боловсруулж байна...",
-        staffBookingRestriction: "Ажилтнууд Админ хуудсаар захиалга хийнэ үү."
+        staffBookingRestriction: "Ажилтнууд Админ хуудсаар захиалга хийнэ үү.",
+        // Banner & Timer
+        actionRequired: "Төлбөр төлнө үү: Захиалга дуусгах",
+        completePaymentNow: "Төлбөр төлөх",
+        holdRoomMessage: "Таны өрөөг түр хадгаллаа. Захиалга цуцлагдахаас өмнө шилжүүлэг хийнэ үү.",
+        dismissBanner: "Хаах",
+        expiresIn: "Төлбөр төлж дуусах хугацаа",
+        hurryMessage: "Яараарай! Өрөөгөө баталгаажуулахын тулд төлбөрөө төлнө үү.",
+        // Profile Page
+        memberSince: "{year} оноос хойш гишүүн",
+        pts: "ОНОО",
+        rewards: "Урамшуулал",
+        noUpcomingBookings: "Захиалга байхгүй байна",
+        roomSelection: "Өрөө сонголт",
+        history: "Түүх",
+        hours: "Цаг",
+        payNow: "ТӨЛӨХ",
+        timeRemaining: "Үлдсэн хугацаа",
+        noBookingHistory: "Түүх байхгүй байна",
+        goldTier: "Алтан гишүүн",
+        currentBalance: "Одоогийн үлдэгдэл",
+        pointsToNextTier: "Дараагийн зэрэглэл хүртэл {points} оноо",
+        editProfile: "Профайл засах",
+        fullName: "Бүтэн нэр",
+        phoneNumber: "Утасны дугаар",
+        pleaseLogin: "Нэвтэрнэ үү.",
+        backToHome: "Нүүр хуудас руу буцах",
+        email: "Имэйл хаяг",
+        profileUpdatedSuccess: "Профайл амжилттай шинэчлэгдлээ!",
+        profileUpdateFailed: "Профайл шинэчлэхэд алдаа гарлаа: "
     }
 };
 

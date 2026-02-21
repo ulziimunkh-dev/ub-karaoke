@@ -2,10 +2,12 @@ import React from 'react';
 import { useData } from '../contexts/DataContext';
 import BookingCountdown from './BookingCountdown';
 import { useLocation } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ReservationBanner = () => {
     const { activeBooking, extendBookingReservation, isExtending, setActiveBooking, setShowResumeModal, showResumeModal } = useData();
     const location = useLocation();
+    const { t } = useLanguage();
 
     // Don't show if no active booking, not RESERVED, or if the payment modal is already open
     if (!activeBooking || (activeBooking.status !== 'RESERVED' && activeBooking.status !== 'reserved')) return null;
@@ -25,12 +27,12 @@ const ReservationBanner = () => {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
                         </span>
-                        <span className="text-white text-sm font-black uppercase tracking-widest bg-red-600/20 px-2 py-0.5 rounded">Action Required: Complete Booking</span>
+                        <span className="text-white text-sm font-black uppercase tracking-widest bg-red-600/20 px-2 py-0.5 rounded">{t('actionRequired')}</span>
                     </div>
                     <button
                         onClick={() => setActiveBooking(null)}
                         className="text-gray-400 hover:text-white transition-colors p-1"
-                        title="Dismiss Banner"
+                        title={t('dismissBanner')}
                     >
                         <i className="pi pi-times text-sm"></i>
                     </button>
@@ -53,11 +55,11 @@ const ReservationBanner = () => {
                         onClick={() => setShowResumeModal(true)}
                         className="w-full py-2.5 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-[0_0_20px_rgba(176,0,255,0.4)] hover:shadow-[0_0_30px_rgba(176,0,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all animate-pulse-slow"
                     >
-                        Complete Payment Now
+                        {t('completePaymentNow')}
                     </button>
 
                     <p className="text-[10px] text-gray-500 text-center uppercase font-bold tracking-tighter">
-                        Your room is being held. please complete transfer to avoid cancellation.
+                        {t('holdRoomMessage')}
                     </p>
                 </div>
             </div>

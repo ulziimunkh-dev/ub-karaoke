@@ -17,6 +17,7 @@ import { api } from '../utils/api';
 
 import AuditLogViewer from './staff/AuditLogViewer';
 import ProfileModal from './common/ProfileModal';
+import NotificationBell from './NotificationBell';
 
 const StaffPortal = () => {
     const {
@@ -264,6 +265,8 @@ const StaffPortal = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
+                    <NotificationBell />
+                    <div className="h-6 w-[1px] bg-white/10"></div>
                     <div
                         className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
                         onClick={() => setIsProfileModalOpen(true)}

@@ -76,14 +76,20 @@ const NotificationBell = () => {
                         notifications.map((notif) => (
                             <div
                                 key={notif.id}
-                                className={`p-3 border-round mb-2 cursor-pointer transition-colors transition-duration-200 ${!notif.readAt ? 'bg-blue-50 border-left-3 border-blue-500' : 'hover:surface-100'}`}
+                                className={`p-3 border-round mb-2 cursor-pointer transition-colors transition-duration-200 ${!notif.readAt ? 'border-left-3 border-blue-500' : 'hover:surface-100'}`}
+                                style={!notif.readAt ? { backgroundColor: 'var(--blue-100, #dbeafe)' } : {}}
                                 onClick={() => !notif.readAt && markAsRead(notif.id)}
                             >
                                 <div className="flex align-items-start gap-3">
                                     <i className={getIcon(notif)} style={{ fontSize: '1.2rem', marginTop: '2px' }} />
                                     <div className="flex-1">
-                                        <div className="text-sm font-semibold mb-1">{notif.title}</div>
-                                        <div className="text-xs text-color-secondary mb-2 line-height-3">{notif.message}</div>
+                                        <div className="flex align-items-center gap-2 mb-1">
+                                            <span className="text-sm font-bold text-color">{notif.title}</span>
+                                            {!notif.readAt && (
+                                                <span className="inline-block border-circle bg-blue-500" style={{ width: '8px', height: '8px', flexShrink: 0 }} />
+                                            )}
+                                        </div>
+                                        <div className="text-xs text-color mb-2 line-height-3" style={{ opacity: 0.75 }}>{notif.message}</div>
                                         <div className="flex justify-content-between align-items-center">
                                             <span className="text-xs opacity-60">{formatDate(notif.createdAt)}</span>
                                             <Button

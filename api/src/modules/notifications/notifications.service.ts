@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, In } from 'typeorm';
 import { Notification, NotificationType, NotificationStatus } from './entities/notification.entity';
+import { Staff, StaffRole } from '../staff/entities/staff.entity';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class NotificationsService {
     constructor(
         @InjectRepository(Notification)
         private notificationsRepository: Repository<Notification>,
+        @InjectRepository(Staff)
+        private staffRepository: Repository<Staff>,
         private configService: ConfigService,
     ) {
         const smtpHost = this.configService.get<string>('SMTP_HOST');
@@ -61,6 +64,47 @@ export class NotificationsService {
     async create(data: Partial<Notification>) {
         const notification = this.notificationsRepository.create(data);
         return this.notificationsRepository.save(notification);
+    }
+
+    /**
+     * Create an in-app notification for all staff and managers in an organization.
+     * Called after key booking events so the bell shows actionable items for staff.
+     */
+    async sendOrgNotification(
+        organizationId: string,
+        title: string,
+        message: string,
+        bookingId?: string,
+    ) {
+        if (!organizationId) return;
+        try {
+            const staffMembers = await this.staffRepository.find({
+                where: {
+                    organizationId,
+                    role: In([StaffRole.STAFF, StaffRole.MANAGER]),
+                },
+                select: ['id'],
+            });
+
+            if (staffMembers.length === 0) return;
+
+            const rows = staffMembers.map(s =>
+                this.notificationsRepository.create({
+                    staffId: s.id,
+                    organizationId,
+                    bookingId: bookingId ?? undefined,
+                    type: NotificationType.PUSH,
+                    status: NotificationStatus.SENT,
+                    title,
+                    message,
+                }),
+            );
+
+            await this.notificationsRepository.save(rows);
+            this.logger.log(`[ORG NOTIFY] "${title}" sent to ${staffMembers.length} staff in org ${organizationId}`);
+        } catch (err) {
+            this.logger.error(`Failed to send org notification: ${err.message}`);
+        }
     }
 
     async sendVerificationCode(contact: string, code: string) {
@@ -167,27 +211,24 @@ export class NotificationsService {
         }
     }
 
-    async getUserNotifications(userId: string, limit: number = 20) {
+    async getUserNotifications(where: { userId?: string; staffId?: string }, limit: number = 20) {
         return this.notificationsRepository.find({
-            where: { userId },
+            where,
             order: { createdAt: 'DESC' },
             take: limit,
             relations: ['booking']
         });
     }
 
-    async getUnreadCount(userId: string): Promise<number> {
+    async getUnreadCount(where: { userId?: string; staffId?: string }): Promise<number> {
         return this.notificationsRepository.count({
-            where: {
-                userId,
-                readAt: IsNull()
-            }
+            where: { ...where, readAt: IsNull() }
         });
     }
 
-    async markAsRead(notificationId: string, userId: string) {
+    async markAsRead(notificationId: string, where: { userId?: string; staffId?: string }) {
         const notification = await this.notificationsRepository.findOne({
-            where: { id: notificationId, userId }
+            where: { id: notificationId, ...where }
         });
 
         if (notification && !notification.readAt) {
@@ -198,14 +239,14 @@ export class NotificationsService {
         return notification;
     }
 
-    async markAllAsRead(userId: string) {
+    async markAllAsRead(where: { userId?: string; staffId?: string }) {
         await this.notificationsRepository.update(
-            { userId, readAt: IsNull() },
+            { ...where, readAt: IsNull() },
             { readAt: new Date() }
         );
     }
 
-    async deleteNotification(notificationId: string, userId: string) {
-        await this.notificationsRepository.delete({ id: notificationId, userId });
+    async deleteNotification(notificationId: string, where: { userId?: string; staffId?: string }) {
+        await this.notificationsRepository.delete({ id: notificationId, ...where });
     }
 }

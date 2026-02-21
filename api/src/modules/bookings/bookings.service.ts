@@ -195,6 +195,14 @@ export class BookingsService {
                     this.notificationsGateway.emitToUser(userId, 'booking:reserved', first);
                 }
                 this.notificationsGateway.emitToOrganization(first.organizationId, 'booking:new_reservation', first);
+
+                // Notify staff of the new online reservation
+                this.notificationsService.sendOrgNotification(
+                    first.organizationId,
+                    'New Online Reservation',
+                    'A customer reserved a room online. Review and confirm payment.',
+                    first.id
+                ).catch(err => console.error('Org notification failed', err));
             }
 
             return bookings[0];
@@ -321,6 +329,14 @@ export class BookingsService {
         // Notify organization
         this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:status_updated', saved);
 
+        // Notify staff
+        this.notificationsService.sendOrgNotification(
+            booking.organizationId,
+            'Booking Confirmed',
+            `Booking #${id.slice(0, 8)} has been approved and confirmed.`,
+            id
+        ).catch(() => { });
+
         return saved;
     }
 
@@ -362,6 +378,14 @@ export class BookingsService {
         // Notify organization
         this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:status_updated', saved);
 
+        // Notify staff
+        this.notificationsService.sendOrgNotification(
+            booking.organizationId,
+            'Booking Rejected',
+            `Booking #${id.slice(0, 8)} has been rejected.`,
+            id
+        ).catch(() => { });
+
         return saved;
     }
 
@@ -372,27 +396,17 @@ export class BookingsService {
         roomId?: string;
         status?: string;
     }): Promise<Booking[]> {
-        const query = this.bookingsRepository.createQueryBuilder('booking');
+        const where: any = {};
+        if (filters?.userId) where.userId = filters.userId;
+        if (filters?.venueId) where.venueId = filters.venueId;
+        if (filters?.roomId) where.roomId = filters.roomId;
+        if (filters?.status) where.status = filters.status;
 
-        if (filters?.userId) {
-            query.andWhere('booking.userId = :userId', { userId: filters.userId });
-        }
-
-        if (filters?.venueId) {
-            query.andWhere('booking.venueId = :venueId', {
-                venueId: filters.venueId,
-            });
-        }
-
-        if (filters?.roomId) {
-            query.andWhere('booking.roomId = :roomId', { roomId: filters.roomId });
-        }
-
-        if (filters?.status) {
-            query.andWhere('booking.status = :status', { status: filters.status });
-        }
-
-        return query.orderBy('booking.created_at', 'DESC').getMany();
+        return this.bookingsRepository.find({
+            where,
+            relations: ['room', 'room.venue', 'venue'],
+            order: { createdAt: 'DESC' }
+        });
     }
 
     async findOne(id: string): Promise<Booking> {
@@ -742,6 +756,14 @@ export class BookingsService {
             this.notificationsGateway.emitToUser(booking.userId, 'booking:confirmed', saved);
         }
 
+        // Notify staff of payment received
+        this.notificationsService.sendOrgNotification(
+            booking.organizationId,
+            'Payment Received',
+            `Payment confirmed for booking #${bookingId.slice(0, 8)}.`,
+            bookingId
+        ).catch(() => { });
+
         return saved;
     }
 
@@ -749,38 +771,7 @@ export class BookingsService {
      * Extend reservation time by 5 minutes (max 3 extensions)
      */
     async extendReservation(bookingId: string, userId: string): Promise<Booking> {
-        const booking = await this.findOne(bookingId);
-
-        if (booking.status !== BookingStatus.RESERVED) {
-            throw new BadRequestException('Can only extend RESERVED bookings');
-        }
-
-        if (booking.userId !== userId) {
-            throw new ForbiddenException('Not authorized');
-        }
-
-        const now = new Date();
-        if (booking.expiresAt && now > booking.expiresAt) {
-            throw new BadRequestException('Reservation already expired');
-        }
-
-        // Track extensions (limit to 3 extensions)
-        const extensionCount = booking.extensionCount || 0;
-        if (extensionCount >= 3) {
-            throw new BadRequestException('Maximum extensions reached');
-        }
-
-        booking.expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // +5 more minutes
-        booking.extensionCount = extensionCount + 1;
-
-        const saved = await this.bookingsRepository.save(booking);
-
-        // Emit real-time update
-        if (this.notificationsGateway && booking.userId) {
-            this.notificationsGateway.emitToUser(booking.userId, 'booking:extended', saved);
-        }
-
-        return saved;
+        throw new BadRequestException('Reservation extension is currently disabled.');
     }
 
     /**
