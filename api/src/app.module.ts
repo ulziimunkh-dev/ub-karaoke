@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -27,6 +27,9 @@ import 'winston-daily-rotate-file';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
 import { join } from 'path';
 import { TypeOrmLoggerAdapter } from './common/adapters/typeorm-logger.adapter';
+import { RequestContextMiddleware } from './common/middleware/request-context.middleware';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestContextInterceptor } from './common/interceptors/request-context.interceptor';
 
 const ignoreRouterExplorer = winston.format((info) => {
   if (info.context === 'RouterExplorer') {
@@ -176,6 +179,18 @@ const ignoreRouterExplorer = winston.format((info) => {
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestContextInterceptor,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestContextMiddleware)
+      .forRoutes('*');
+  }
+}

@@ -43,7 +43,7 @@ const BookingsManagement = () => {
 
         // Status filter
         if (statusFilter) {
-            filtered = filtered.filter(b => b.status?.toUpperCase() === statusFilter.toUpperCase());
+            filtered = filtered.filter(b => b.status?.toUpperCase() === statusFilter?.toUpperCase());
         }
 
         return filtered.sort((a, b) => new Date(b.createdAt || b.startTime) - new Date(a.createdAt || a.startTime));
@@ -57,6 +57,8 @@ const BookingsManagement = () => {
         { label: t('checkedIn'), value: 'CHECKED_IN' },
         { label: t('completed'), value: 'COMPLETED' },
         { label: t('cancelled'), value: 'CANCELLED' },
+        { label: t('rejected'), value: 'REJECTED' },
+        { label: t('expired'), value: 'EXPIRED' },
     ];
 
     const getStatusSeverity = (status) => {
@@ -204,8 +206,10 @@ const BookingsManagement = () => {
                     value={statusFilter}
                     options={statusOptions}
                     onChange={(e) => setStatusFilter(e.value)}
+                    optionValue="value"
                     placeholder={t('filterByStatus')}
                     className="w-40"
+                    showClear
                 />
             </div>
             <span className="p-input-icon-left">

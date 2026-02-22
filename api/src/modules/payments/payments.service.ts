@@ -38,7 +38,9 @@ export class PaymentsService {
             resource: 'Payment',
             resourceId: savedPayment.id,
             details: { amount: savedPayment.amount, method: savedPayment.method, bookingId: savedPayment.bookingId },
-            userId: userId,
+            actorId: userId,
+            actorType: 'USER',
+            organizationId: savedPayment.organizationId
         });
 
         return savedPayment;
@@ -160,7 +162,9 @@ export class PaymentsService {
                     bookingId,
                     qpayInvoiceId: qpayResponse.invoice_id,
                 },
-                userId,
+                actorId: userId,
+                actorType: 'USER',
+                organizationId: savedPayment.organizationId
             });
 
             this.logger.log(`QPay invoice created for payment ${savedPayment.id}, invoice: ${qpayResponse.invoice_id}`);
@@ -239,7 +243,9 @@ export class PaymentsService {
                         amount: qpayPayment.payment_amount,
                         bookingId: payment.bookingId,
                     },
-                    userId: payment.createdBy,
+                    actorId: payment.createdBy,
+                    actorType: 'USER',
+                    organizationId: payment.organizationId
                 });
             }
 

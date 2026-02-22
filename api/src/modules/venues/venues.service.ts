@@ -35,7 +35,9 @@ export class VenuesService {
             resource: 'Venue',
             resourceId: saved.id,
             details: { name: saved.name },
-            staffId: creatorId
+            actorId: creatorId,
+            actorType: 'STAFF',
+            organizationId: saved.organizationId
         });
 
         if (createVenueDto.openingHours) {
@@ -144,7 +146,9 @@ export class VenuesService {
             resource: 'Venue',
             resourceId: id,
             details: updateVenueDto,
-            staffId: updaterId
+            actorId: updaterId,
+            actorType: 'STAFF',
+            organizationId: venue.organizationId
         });
 
         if (updateVenueDto.openingHours) {
@@ -169,7 +173,9 @@ export class VenuesService {
             resource: 'Venue',
             resourceId: id,
             details: { isActive },
-            staffId: updaterId
+            actorId: updaterId,
+            actorType: 'STAFF',
+            organizationId: venue.organizationId
         });
 
         return updated;
@@ -185,7 +191,8 @@ export class VenuesService {
             action: 'VENUE_DELETED',
             resource: 'Venue',
             resourceId: id,
-            details: { name: venue.name }
+            details: { name: venue.name },
+            organizationId: venue.organizationId
         });
     }
 
@@ -270,7 +277,9 @@ export class VenuesService {
                 userAgent,
                 timestamp: new Date().toISOString()
             },
-            userId: userId,
+            actorId: userId,
+            actorType: 'USER',
+            organizationId: venue.organizationId
         });
 
         return { success: true };

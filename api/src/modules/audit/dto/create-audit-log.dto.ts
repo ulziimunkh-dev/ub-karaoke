@@ -3,6 +3,10 @@ export class CreateAuditLogDto {
     resource: string;
     resourceId?: string;
     details?: any;
-    userId?: string;
-    staffId?: string;
+    actorId?: string;
+    actorType?: string;
+    actorName?: string;
+    organizationId?: string;
+    ipAddress?: string;
+    userAgent?: string;
 }

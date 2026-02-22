@@ -100,17 +100,20 @@ export class BookingsController {
     @ApiQuery({ name: 'venueId', required: false })
     @ApiQuery({ name: 'roomId', required: false })
     @ApiQuery({ name: 'status', required: false })
+    @ApiQuery({ name: 'organizationId', required: false })
     findAll(
         @Query('userId') userId?: string,
         @Query('venueId') venueId?: string,
         @Query('roomId') roomId?: string,
         @Query('status') status?: string,
+        @Query('organizationId') organizationId?: string,
     ) {
         return this.bookingsService.findAll({
             userId,
             venueId,
             roomId,
             status,
+            organizationId,
         });
     }
 

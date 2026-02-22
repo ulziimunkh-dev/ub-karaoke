@@ -12,21 +12,23 @@ import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
 import { Toast } from 'primereact/toast';
 import { Dropdown } from 'primereact/dropdown';
+import { confirmDialog, ConfirmDialog } from 'primereact/confirmdialog';
 
 const Finance = () => {
     const {
         earnings, payouts, payoutAccounts,
-        requestPayout, addPayoutAccount, updatePayoutStatus,
-        currentUser, bookings, processRefund, venues, refreshData
+        currentUser, venues, refreshData,
+        requestPayout, addPayoutAccount, updatePayoutAccount, deletePayoutAccount, updatePayoutStatus
     } = useData();
     const { t } = useLanguage();
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedEarnings, setSelectedEarnings] = useState([]);
     const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+    const [editingAccountId, setEditingAccountId] = useState(null);
     const [payoutForm, setPayoutForm] = useState({ payoutAccountId: '' });
     const [accountForm, setAccountForm] = useState({
-        bankName: '', accountNumber: '', accountHolder: '', isDefault: true
+        bankName: '', accountNumber: '', accountName: '', isDefault: true, provider: 'BANK'
     });
     const toast = useRef(null);
 
@@ -86,20 +88,64 @@ const Finance = () => {
             setSelectedEarnings([]);
             toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutRequestedSuccess') });
             refreshData?.();
-        } catch (error) {
+        } catch {
             toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutRequestFailed') });
         }
     };
 
-    const handleAddAccount = async () => {
+    const handleSaveAccount = async () => {
         try {
-            await addPayoutAccount(accountForm);
+            if (editingAccountId) {
+                await updatePayoutAccount(editingAccountId, accountForm);
+                toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutAccountUpdated') });
+            } else {
+                await addPayoutAccount(accountForm);
+                toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutAccountAdded') });
+            }
             setIsAccountModalOpen(false);
-            toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutAccountAdded') });
+            setEditingAccountId(null);
             refreshData?.();
-        } catch (error) {
-            toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutAccountAddFailed') });
+        } catch {
+            toast.current.show({ severity: 'error', summary: t('error'), detail: editingAccountId ? t('payoutAccountUpdateFailed') : t('payoutAccountAddFailed') });
         }
+    };
+
+    const handleEditAccount = (account) => {
+        setAccountForm({
+            bankName: account.bankName,
+            accountNumber: account.accountNumber,
+            accountName: account.accountName,
+            isDefault: account.isDefault,
+            provider: account.provider || 'BANK'
+        });
+        setEditingAccountId(account.id);
+        setIsAccountModalOpen(true);
+    };
+
+    const handleDeleteAccount = (id) => {
+        confirmDialog({
+            message: t('confirmDeleteAccount'),
+            header: t('confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptClassName: 'p-button-danger',
+            accept: async () => {
+                try {
+                    await deletePayoutAccount(id);
+                    toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutAccountDeleted') });
+                    refreshData?.();
+                } catch {
+                    toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutAccountDeleteFailed') });
+                }
+            }
+        });
+    };
+
+    const handleOpenAddModal = () => {
+        setAccountForm({
+            bankName: '', accountNumber: '', accountName: '', isDefault: true, provider: 'BANK'
+        });
+        setEditingAccountId(null);
+        setIsAccountModalOpen(true);
     };
 
     const handleUpdatePayoutStatus = async (id, status) => {
@@ -107,10 +153,24 @@ const Finance = () => {
             await updatePayoutStatus(id, status);
             toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutMarkedAs', { status: t(status.toLowerCase()) }) });
             refreshData?.();
-        } catch (error) {
+        } catch {
             toast.current.show({ severity: 'error', summary: t('error'), detail: t('updateFailed') });
         }
     };
+
+    const MONGOLIAN_BANKS = [
+        { label: 'Khan Bank', value: 'Khan Bank' },
+        { label: 'Golomt Bank', value: 'Golomt Bank' },
+        { label: 'TDB (Trade and Development Bank)', value: 'TDB' },
+        { label: 'Khas Bank', value: 'Khas Bank' },
+        { label: 'State Bank', value: 'State Bank' },
+        { label: 'Capitron Bank', value: 'Capitron Bank' },
+        { label: 'Arig Bank', value: 'Arig Bank' },
+        { label: 'Bogd Bank', value: 'Bogd Bank' },
+        { label: 'TransBank', value: 'TransBank' },
+        { label: 'National Investment Bank', value: 'National Investment Bank' },
+        { label: 'M Bank', value: 'M Bank' }
+    ];
 
     return (
         <div className="finance-page">
@@ -133,7 +193,7 @@ const Finance = () => {
                         label={t('addBankAccount')}
                         icon="pi pi-plus"
                         className="p-button-outlined p-button-sm"
-                        onClick={() => setIsAccountModalOpen(true)}
+                        onClick={handleOpenAddModal}
                     />
                     <Button
                         label={t('requestPayout')}
@@ -219,11 +279,17 @@ const Finance = () => {
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
                                         <h4 className="m-0 text-white">{account.bankName}</h4>
-                                        <p className="text-gray-500 text-xs mt-1">{t('owner')}: {account.accountHolder}</p>
+                                        <p className="text-gray-500 text-xs mt-1">{t('owner')}: {account.accountName}</p>
                                     </div>
                                     {account.isDefault && <Tag value={t('default')} severity="info" />}
                                 </div>
-                                <h3 className="text-xl font-mono tracking-wider m-0 text-gray-300">{account.accountNumber}</h3>
+                                <div className="flex justify-between items-end">
+                                    <h3 className="text-xl font-mono tracking-wider m-0 text-gray-300">{account.accountNumber}</h3>
+                                    <div className="flex gap-2">
+                                        <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-sm text-blue-400" onClick={() => handleEditAccount(account)} />
+                                        <Button icon="pi pi-trash" className="p-button-rounded p-button-text p-button-sm text-red-400" onClick={() => handleDeleteAccount(account.id)} />
+                                    </div>
+                                </div>
                             </Card>
                         ))}
                     </div>
@@ -261,15 +327,22 @@ const Finance = () => {
             </Dialog>
 
             {/* Bank Account Modal */}
-            <Dialog header={t('addPayoutAccount')} visible={isAccountModalOpen} className="w-[450px]" onHide={() => setIsAccountModalOpen(false)}>
+            <ConfirmDialog />
+            <Dialog header={editingAccountId ? t('editPayoutAccount') : t('addPayoutAccount')} visible={isAccountModalOpen} className="w-[450px]" onHide={() => setIsAccountModalOpen(false)}>
                 <div className="flex flex-col gap-4 py-2">
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">{t('bankName')}</label>
-                        <InputText value={accountForm.bankName} onChange={e => setAccountForm({ ...accountForm, bankName: e.target.value })} placeholder={t('bankPlaceholder')} />
+                        <Dropdown
+                            value={accountForm.bankName}
+                            options={MONGOLIAN_BANKS}
+                            placeholder={t('bankPlaceholder')}
+                            className="w-full"
+                            onChange={e => setAccountForm({ ...accountForm, bankName: e.value })}
+                        />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">{t('accountHolderName')}</label>
-                        <InputText value={accountForm.accountHolder} onChange={e => setAccountForm({ ...accountForm, accountHolder: e.target.value })} placeholder={t('holderPlaceholder')} />
+                        <InputText value={accountForm.accountName} onChange={e => setAccountForm({ ...accountForm, accountName: e.target.value })} placeholder={t('holderPlaceholder')} />
                     </div>
                     <div className="flex flex-col gap-2">
                         <label className="text-xs font-bold text-gray-500 uppercase">{t('accountNumber')}</label>
@@ -282,7 +355,7 @@ const Finance = () => {
 
                     <div className="flex justify-end gap-2 mt-6">
                         <Button label={t('cancel')} className="p-button-text" onClick={() => setIsAccountModalOpen(false)} />
-                        <Button label={t('saveAccount')} className="p-button-primary" onClick={handleAddAccount} />
+                        <Button label={editingAccountId ? t('updateAccount') : t('saveAccount')} className="p-button-primary" onClick={handleSaveAccount} />
                     </div>
                 </div>
             </Dialog>

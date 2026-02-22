@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Req, Query } from '@nestjs/common';
 import { AuditService } from './audit.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 // import { RolesGuard } from '../auth/guards/roles.guard';
@@ -10,9 +10,14 @@ export class AuditController {
     constructor(private readonly auditService: AuditService) { }
 
     @Get()
-    // @Roles('admin') // Uncomment when Role guard is ready and if we want to restrict
-    findAll() {
-        return this.auditService.findAll();
+    findAll(
+        @Req() req: any,
+        @Query('action') action?: string,
+        @Query('staffId') staffId?: string,
+        @Query('organizationId') organizationId?: string,
+    ) {
+        const targetOrgId = req.user.role === 'sysadmin' ? organizationId : req.user.organizationId;
+        return this.auditService.findAll(targetOrgId, action, staffId);
     }
 
     @Get('resource/:resource/:id')

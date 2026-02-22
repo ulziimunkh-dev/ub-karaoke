@@ -212,8 +212,17 @@ export const api = {
     },
 
     // Audit
-    getAuditLogs: async () => {
-        const response = await apiInstance.get('/audit');
+    getAuditLogs: async (filters = {}) => {
+        // Clean up filters: remove null/undefined and ensure no nested objects are stringified poorly
+        const cleanFilters = Object.entries(filters).reduce((acc, [key, val]) => {
+            if (val !== null && val !== undefined && typeof val !== 'object') {
+                acc[key] = val;
+            }
+            return acc;
+        }, {});
+
+        const params = new URLSearchParams(cleanFilters).toString();
+        const response = await apiInstance.get(`/audit${params ? '?' + params : ''}`);
         return response.data;
     },
 

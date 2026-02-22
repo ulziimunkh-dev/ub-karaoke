@@ -48,8 +48,8 @@ export class UsersController {
             action: 'USER_CREATED',
             resource: 'User',
             resourceId: savedUser.id,
-            userId: undefined,
-            staffId: req.user.id,
+            actorId: req.user.id,
+            actorType: 'STAFF',
             details: { username: savedUser.username, role: savedUser.role }
         });
 
@@ -92,7 +92,8 @@ export class UsersController {
             action: 'USER_PROFILE_UPDATED',
             resource: 'User',
             resourceId: userId,
-            userId: userId,
+            actorId: userId,
+            actorType: 'USER',
             details: { updatedFields: Object.keys(safeUpdates) }
         });
 
@@ -124,8 +125,8 @@ export class UsersController {
             action: 'USER_ROLE_UPDATED',
             resource: 'User',
             resourceId: id,
-            userId: undefined,
-            staffId: req.user.id,
+            actorId: req.user.id,
+            actorType: 'STAFF',
             details: { oldRole, newRole: body.role }
         });
 
@@ -152,8 +153,8 @@ export class UsersController {
             action: 'USER_STATUS_UPDATED',
             resource: 'User',
             resourceId: id,
-            userId: undefined,
-            staffId: req.user.id,
+            actorId: req.user.id,
+            actorType: 'STAFF',
             details: { isActive: body.isActive }
         });
 

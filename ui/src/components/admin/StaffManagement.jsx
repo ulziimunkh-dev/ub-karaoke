@@ -225,7 +225,8 @@ const StaffManagement = () => {
                         </div>
                     )} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column field="username" header={t('username')} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
-                    <Column field="email" header={t('email')} sortable style={{ width: '20%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="email" header={t('email')} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
+                    <Column field="phone" header={t('phone')} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column field="role" header={t('role')} body={roleBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column header={t('organization')} body={organizationBodyTemplate} sortable style={{ width: '15%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
                     <Column header={t('status')} body={statusBodyTemplate} style={{ width: '10%' }} headerClassName="bg-gray-50 font-bold text-gray-700 select-none px-4"></Column>
@@ -257,9 +258,13 @@ const StaffManagement = () => {
                                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('organization')}</span>
                                     <span className="text-xs text-gray-700 font-bold">{orgName}</span>
                                 </div>
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center mb-1">
                                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('email')}</span>
                                     <span className="text-xs text-gray-700 font-medium truncate max-w-[150px]">{staff.email}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('phone')}</span>
+                                    <span className="text-xs text-gray-700 font-bold">{staff.phone || 'N/A'}</span>
                                 </div>
                             </div>
 

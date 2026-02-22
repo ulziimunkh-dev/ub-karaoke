@@ -173,10 +173,11 @@ export class BookingsService {
                         action: 'BOOKING_CREATED',
                         resource: 'Booking',
                         resourceId: savedBooking.id,
-                        userId: userId || undefined,
-                        staffId: undefined,
+                        actorId: userId,
+                        actorType: 'USER',
                         details: { ...createBookingDto, roomId },
-                    }, transactionalEntityManager); // Assuming audit service can take a manager
+                        organizationId: savedBooking.organizationId
+                    }, transactionalEntityManager);
                 }
             }
 
@@ -283,8 +284,9 @@ export class BookingsService {
                 resource: 'Booking',
                 resourceId: savedBooking.id,
                 details: { ...createBookingDto },
-                userId: undefined,
-                staffId: user.id,
+                actorId: user.id,
+                actorType: 'STAFF',
+                organizationId: savedBooking.organizationId
             }, transactionalEntityManager);
 
             return savedBooking;
@@ -310,8 +312,9 @@ export class BookingsService {
             action: 'BOOKING_APPROVED',
             resource: 'Booking',
             resourceId: id,
-            userId: undefined,
-            staffId: adminId,
+            actorId: adminId,
+            actorType: 'STAFF',
+            organizationId: booking.organizationId
         });
 
         // Send notifications
@@ -359,8 +362,9 @@ export class BookingsService {
             action: 'BOOKING_REJECTED',
             resource: 'Booking',
             resourceId: id,
-            userId: undefined,
-            staffId: adminId,
+            actorId: adminId,
+            actorType: 'STAFF',
+            organizationId: booking.organizationId
         });
 
         // Send notifications
@@ -395,12 +399,14 @@ export class BookingsService {
         venueId?: string;
         roomId?: string;
         status?: string;
+        organizationId?: string;
     }): Promise<Booking[]> {
         const where: any = {};
         if (filters?.userId) where.userId = filters.userId;
         if (filters?.venueId) where.venueId = filters.venueId;
         if (filters?.roomId) where.roomId = filters.roomId;
         if (filters?.status) where.status = filters.status;
+        if (filters?.organizationId) where.organizationId = filters.organizationId;
 
         return this.bookingsRepository.find({
             where,

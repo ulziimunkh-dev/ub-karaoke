@@ -6,7 +6,7 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -92,7 +92,8 @@ export class AuthService {
             action: 'USER_REGISTERED',
             resource: 'User',
             resourceId: savedUser.id,
-            userId: savedUser.id,
+            actorId: savedUser.id,
+            actorType: 'USER',
             details: { email: savedUser.email, phone: savedUser.phone }
         });
 
@@ -123,7 +124,8 @@ export class AuthService {
             action: 'ACCOUNT_VERIFIED',
             resource: 'User',
             resourceId: user.id,
-            userId: user.id,
+            actorId: user.id,
+            actorType: 'USER',
             details: { email: user.email, phone: user.phone }
         });
 
@@ -204,11 +206,15 @@ export class AuthService {
             // 2. If not found, try Sysadmin (Staff with no org or system role)
             if (!user) {
                 console.log(`[Auth] Checking Staff repository for Sysadmin...`);
+                // Sysadmins have no organizationId
                 user = await this.staffRepository.findOne({
-                    where: { username: identifier },
+                    where: {
+                        username: identifier,
+                        organizationId: IsNull()
+                    },
                     relations: ['organization']
                 });
-                console.log(`[Auth] Found in Staff?: ${!!user}, Role: ${user?.role}`);
+                console.log(`[Auth] Found in Staff (Sysadmin check)?: ${!!user}, Role: ${user?.role}`);
 
                 // Only allow if role is sysadmin/admin, otherwise regular staff MUST use org code
                 if (user && (user.role === 'sysadmin' || user.role === 'admin')) {
@@ -255,8 +261,8 @@ export class AuthService {
         await this.auditService.log({
             action: 'LOGIN_SUCCESS',
             resource: 'Auth',
-            userId: userType === 'customer' ? user.id : undefined,
-            staffId: userType === 'staff' ? user.id : undefined,
+            actorId: user.id,
+            actorType: userType === 'staff' ? 'STAFF' : 'USER',
             details: { method: 'password', identifier, userType, orgCode }
         });
 

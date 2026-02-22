@@ -20,32 +20,26 @@ export class AuditLog {
     @Column('jsonb', { nullable: true })
     details: any;
 
-    @Column({ name: 'userId', nullable: true })
-    userId: string; // Can be User ID or Staff ID (if no strict FK needed, or used for logic)
+    @Column({ name: 'actor_id', nullable: true })
+    actorId: string;
 
-    // Keeping User FK for customers
-    @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'userId' })
-    user: User;
+    @Column({ name: 'actor_type', nullable: true })
+    actorType: string; // 'STAFF' | 'USER' | 'SYSTEM'
 
-    @Column({ name: 'staffId', nullable: true })
-    staffId: string;
-
-    @ManyToOne(() => Staff, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'staffId' })
-    staff: Staff;
+    @Column({ name: 'actor_name', nullable: true })
+    actorName: string;
 
     @ManyToOne(() => Organization, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'organization_id' })
     organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
+    @Column({ name: 'organization_id', nullable: true })
     organizationId: string;
 
-    @Column({ name: 'ipAddress', nullable: true })
+    @Column({ name: 'ip_address', nullable: true })
     ipAddress: string;
 
-    @Column({ name: 'userAgent', nullable: true })
+    @Column({ name: 'user_agent', nullable: true, type: 'text' })
     userAgent: string;
 
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

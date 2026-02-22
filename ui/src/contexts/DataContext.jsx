@@ -685,6 +685,27 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const updatePayoutAccount = async (id, data) => {
+        try {
+            const updated = await api.updatePayoutAccount(id, data);
+            setPayoutAccounts(prev => prev.map(a => a.id === id ? updated : a));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update payout account:', error);
+            throw error;
+        }
+    };
+
+    const deletePayoutAccount = async (id) => {
+        try {
+            await api.deletePayoutAccount(id);
+            setPayoutAccounts(prev => prev.filter(a => a.id !== id));
+        } catch (error) {
+            console.error('Failed to delete payout account:', error);
+            throw error;
+        }
+    };
+
     const requestPayout = async (data) => {
         try {
             const newPayout = await api.requestPayout(data);
@@ -939,7 +960,7 @@ export const DataProvider = ({ children }) => {
                 earnings,
                 payouts,
                 payoutAccounts,
-                addPayoutAccount,
+                addPayoutAccount, updatePayoutAccount, deletePayoutAccount,
                 requestPayout,
                 updatePayoutStatus,
                 settings,

@@ -243,7 +243,7 @@ const AdminPage = () => {
                 {activeTab === 'pos_view' && <StaffPortal />}
                 {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
-                {activeTab === 'audit' && (currentUser.role === 'sysadmin') && <AuditLogViewer />}
+                {activeTab === 'audit' && (['sysadmin', 'manager'].includes(currentUser.role)) && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
                 {activeTab === 'finance' && <Finance />}
                 {activeTab === 'settings' && <SystemSettings />}

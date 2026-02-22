@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Staff } from './entities/staff.entity';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import * as bcrypt from 'bcrypt';
@@ -15,28 +15,28 @@ export class StaffService {
     ) { }
 
     async create(createStaffDto: CreateStaffDto, createdByRole: string, createdByOrgId: string, createdByStaffId?: string) {
-        // Check if email or username already exists
-        const existing = await this.staffRepository.findOne({
-            where: [
-                { email: createStaffDto.email },
-                { username: createStaffDto.username }
-            ]
-        });
-
-        if (existing) {
-            throw new ConflictException('Email or username already exists');
-        }
-
-        // Hash password
-        const hashedPassword = await bcrypt.hash(createStaffDto.password, 10);
-
-        // Determine organizationId
+        // Determine organizationId first
         let organizationId: string | undefined = createStaffDto.organizationId;
         if (createStaffDto.role === 'sysadmin') {
             organizationId = undefined; // Sysadmin has no organization
         } else if (!organizationId && createdByRole !== 'sysadmin') {
             organizationId = createdByOrgId; // Use creator's organization
         }
+
+        // Check if username exists within the same organization
+        const existingUsername = await this.staffRepository.findOne({
+            where: {
+                username: createStaffDto.username,
+                organizationId: organizationId || IsNull()
+            }
+        });
+
+        if (existingUsername) {
+            throw new ConflictException('Username already exists in this organization');
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(createStaffDto.password, 10);
 
         const staff = this.staffRepository.create({
             ...createStaffDto,
@@ -53,7 +53,9 @@ export class StaffService {
             resource: 'Staff',
             resourceId: saved.id,
             details: { username: saved.username, role: saved.role },
-            staffId: createdByStaffId
+            actorId: createdByStaffId,
+            actorType: 'STAFF',
+            organizationId: saved.organizationId
         });
 
         return this.findOne(saved.id);
@@ -67,6 +69,7 @@ export class StaffService {
                 name: true,
                 username: true,
                 email: true,
+                phone: true,
                 role: true,
                 isActive: true,
                 avatar: true,
@@ -106,6 +109,18 @@ export class StaffService {
             throw new NotFoundException('Staff not found');
         }
 
+        if (updateDto.username && updateDto.username !== staff.username) {
+            const existing = await this.staffRepository.findOne({
+                where: {
+                    username: updateDto.username,
+                    organizationId: staff.organizationId || IsNull()
+                }
+            });
+            if (existing && existing.id !== id) {
+                throw new ConflictException('Username already exists in this organization');
+            }
+        }
+
         // Only sysadmin can change role
         if (updateDto.role && updateDto.role !== staff.role && updaterRole !== 'sysadmin') {
             throw new ForbiddenException('Only sysadmin can change staff roles');
@@ -121,6 +136,17 @@ export class StaffService {
         }
         const updated = await this.staffRepository.save(staff);
 
+        // Audit log
+        await this.auditService.log({
+            action: 'STAFF_UPDATED',
+            resource: 'Staff',
+            resourceId: id,
+            details: updateDto,
+            actorId: updatedByStaffId,
+            actorType: 'STAFF',
+            organizationId: updated.organizationId
+        });
+
         return this.findOne(updated.id);
     }
 
@@ -132,6 +158,16 @@ export class StaffService {
 
         staff.isActive = false;
         await this.staffRepository.save(staff);
+
+        // Audit log
+        await this.auditService.log({
+            action: 'STAFF_DEACTIVATED',
+            resource: 'Staff',
+            resourceId: id,
+            details: { isActive: false },
+            organizationId: staff.organizationId
+        });
+
         return { message: 'Staff deactivated successfully' };
     }
 }

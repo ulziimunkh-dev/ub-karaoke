@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 import { Organization } from '../../organizations/entities/organization.entity';
 
 export enum StaffRole {
@@ -8,14 +8,15 @@ export enum StaffRole {
 }
 
 @Entity('staff')
+@Unique(['username', 'organizationId'])
 export class Staff {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column()
     email: string;
 
-    @Column({ unique: true })
+    @Column()
     username: string;
 
     @Column()

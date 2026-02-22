@@ -89,7 +89,9 @@ export class OrganizationsService {
             resource: 'Organization',
             resourceId: saved.id,
             details: { code: saved.code, name: saved.name, planId: createOrganizationDto.planId },
-            staffId: createdByStaffId
+            actorId: createdByStaffId,
+            actorType: 'STAFF',
+            organizationId: saved.id
         });
 
         return saved;
@@ -195,7 +197,9 @@ export class OrganizationsService {
             resource: 'Organization',
             resourceId: id,
             details: updateDto,
-            staffId: updatedByStaffId
+            actorId: updatedByStaffId,
+            actorType: 'STAFF',
+            organizationId: id
         });
 
         return updated;
@@ -217,8 +221,9 @@ export class OrganizationsService {
             resource: 'Organization',
             resourceId: id,
             details: { isActive },
-            userId: undefined,
-            staffId: updatedByStaffId
+            actorId: updatedByStaffId,
+            actorType: 'STAFF',
+            organizationId: id
         });
 
         return updated;
@@ -476,8 +481,9 @@ export class OrganizationsService {
             resource: 'Organization',
             resourceId: organizationId,
             details: { ...data, newEndDate },
-            userId: undefined,
-            staffId: userId
+            actorId: userId,
+            actorType: 'STAFF',
+            organizationId: organizationId
         });
 
         return saved;

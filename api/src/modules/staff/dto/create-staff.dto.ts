@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsNotEmpty, IsEnum, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsEnum, IsOptional, MinLength, IsBoolean } from 'class-validator';
 import { StaffRole } from '../entities/staff.entity';
 
 export class CreateStaffDto {
@@ -34,4 +34,8 @@ export class CreateStaffDto {
     @IsOptional()
     @IsString()
     organizationId?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
 }

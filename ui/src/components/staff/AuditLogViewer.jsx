@@ -7,21 +7,42 @@ import { Tag } from 'primereact/tag';
 import { Card } from 'primereact/card';
 import { Dropdown } from 'primereact/dropdown';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useData } from '../../contexts/DataContext';
 
 const AuditLogViewer = () => {
     const { t } = useLanguage();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedAction, setSelectedAction] = useState(null);
+    const [selectedStaff, setSelectedStaff] = useState(null);
+    const [allActions, setAllActions] = useState([]);
+    const { staffs } = useData();
+
+    useEffect(() => {
+        // Fetch all actions once on mount to populate the dropdown exhaustively
+        const fetchInitialActions = async () => {
+            try {
+                const data = await api.getAuditLogs();
+                const actions = [...new Set(data.map(l => l.action?.toUpperCase()))].filter(Boolean).sort();
+                setAllActions(actions);
+            } catch (err) {
+                console.error('Failed to pre-fetch actions:', err);
+            }
+        };
+        fetchInitialActions();
+    }, []);
 
     useEffect(() => {
         loadLogs();
-    }, []);
+    }, [selectedAction, selectedStaff]);
 
     const loadLogs = async () => {
         try {
             setLoading(true);
-            const data = await api.getAuditLogs();
+            const data = await api.getAuditLogs({
+                action: selectedAction || undefined,
+                staffId: selectedStaff || undefined
+            });
             setLogs(data);
         } catch (error) {
             console.error('Failed to load audit logs:', error);
@@ -51,12 +72,32 @@ const AuditLogViewer = () => {
     };
 
     const userBodyTemplate = (rowData) => {
+        const name = rowData.actorName || (rowData.staff?.username || rowData.user?.username || 'System');
+        const type = rowData.actorType || (rowData.staffId ? 'STAFF' : (rowData.userId ? 'USER' : 'SYSTEM'));
+        const initial = (name || 'S').charAt(0).toUpperCase();
+
         return (
             <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black border border-white/10 text-[#eb79b2]">
-                    {(rowData.user?.username || 'U').charAt(0).toUpperCase()}
+                    {initial}
                 </div>
-                <span className="text-xs font-bold text-gray-300">{rowData.user ? rowData.user.username : `User #${rowData.userId}`}</span>
+                <div className="flex flex-col">
+                    <span className="text-xs font-bold text-gray-300">{name}</span>
+                    <span className={`text-[8px] font-bold uppercase tracking-widest ${type === 'STAFF' ? 'text-blue-400' : (type === 'USER' ? 'text-green-400' : 'text-gray-500')}`}>
+                        {type}
+                    </span>
+                </div>
+            </div>
+        );
+    };
+
+    const deviceBodyTemplate = (rowData) => {
+        return (
+            <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-mono text-gray-400">{rowData.ipAddress || '0.0.0.0'}</span>
+                <span className="text-[8px] text-gray-600 truncate max-w-[120px]" title={rowData.userAgent}>
+                    {rowData.userAgent || 'Unknown'}
+                </span>
             </div>
         );
     };
@@ -94,24 +135,44 @@ const AuditLogViewer = () => {
                 />
             </div>
 
-            {/* Event Filter */}
-            <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">{t('filterByEvent')}</span>
-                <Dropdown
-                    value={selectedAction}
-                    options={[
-                        { label: t('allEvents'), value: null },
-                        ...([...new Set(logs.map(l => l.action?.toUpperCase()))].filter(Boolean).sort().map(a => ({ label: a, value: a })))
-                    ]}
-                    onChange={(e) => setSelectedAction(e.value)}
-                    placeholder={t('allEvents')}
-                    className="w-48 text-sm"
-                />
+            {/* Filters */}
+            <div className="flex flex-wrap items-center gap-6 mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{t('filterByEvent')}</span>
+                    <Dropdown
+                        value={selectedAction}
+                        options={[
+                            { label: t('allEvents'), value: null },
+                            ...(allActions.length > 0 ? allActions : [...new Set(logs.map(l => l.action?.toUpperCase()))].filter(Boolean).sort()).map(a => ({ label: a, value: a }))
+                        ]}
+                        onChange={(e) => setSelectedAction(e.value)}
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder={t('allEvents')}
+                        className="w-48 text-sm bg-black/20 border-white/10"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{t('filterByStaff')}</span>
+                    <Dropdown
+                        value={selectedStaff}
+                        options={[
+                            { label: t('allStaff'), value: null },
+                            ...(staffs?.map(s => ({ label: s.username || s.fullName, value: s.id })) || [])
+                        ]}
+                        onChange={(e) => setSelectedStaff(e.value)}
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder={t('allStaff')}
+                        className="w-48 text-sm bg-black/20 border-white/10"
+                    />
+                </div>
             </div>
 
             <Card className="bg-[#1a1a24] border border-white/5 shadow-2xl p-0 overflow-hidden">
                 <DataTable
-                    value={selectedAction ? logs.filter(l => l.action?.toUpperCase() === selectedAction) : logs}
+                    value={logs}
                     paginator
                     rows={15}
                     loading={loading}
@@ -123,8 +184,9 @@ const AuditLogViewer = () => {
                 >
                     <Column field="createdAt" header={t('timestamp')} body={dateBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '150px' }}></Column>
                     <Column field="action" header={t('activity')} body={actionBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '120px' }}></Column>
-                    <Column field="user.username" header={t('actor')} body={userBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="actorName" header={t('actor')} body={userBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
                     <Column field="resource" header={t('targetEntity')} body={resourceBodyTemplate} sortable headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
+                    <Column field="ipAddress" header="IP / Device" body={deviceBodyTemplate} headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left" style={{ width: '150px' }}></Column>
                     <Column field="details" header={t('eventMetadata')} body={detailsBodyTemplate} headerClassName="bg-white/5 font-bold px-4 py-3 text-gray-400 uppercase text-[10px] tracking-widest text-left"></Column>
                 </DataTable>
             </Card>
