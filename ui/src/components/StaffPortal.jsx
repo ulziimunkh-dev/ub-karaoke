@@ -19,7 +19,7 @@ import AuditLogViewer from './staff/AuditLogViewer';
 import ProfileModal from './common/ProfileModal';
 import NotificationBell from './NotificationBell';
 
-const StaffPortal = () => {
+const StaffPortal = ({ embedded = false }) => {
     const {
         venues, bookings, updateRoomStatus, updateBookingStatus, updateBooking,
         updateVenue, addOrder, currentUser, logout,
@@ -264,40 +264,42 @@ const StaffPortal = () => {
                         />
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <NotificationBell />
-                    <div className="h-6 w-[1px] bg-white/10"></div>
-                    <div
-                        className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
-                        onClick={() => setIsProfileModalOpen(true)}
-                    >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
-                            {currentUser?.avatar ? (
-                                <img src={api.getFileUrl(currentUser.avatar)} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                                (currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()
-                            )}
+                {!embedded && (
+                    <div className="flex items-center gap-4">
+                        <NotificationBell />
+                        <div className="h-6 w-[1px] bg-white/10"></div>
+                        <div
+                            className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
+                            onClick={() => setIsProfileModalOpen(true)}
+                        >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
+                                {currentUser?.avatar ? (
+                                    <img src={api.getFileUrl(currentUser.avatar)} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    (currentUser?.firstName?.[0] || currentUser?.username?.[0] || 'S').toUpperCase()
+                                )}
+                            </div>
+                            <div className="hidden md:block text-right">
+                                <p className="text-white text-xs font-bold m-0 leading-tight">
+                                    {currentUser?.firstName || currentUser?.username || t('staff')}
+                                </p>
+                                <p className="text-[10px] text-gray-500 font-mono m-0 leading-tight uppercase">
+                                    {currentUser?.role || t('staff')}
+                                </p>
+                            </div>
                         </div>
-                        <div className="hidden md:block text-right">
-                            <p className="text-white text-xs font-bold m-0 leading-tight">
-                                {currentUser?.firstName || currentUser?.username || t('staff')}
-                            </p>
-                            <p className="text-[10px] text-gray-500 font-mono m-0 leading-tight uppercase">
-                                {currentUser?.role || t('staff')}
-                            </p>
-                        </div>
+                        <div className="h-6 w-[1px] bg-white/10"></div>
+                        <Button
+                            icon="pi pi-power-off"
+                            className="p-button-rounded p-button-danger p-button-text hover:bg-red-500/10"
+                            onClick={() => {
+                                logout();
+                                navigate('/staff/login');
+                            }}
+                            tooltip={`${t('signOut')} (${currentUser?.firstName || t('staff')})`}
+                        />
                     </div>
-                    <div className="h-6 w-[1px] bg-white/10"></div>
-                    <Button
-                        icon="pi pi-power-off"
-                        className="p-button-rounded p-button-danger p-button-text hover:bg-red-500/10"
-                        onClick={() => {
-                            logout();
-                            navigate('/staff/login');
-                        }}
-                        tooltip={`${t('signOut')} (${currentUser?.firstName || t('staff')})`}
-                    />
-                </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -617,13 +619,15 @@ const StaffPortal = () => {
             </Dialog>
 
 
-            {/* Profile Modal */}
-            <ProfileModal
-                visible={isProfileModalOpen}
-                onHide={() => setIsProfileModalOpen(false)}
-                currentUser={currentUser}
-                onUpdate={updateStaff}
-            />
+            {/* Profile Modal - only when standalone */}
+            {!embedded && (
+                <ProfileModal
+                    visible={isProfileModalOpen}
+                    onHide={() => setIsProfileModalOpen(false)}
+                    currentUser={currentUser}
+                    onUpdate={updateStaff}
+                />
+            )}
         </div>
     );
 };

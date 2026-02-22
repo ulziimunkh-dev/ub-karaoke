@@ -240,7 +240,7 @@ const AdminPage = () => {
                 {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'bookings' && <BookingsManagement />}
-                {activeTab === 'pos_view' && <StaffPortal />}
+                {activeTab === 'pos_view' && <StaffPortal embedded />}
                 {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}
                 {activeTab === 'audit' && (['sysadmin', 'manager'].includes(currentUser.role)) && <AuditLogViewer />}
