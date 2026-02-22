@@ -12,7 +12,7 @@ export const AppDataSource = new DataSource({
     username: process.env.DATABASE_USER || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
     database: process.env.DATABASE_NAME || 'karaoke_db',
-    synchronize: true, // Should match app.module.ts for consistency in dev
+    synchronize: false, // Must be false when using migrations
     logging: true,
     entities: [join(__dirname, '..', '**', '*.entity{.ts,.js}')],
     migrations: [join(__dirname, 'migrations', '**', '*.ts')],

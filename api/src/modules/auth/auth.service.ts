@@ -173,27 +173,27 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { identifier, password, orgCode } = loginDto;
+        const normalizedIdentifier = identifier.trim();
         let user: any;
         let userType: string;
 
         // STRICT SEPARATION
         if (orgCode) {
             // STAFF / MANAGER LOGIN
-            // Must match Org Code + Username (Staff mostly use username)
+            // Must match Org Code + Username/Email
             user = await this.staffRepository.findOne({
-                where: {
-                    username: identifier,
-                    organization: { code: orgCode }
-                },
+                where: [
+                    { username: normalizedIdentifier, organization: { code: orgCode } },
+                    { email: normalizedIdentifier, organization: { code: orgCode } }
+                ],
                 relations: ['organization']
             });
             userType = 'staff';
         } else {
-            console.log(`[Auth] Attempting login for ${identifier} (No Org Code)`);
+            console.log(`[Auth] Attempting login for ${normalizedIdentifier} (No Org Code)`);
 
             // CUSTOMER LOGIN OR SYSADMIN LOGIN
             // 1. Try Customer (Users) — case-insensitive email
-            const normalizedIdentifier = identifier.trim();
             user = await this.usersRepository
                 .createQueryBuilder('user')
                 .where('LOWER(user.email) = LOWER(:id)', { id: normalizedIdentifier })
@@ -208,10 +208,10 @@ export class AuthService {
                 console.log(`[Auth] Checking Staff repository for Sysadmin...`);
                 // Sysadmins have no organizationId
                 user = await this.staffRepository.findOne({
-                    where: {
-                        username: identifier,
-                        organizationId: IsNull()
-                    },
+                    where: [
+                        { username: normalizedIdentifier, organizationId: IsNull() },
+                        { email: normalizedIdentifier, organizationId: IsNull() }
+                    ],
                     relations: ['organization']
                 });
                 console.log(`[Auth] Found in Staff (Sysadmin check)?: ${!!user}, Role: ${user?.role}`);
@@ -234,6 +234,7 @@ export class AuthService {
 
         // Check password
         const isPasswordValid = await bcrypt.compare(password, user.password);
+
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid credentials');
         }

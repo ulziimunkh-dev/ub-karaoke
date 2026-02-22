@@ -113,10 +113,12 @@ const ignoreRouterExplorer = winston.format((info) => {
           type: 'postgres',
           ...dbOptions,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true, // Enabled for easier development
+          synchronize: false, // Disabled in favor of migrations
           logging: true,
           logger: new TypeOrmLoggerAdapter(),
           timezone: '+08:00',
+          migrations: [join(__dirname, 'database', 'migrations', '*{.ts,.js}')],
+          migrationsRun: true, // Automatically run migrations on startup
         };
       },
       inject: [ConfigService],

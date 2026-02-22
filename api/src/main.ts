@@ -1,6 +1,6 @@
 process.env.TZ = 'Asia/Ulaanbaatar';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -11,6 +11,13 @@ import { HttpAdapterHost } from '@nestjs/core';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable URI-based versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
   // Use Winston for system logging
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
