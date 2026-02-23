@@ -11,12 +11,92 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: http: ws: wss:;" />
-  <title>UB Karaoke - Booking</title>
+
+  <!-- SEO Meta Tags -->
+  <title>UB Karaoke — Book Karaoke Rooms in Ulaanbaatar | Online Reservation</title>
+  <meta name="description"
+    content="Book premium karaoke rooms in Ulaanbaatar online. Compare venues, check availability, see room prices, and reserve instantly. UB Karaoke — Mongolia's #1 karaoke booking platform." />
+  <meta name="keywords"
+    content="karaoke Ulaanbaatar, karaoke booking Mongolia, UB karaoke, караоке Улаанбаатар, караоке захиалга, karaoke room booking, Mongolia entertainment" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.ubkaraoke.mn/" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.ubkaraoke.mn/" />
+  <meta property="og:title" content="UB Karaoke — Book Karaoke Rooms in Ulaanbaatar" />
+  <meta property="og:description"
+    content="Find and book the best karaoke rooms in Ulaanbaatar. Compare venues, check room availability, and reserve online instantly." />
+  <meta property="og:image" content="https://www.ubkaraoke.mn/pwa-512x512.png" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="UB Karaoke" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="UB Karaoke — Book Karaoke Rooms in Ulaanbaatar" />
+  <meta name="twitter:description"
+    content="Find and book the best karaoke rooms in Ulaanbaatar. Compare venues, check room availability, and reserve online instantly." />
+  <meta name="twitter:image" content="https://www.ubkaraoke.mn/pwa-512x512.png" />
+
+  <!-- Structured Data: LocalBusiness (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "UB Karaoke",
+    "description": "Premium karaoke room booking platform in Ulaanbaatar, Mongolia. Browse venues, compare prices, and book rooms online.",
+    "url": "https://www.ubkaraoke.mn",
+    "telephone": "+976-8976-7700",
+    "email": "support@ubkaraoke.mn",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Central Tower",
+      "addressLocality": "Ulaanbaatar",
+      "addressCountry": "MN"
+    },
+    "image": "https://www.ubkaraoke.mn/pwa-512x512.png",
+    "priceRange": "$$",
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "12:00",
+      "closes": "02:00"
+    },
+    "sameAs": []
+  }
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Fallback content for search engine crawlers (they may not execute JavaScript) -->
+  <noscript>
+    <div style="max-width:800px;margin:0 auto;padding:40px 20px;font-family:sans-serif;color:#333;">
+      <h1>UB Karaoke — Book Karaoke Rooms in Ulaanbaatar</h1>
+      <p>UB Karaoke is Ulaanbaatar's premier karaoke booking platform. Browse venues, compare room prices, check
+        availability, and reserve online instantly.</p>
+      <h2>Our Services</h2>
+      <ul>
+        <li>Online karaoke room booking</li>
+        <li>Venue comparison with ratings and reviews</li>
+        <li>Party room reservations (birthdays, events)</li>
+        <li>Real-time room availability</li>
+      </ul>
+      <h2>Pages</h2>
+      <nav>
+        <ul>
+          <li><a href="/">Home — Browse Karaoke Venues</a></li>
+          <li><a href="/about">About UB Karaoke</a></li>
+          <li><a href="/faq">Frequently Asked Questions</a></li>
+          <li><a href="/policy">Privacy Policy & Terms</a></li>
+        </ul>
+      </nav>
+      <p>Contact us: <a href="mailto:support@ubkaraoke.mn">support@ubkaraoke.mn</a> | +976 8976 7700</p>
+      <p>Location: Central Tower, Ulaanbaatar, Mongolia</p>
+    </div>
+  </noscript>
 </body>
 
 </html>

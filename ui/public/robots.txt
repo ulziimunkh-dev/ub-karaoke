@@ -1,0 +1,17 @@
+# UB Karaoke - robots.txt
+# Allow all search engines to crawl public pages
+
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /faq
+Allow: /policy
+
+# Block admin and staff areas from indexing
+Disallow: /dashboard
+Disallow: /sysadmin
+Disallow: /staff/
+Disallow: /user/
+
+# Sitemap location
+Sitemap: https://www.ubkaraoke.mn/sitemap.xml
