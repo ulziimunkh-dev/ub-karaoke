@@ -869,125 +869,130 @@ const VenueManagement = () => {
                         </div>
                     </form>
 
-                    {/* Additional Settings: Flexible Pricing & Calendar */}
+                    {/* Advanced Dynamic Pricing — OUTSIDE form to prevent form submit conflicts */}
                     {editingRoom && (
                         <div className="mt-8 pt-8 border-t-2 border-dashed border-white/10">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-[#eb79b2]/10 flex items-center justify-center">
-                                    <i className="pi pi-calendar text-[#eb79b2] text-lg"></i>
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-[#eb79b2]/10 flex items-center justify-center">
+                                        <i className="pi pi-calendar text-[#eb79b2] text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h3 className="m-0 text-lg font-bold text-white">{t('advancedPricing')}</h3>
+                                        <p className="m-0 text-xs text-gray-500">{t('seasonalOverride')}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="m-0 text-xl font-bold text-white">{t('advancedPricing')}</h3>
-                                    <h5 className="m-0 text-[10px] font-black uppercase tracking-widest text-[#eb79b2]">{t('addPricingRule')}</h5>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] text-text-muted uppercase">{t('pricingType')}</span>
-                                        <Dropdown
-                                            value={pricingForm.isSpecificDate}
-                                            options={[
-                                                { label: t('happyHourRecurring'), value: false },
-                                                { label: t('specificDate'), value: true }
-                                            ]}
-                                            onChange={(e) => setPricingForm({ ...pricingForm, isSpecificDate: e.value })}
-                                            className="h-8 text-[10px] w-48"
+                                <Dropdown
+                                    value={pricingForm.isSpecificDate}
+                                    options={[
+                                        { label: `🔄 ${t('happyHourRecurring')}`, value: false },
+                                        { label: `📌 ${t('specificDate')}`, value: true }
+                                    ]}
+                                    onChange={(e) => setPricingForm({ ...pricingForm, isSpecificDate: e.value })}
+                                    className="h-10 text-sm w-56"
+                                />
+                            </div>
+
+                            {/* Add Rule Form */}
+                            <div className="bg-white/5 p-5 rounded-xl border border-white/5 mb-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {!pricingForm.isSpecificDate ? (
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{t('applyTo')}</label>
+                                            <Dropdown
+                                                value={pricingForm.dayType}
+                                                options={[
+                                                    { label: t('everyday'), value: 'EVERYDAY' },
+                                                    { label: t('weekdays'), value: 'WEEKDAY' },
+                                                    { label: t('weekends'), value: 'WEEKEND' }
+                                                ]}
+                                                onChange={e => setPricingForm({ ...pricingForm, dayType: e.value })}
+                                                className="h-10"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{t('dateRange')}</label>
+                                            <Calendar
+                                                value={pricingForm.dateRange}
+                                                onChange={e => setPricingForm({ ...pricingForm, dateRange: e.value })}
+                                                selectionMode="range"
+                                                readOnlyInput
+                                                placeholder={t('selectDates')}
+                                                className="h-10"
+                                                showIcon
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{t('startTime')}</label>
+                                        <InputText type="time" value={pricingForm.startTime} onChange={e => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="h-10" />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{t('endTime')}</label>
+                                        <InputText type="time" value={pricingForm.endTime} onChange={e => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="h-10" />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{t('specialRatePerHour')}</label>
+                                        <InputNumber value={pricingForm.pricePerHour} onValueChange={e => setPricingForm({ ...pricingForm, pricePerHour: e.value })} mode="currency" currency="MNT" locale="mn-MN" className="h-10" />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-text-muted uppercase tracking-wider" title={t('priorityLabel')}>{t('priority')}</label>
+                                        <InputNumber value={pricingForm.priority} onValueChange={e => setPricingForm({ ...pricingForm, priority: e.value })} className="h-10" min={0} max={100} showButtons />
+                                    </div>
+                                    <div className="flex items-end">
+                                        <Button
+                                            label={t('addPricingRule')}
+                                            icon="pi pi-plus"
+                                            type="button"
+                                            onClick={() => handleAddPricing(editingRoom.id)}
+                                            className="h-10 w-full bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none font-bold text-sm"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                {/* Form Side */}
-                                <div className="lg:col-span-4 space-y-4">
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                        {!pricingForm.isSpecificDate ? (
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] font-bold text-text-muted uppercase">{t('applyTo')}</label>
-                                                <Dropdown
-                                                    value={pricingForm.dayType}
-                                                    options={[
-                                                        { label: t('everyday'), value: 'EVERYDAY' },
-                                                        { label: t('weekdays'), value: 'WEEKDAY' },
-                                                        { label: t('weekends'), value: 'WEEKEND' }
-                                                    ]}
-                                                    onChange={e => setPricingForm({ ...pricingForm, dayType: e.value })}
-                                                    className="h-9 text-xs"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col gap-1 sm:col-span-2">
-                                                <label className="text-[10px] font-bold text-text-muted uppercase">{t('dateRange')}</label>
-                                                <Calendar
-                                                    value={pricingForm.dateRange}
-                                                    onChange={e => setPricingForm({ ...pricingForm, dateRange: e.value })}
-                                                    selectionMode="range"
-                                                    readOnlyInput
-                                                    placeholder={t('selectDates')}
-                                                    className="h-9 text-xs"
-                                                />
-                                            </div>
-                                        )}
-
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('startTime')}</label>
-                                            <InputText type="time" value={pricingForm.startTime} onChange={e => setPricingForm({ ...pricingForm, startTime: e.target.value })} className="h-9 text-xs" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('endTime')}</label>
-                                            <InputText type="time" value={pricingForm.endTime} onChange={e => setPricingForm({ ...pricingForm, endTime: e.target.value })} className="h-9 text-xs" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] font-bold text-text-muted uppercase">{t('specialRatePerHour')}</label>
-                                            <InputNumber value={pricingForm.pricePerHour} onValueChange={e => setPricingForm({ ...pricingForm, pricePerHour: e.value })} className="h-9 text-xs" />
-                                        </div>
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] font-bold text-text-muted uppercase" title={t('priorityLabel')}>{t('priority')}</label>
-                                            <InputNumber value={pricingForm.priority} onValueChange={e => setPricingForm({ ...pricingForm, priority: e.value })} className="h-9 text-xs" />
-                                        </div>
-                                        <div className="flex items-end">
-                                            <Button
-                                                label={t('save')}
-                                                icon="pi pi-plus"
-                                                onClick={() => handleAddPricing(editingRoom.id)}
-                                                className="h-9 w-full bg-white/10 border-none font-bold text-xs"
-                                            />
-                                        </div>
+                            {/* Existing Rules Table — use live data from selectedVenue instead of stale editingRoom */}
+                            <DataTable
+                                value={(() => {
+                                    const liveRoom = selectedVenue?.rooms?.find(r => r.id === editingRoom.id);
+                                    const rawList = liveRoom?.pricing || liveRoom?.pricingRules || editingRoom.pricing || editingRoom.pricingRules || [];
+                                    return [...rawList].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+                                })()}
+                                className="pricing-datatable text-sm"
+                                emptyMessage={t('noPricingRules')}
+                            >
+                                <Column header={t('schedule')} body={(rowData) => (
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-white">
+                                            {rowData.isHoliday ? t('holidayEvent') : rowData.dayType}
+                                        </span>
+                                        <span className="text-gray-500 text-xs">
+                                            {rowData.startTime} — {rowData.endTime}
+                                        </span>
                                     </div>
-                                </div>
-
-                                {/* List Side */}
-                                <div className="lg:col-span-8">
-                                    <DataTable
-                                        value={editingRoom.pricingRules || []}
-                                        className="pricing-datatable text-xs"
-                                        emptyMessage={t('noPricingRules')}
-                                    >
-                                        <Column header={t('schedule')} body={(rowData) => (
-                                            <div className="flex flex-col">
-                                                <span className="font-bold text-white">
-                                                    {rowData.isHoliday ? t('holidayEvent') : rowData.dayType}
-                                                </span>
-                                                <span className="text-gray-500 opacity-60">
-                                                    {rowData.startTime} - {rowData.endTime}
-                                                </span>
-                                            </div>
-                                        )} />
-                                        <Column header={t('dates')} body={(rowData) => rowData.startDateTime ?
-                                            `${new Date(rowData.startDateTime).toLocaleDateString()} - ${new Date(rowData.endDateTime).toLocaleDateString()}`
-                                            : t('recurring')} />
-                                        <Column header={t('rate')} body={(rowData) => (
-                                            <span className="font-black text-[#4CAF50]">{rowData.pricePerHour.toLocaleString()}₮</span>
-                                        )} />
-                                        <Column body={(rowData) => (
-                                            <Button
-                                                icon="pi pi-trash"
-                                                text
-                                                severity="danger"
-                                                size="small"
-                                                onClick={() => handleDeletePricing(rowData.id)}
-                                            />
-                                        )} />
-                                    </DataTable>
-                                </div>
-                            </div>
+                                )} />
+                                <Column header={t('dates')} body={(rowData) => rowData.startDateTime ?
+                                    `${new Date(rowData.startDateTime).toLocaleDateString()} — ${new Date(rowData.endDateTime).toLocaleDateString()}`
+                                    : t('recurring')} />
+                                <Column header={t('rate')} body={(rowData) => (
+                                    <span className="font-black text-[#4CAF50]">{rowData.pricePerHour.toLocaleString()}₮</span>
+                                )} />
+                                <Column header={t('priority')} body={(rowData) => (
+                                    <Tag value={`#${rowData.priority}`} severity="info" className="text-xs" />
+                                )} />
+                                <Column body={(rowData) => (
+                                    <Button
+                                        icon="pi pi-trash"
+                                        text
+                                        severity="danger"
+                                        size="small"
+                                        onClick={() => handleDeletePricing(rowData.id)}
+                                    />
+                                )} />
+                            </DataTable>
                         </div>
                     )}
                 </div>

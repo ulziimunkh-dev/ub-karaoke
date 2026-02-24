@@ -180,7 +180,7 @@ export const DataProvider = ({ children }) => {
                             const [types, features, promotions] = await Promise.all([
                                 api.getRoomTypes(),
                                 api.getRoomFeatures(),
-                                api.getPromotions()
+                                api.getPromotions({ includeInactive: true })
                             ]);
                             setRoomTypes(types);
                             setRoomFeatures(features);
@@ -861,10 +861,22 @@ export const DataProvider = ({ children }) => {
 
     const deletePromotion = async (id) => {
         try {
-            await api.deletePromotion(id);
+            const deactivated = await api.deletePromotion(id);
             setPromos(prev => prev.filter(p => p.id !== id));
+            return deactivated;
         } catch (error) {
             console.error('Failed to delete promotion:', error);
+            throw error;
+        }
+    };
+
+    const updatePromotion = async (id, data) => {
+        try {
+            const updated = await api.updatePromotion(id, data);
+            setPromos(prev => prev.map(p => p.id === id ? updated : p));
+            return updated;
+        } catch (error) {
+            console.error('Failed to update promotion:', error);
             throw error;
         }
     };
@@ -968,6 +980,7 @@ export const DataProvider = ({ children }) => {
                 promos,
                 addPromotion,
                 deletePromotion,
+                updatePromotion,
                 verifyPromoCode,
                 refreshData: loadInitialData,
                 roomTypes,

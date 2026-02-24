@@ -48,4 +48,8 @@ export class CreateBookingDto {
     @IsNumber()
     @IsOptional()
     pointsToUse?: number;
+
+    @IsString()
+    @IsOptional()
+    promoCode?: string;
 }

@@ -20,6 +20,7 @@ import { VenueOperatingHours, DayOfWeek } from '../venues/entities/venue-operati
 import { User } from '../auth/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { PromotionsService } from '../promotions/promotions.service';
 
 @Injectable()
 export class BookingsService {
@@ -43,6 +44,7 @@ export class BookingsService {
         private readonly auditService: AuditService,
         private readonly notificationsService: NotificationsService,
         private readonly notificationsGateway: NotificationsGateway,
+        private readonly promotionsService: PromotionsService,
     ) { }
 
     async create(createBookingDto: CreateBookingDto, userId?: string): Promise<Booking> {
@@ -90,9 +92,41 @@ export class BookingsService {
                 pointsUsed = createBookingDto.pointsToUse;
             }
 
-            // Distribute discount across rooms (simple division for now)
+            // Distribute loyalty discount across rooms
             const discountPerRoom = loyaltyDiscount / roomIds.length;
             const pointsPerRoom = Math.round(pointsUsed / roomIds.length);
+
+            // Promo Code Logic: Validate and calculate promo discount
+            let promoDiscount = 0;
+            let appliedPromoId: string | undefined = undefined;
+
+            if (createBookingDto.promoCode) {
+                // We need the venue to get the organizationId
+                const firstRoom = await transactionalEntityManager.getRepository(Room).findOne({
+                    where: { id: roomIds[0] },
+                    relations: ['venue'],
+                });
+                if (firstRoom?.venue) {
+                    try {
+                        const promotion = await this.promotionsService.validateCode(
+                            createBookingDto.promoCode,
+                            firstRoom.venue.organizationId,
+                        );
+                        appliedPromoId = promotion.id;
+
+                        const priceAfterLoyalty = createBookingDto.totalPrice - loyaltyDiscount;
+                        if (promotion.discountType === 'PERCENT') {
+                            promoDiscount = Math.round(priceAfterLoyalty * Number(promotion.value) / 100);
+                        } else {
+                            promoDiscount = Math.min(Number(promotion.value), priceAfterLoyalty);
+                        }
+                    } catch (error) {
+                        throw new BadRequestException(error.message || 'Invalid promotion code');
+                    }
+                }
+            }
+
+            const promoDiscountPerRoom = promoDiscount / roomIds.length;
 
             for (const roomId of roomIds) {
                 const room = await transactionalEntityManager.getRepository(Room).findOne({
@@ -135,7 +169,7 @@ export class BookingsService {
                 }
 
                 const basePricePerRoom = createBookingDto.totalPrice / roomIds.length;
-                const finalPricePerRoom = basePricePerRoom - discountPerRoom;
+                const finalPricePerRoom = basePricePerRoom - discountPerRoom - promoDiscountPerRoom;
 
                 const booking = transactionalEntityManager.getRepository(Booking).create({
                     ...createBookingDto,
@@ -153,6 +187,7 @@ export class BookingsService {
                     expiresAt: new Date(Date.now() + 15 * 60 * 1000),
                     source: (createBookingDto.source as BookingSource) || BookingSource.ONLINE,
                     organizationId: venue.organizationId,
+                    appliedPromotionId: appliedPromoId,
                 });
 
                 const savedBooking = await transactionalEntityManager.getRepository(Booking).save(booking);

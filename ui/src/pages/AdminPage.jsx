@@ -8,6 +8,7 @@ import VenueManagement from '../components/admin/VenueManagement';
 import UserManagement from '../components/admin/UserManagement';
 import StaffManagement from '../components/admin/StaffManagement';
 import SystemSettings from '../components/admin/SystemSettings';
+import PromotionsManagement from '../components/admin/PromotionsManagement';
 import Reports from '../components/admin/Reports';
 import Finance from '../components/admin/Finance';
 import StaffPortal from '../components/StaffPortal';
@@ -59,15 +60,17 @@ const AdminPage = () => {
             { id: 'organizations', label: t('orgsLabel'), icon: '🏛️' },
             { id: 'plans', label: t('plansLabel'), icon: '📑' }
         ] : []),
+        ...(currentUser.role === 'manager' ? [{ id: 'subscription', label: t('subscription'), icon: '💎' }] : []),
         { id: 'venues', label: currentUser.role === 'sysadmin' ? t('venuesAndRooms') : t('branchesAndRooms'), icon: '🏢' },
         { id: 'bookings', label: t('bookings'), icon: '📅' },
-        ...(currentUser.role === 'manager' ? [{ id: 'subscription', label: t('subscription'), icon: '💎' }] : []),
         ...(currentUser.role !== 'sysadmin' ? [{ id: 'pos_view', label: t('pointOfSale'), icon: '🖥️' }] : []),
-        ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: t('users'), icon: '👥' }] : []),
-        { id: 'staffs', label: t('staffs'), icon: '👥' },
-        { id: 'audit', label: t('auditLogs'), icon: '📋' },
-        { id: 'reports', label: t('reports'), icon: '📈' },
+
+        { id: 'promotions', label: t('promotions') || 'Promotions', icon: '🎟️' },
         { id: 'finance', label: t('finance'), icon: '💰' },
+        { id: 'reports', label: t('reports'), icon: '📈' },
+        { id: 'staffs', label: t('staffs'), icon: '👥' },
+        ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: t('users'), icon: '👥' }] : []),
+        { id: 'audit', label: t('auditLogs'), icon: '📋' },
         { id: 'settings', label: t('settings'), icon: '⚙️' }
     ];
 
@@ -236,16 +239,17 @@ const AdminPage = () => {
 
                 {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard onNavigate={setActiveTab} />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
-                {activeTab === 'plans' && <PlanManagement />}
-                {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'bookings' && <BookingsManagement />}
                 {activeTab === 'pos_view' && <StaffPortal embedded />}
-                {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
-                {activeTab === 'staffs' && <StaffManagement />}
+                {activeTab === 'promotions' && <PromotionsManagement />}
+                {activeTab === 'plans' && <PlanManagement />}
+                {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'audit' && (['sysadmin', 'manager'].includes(currentUser.role)) && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
                 {activeTab === 'finance' && <Finance />}
+                {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
+                {activeTab === 'staffs' && <StaffManagement />}
                 {activeTab === 'settings' && <SystemSettings />}
             </main>
 

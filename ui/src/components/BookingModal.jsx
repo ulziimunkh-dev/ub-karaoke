@@ -223,6 +223,13 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [qpayLoading, setQpayLoading] = useState(false);
     const [qpayPolling, setQpayPolling] = useState(false);
 
+    // Promo Code State
+    const [promoCode, setPromoCode] = useState('');
+    const [promoResult, setPromoResult] = useState(null);
+    const [promoError, setPromoError] = useState(null);
+    const [promoLoading, setPromoLoading] = useState(false);
+    const [showPromoInput, setShowPromoInput] = useState(false);
+
     const handlePayment = async () => {
         if (!currentUser) {
             setShowLogin(true);
@@ -241,7 +248,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                 ...bookingData,
                 date: bookingDate.toISOString().split('T')[0],
                 rooms: selectedRooms.map(r => r.id),
-                totalPrice: totalCost
+                totalPrice: finalTotal,
+                promoCode: promoResult?.code || null
             });
             setActiveBooking(reservation);
             setStep(3);
@@ -374,6 +382,35 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     };
 
     const totalCost = calculateTotalCost();
+
+    // Calculate promo discount
+    const promoDiscount = promoResult ? (
+        promoResult.discountType === 'PERCENT'
+            ? Math.round(totalCost * Number(promoResult.value) / 100)
+            : Math.min(Number(promoResult.value), totalCost)
+    ) : 0;
+    const finalTotal = Math.max(0, totalCost - promoDiscount);
+
+    const handleApplyPromo = async () => {
+        if (!promoCode.trim()) return;
+        setPromoLoading(true);
+        setPromoError(null);
+        setPromoResult(null);
+        try {
+            const result = await api.validatePromoCodePublic(promoCode.trim(), venue.id);
+            setPromoResult(result);
+        } catch (error) {
+            setPromoError(error.response?.data?.message || t('promoInvalid') || 'Invalid promotion code');
+        } finally {
+            setPromoLoading(false);
+        }
+    };
+
+    const handleRemovePromo = () => {
+        setPromoResult(null);
+        setPromoCode('');
+        setPromoError(null);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex flex-col lg:justify-center lg:items-center justify-end z-[60] p-0 lg:p-4 animate-[fadeIn_0.2s_ease]">
@@ -799,11 +836,90 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                         <p className="text-xs text-gray-500 mt-1 text-right">{bookingData.notes.length}/500</p>
                                     </div>
 
+                                    {/* Promo Code Section */}
+                                    <div className="mb-6 p-4 bg-surface rounded-xl border border-white/5">
+                                        {!showPromoInput && !promoResult ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPromoInput(true)}
+                                                className="flex items-center gap-2 text-sm text-[#eb79b2] hover:text-[#b000ff] bg-transparent border-none cursor-pointer transition-colors font-medium"
+                                            >
+                                                <i className="pi pi-ticket" />
+                                                {t('havePromoCode') || 'Have a promo code?'}
+                                            </button>
+                                        ) : promoResult ? (
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                                        <i className="pi pi-check text-green-400" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="m-0 text-sm font-bold text-green-400">{t('promoApplied') || 'Promo Applied!'}</p>
+                                                        <p className="m-0 text-xs text-gray-400">
+                                                            <span className="text-[#ff9800] font-bold">{promoResult.code}</span>
+                                                            {' — '}
+                                                            {promoResult.discountType === 'PERCENT'
+                                                                ? `${promoResult.value}% ${t('off') || 'off'}`
+                                                                : `-${Number(promoResult.value).toLocaleString()}₮`
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemovePromo}
+                                                    className="text-xs text-red-400 hover:text-red-300 bg-transparent border-none cursor-pointer font-medium"
+                                                >
+                                                    {t('removePromo') || 'Remove'}
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <label className="text-sm text-gray-400 font-medium block mb-2">
+                                                    <i className="pi pi-ticket mr-2" />
+                                                    {t('promoCode') || 'Promo Code'}
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={promoCode}
+                                                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                        placeholder={t('enterPromoCode') || 'Enter code...'}
+                                                        className="flex-1 h-10 px-3 bg-[#151521] border border-[#2A2A35] rounded-lg text-white text-sm focus:outline-none focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff]/30 transition-all uppercase tracking-wider"
+                                                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleApplyPromo}
+                                                        disabled={promoLoading || !promoCode.trim()}
+                                                        className="h-10 px-4 bg-[#b000ff]/20 hover:bg-[#b000ff]/30 border border-[#b000ff]/40 text-[#eb79b2] font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                                    >
+                                                        {promoLoading ? <i className="pi pi-spin pi-spinner" /> : (t('applyPromo') || 'Apply')}
+                                                    </button>
+                                                </div>
+                                                {promoError && (
+                                                    <p className="m-0 mt-2 text-xs text-red-400 flex items-center gap-1">
+                                                        <i className="pi pi-exclamation-circle" />
+                                                        {promoError}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
                                     <div className="flex justify-between items-center mb-6 p-4 bg-surface rounded-xl border border-white/5">
                                         <span className="text-xl font-semibold">{t('total')}:</span>
-                                        <span className="text-2xl font-bold text-primary drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
-                                            {totalCost.toLocaleString()}₮
-                                        </span>
+                                        <div className="text-right">
+                                            {promoDiscount > 0 && (
+                                                <div className="flex items-center gap-2 justify-end mb-1">
+                                                    <span className="text-sm text-gray-500 line-through">{totalCost.toLocaleString()}₮</span>
+                                                    <span className="text-xs text-green-400 font-bold">-{promoDiscount.toLocaleString()}₮</span>
+                                                </div>
+                                            )}
+                                            <span className="text-2xl font-bold text-primary drop-shadow-[0_0_10px_rgba(176,0,255,0.4)]">
+                                                {finalTotal.toLocaleString()}₮
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-4 sm:mt-0">

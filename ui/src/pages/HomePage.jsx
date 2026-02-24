@@ -129,8 +129,9 @@ const HomePage = () => {
             startTime: data.time,
             endTime: endTime,
             duration: Number(data.hours),
-            totalPrice: data.totalPrice, // We'll add this to the call in BookingModal
-            customerPhone: currentUser?.phone || '99999999'
+            totalPrice: data.totalPrice,
+            customerPhone: currentUser?.phone || '99999999',
+            promoCode: data.promoCode || null
         };
 
         return await addBooking(booking);

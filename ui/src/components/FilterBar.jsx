@@ -66,7 +66,7 @@ const FilterBar = ({ onFilterChange, filters }) => {
                             }`}
                         onClick={() => onFilterChange({ ...filters, nearMe: !filters.nearMe })}
                     >
-                        📍 {t('nearMe')}
+                        {t('nearMe')}
                     </button>
 
                     {/* Capacity Filter */}
@@ -94,7 +94,7 @@ const FilterBar = ({ onFilterChange, filters }) => {
                             }`}
                         onClick={() => onFilterChange({ ...filters, partyCapable: !filters.partyCapable })}
                     >
-                        🎉 {t('filterPartyCapable')}
+                        {t('filterPartyCapable')}
                     </button>
                 </div>
             </div>

@@ -388,8 +388,8 @@ export const api = {
     },
 
     // Promotions
-    getPromotions: async () => {
-        const response = await apiInstance.get('/promotions');
+    getPromotions: async ({ includeInactive = false } = {}) => {
+        const response = await apiInstance.get('/promotions', { params: { includeInactive } });
         return response.data;
     },
     createPromotion: async (data) => {
@@ -400,8 +400,16 @@ export const api = {
         const response = await apiInstance.delete(`/promotions/${id}`);
         return response.data;
     },
+    updatePromotion: async (id, data) => {
+        const response = await apiInstance.patch(`/promotions/${id}`, data);
+        return response.data;
+    },
     validatePromotion: async (code) => {
         const response = await apiInstance.post('/promotions/validate', { code });
+        return response.data;
+    },
+    validatePromoCodePublic: async (code, venueId) => {
+        const response = await apiInstance.post('/promotions/validate-public', { code, venueId });
         return response.data;
     },
 
