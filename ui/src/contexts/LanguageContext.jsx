@@ -775,7 +775,13 @@ const dictionaries = {
         confirmDelete: "Confirm Delete",
         promoUpdated: "Updated",
         promoCodeUpdated: "Promotion \"{code}\" updated",
-        promoUpdateFailed: "Update failed"
+        promoUpdateFailed: "Update failed",
+        havePromoCode: "Have a promo code?",
+        promoApplied: "Promo Applied!",
+        removePromo: "Remove",
+        enterPromoCode: "Enter code...",
+        applyPromo: "Apply",
+        promoInvalid: "Invalid promotion code"
     },
     mn: {
         appTitle: "UB КАРАОКЕ",
@@ -1578,7 +1584,13 @@ const dictionaries = {
         date: "Огноо",
         delete: "Устгах",
         validationError: "Баталгаажуулалтын алдаа",
-        fillAllFields: "Бүх талбарыг бөглөнө үү"
+        fillAllFields: "Бүх талбарыг бөглөнө үү",
+        havePromoCode: "Урамшууллын код бий юу?",
+        promoApplied: "Урамшуулал ашиглагдлаа!",
+        removePromo: "Устгах",
+        enterPromoCode: "Код оруулна уу...",
+        applyPromo: "Ашиглах",
+        promoInvalid: "Урамшууллын код хүчингүй байна"
     }
 };
 
