@@ -11,13 +11,13 @@ import { QpayService } from './qpay.service';
 import { BookingsModule } from '../bookings/bookings.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Payment, PaymentTransaction, Refund, Booking]),
-        HttpModule,
-        forwardRef(() => BookingsModule),
-    ],
-    controllers: [PaymentsController],
-    providers: [PaymentsService, QpayService],
-    exports: [PaymentsService],
+  imports: [
+    TypeOrmModule.forFeature([Payment, PaymentTransaction, Refund, Booking]),
+    HttpModule,
+    forwardRef(() => BookingsModule),
+  ],
+  controllers: [PaymentsController],
+  providers: [PaymentsService, QpayService],
+  exports: [PaymentsService],
 })
-export class PaymentsModule { }
+export class PaymentsModule {}

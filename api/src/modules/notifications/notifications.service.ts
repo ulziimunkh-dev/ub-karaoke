@@ -3,113 +3,129 @@ import { ConfigService } from '@nestjs/config';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In } from 'typeorm';
-import { Notification, NotificationType, NotificationStatus } from './entities/notification.entity';
+import {
+  Notification,
+  NotificationType,
+  NotificationStatus,
+} from './entities/notification.entity';
 import { Staff, StaffRole } from '../staff/entities/staff.entity';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class NotificationsService {
-    private readonly logger = new Logger(NotificationsService.name);
-    private transporter: nodemailer.Transporter | null = null;
-    private fromEmail: string;
+  private readonly logger = new Logger(NotificationsService.name);
+  private transporter: nodemailer.Transporter | null = null;
+  private fromEmail: string;
 
-    constructor(
-        @InjectRepository(Notification)
-        private notificationsRepository: Repository<Notification>,
-        @InjectRepository(Staff)
-        private staffRepository: Repository<Staff>,
-        private configService: ConfigService,
-    ) {
-        const smtpHost = this.configService.get<string>('SMTP_HOST');
-        const smtpPort = this.configService.get<number>('SMTP_PORT');
-        const smtpUser = this.configService.get<string>('SMTP_USER');
-        const smtpPass = this.configService.get<string>('SMTP_PASS');
-        this.fromEmail = this.configService.get<string>('SMTP_FROM') || 'noreply@ubkaraoke.com';
+  constructor(
+    @InjectRepository(Notification)
+    private notificationsRepository: Repository<Notification>,
+    @InjectRepository(Staff)
+    private staffRepository: Repository<Staff>,
+    private configService: ConfigService,
+  ) {
+    const smtpHost = this.configService.get<string>('SMTP_HOST');
+    const smtpPort = this.configService.get<number>('SMTP_PORT');
+    const smtpUser = this.configService.get<string>('SMTP_USER');
+    const smtpPass = this.configService.get<string>('SMTP_PASS');
+    this.fromEmail =
+      this.configService.get<string>('SMTP_FROM') || 'noreply@ubkaraoke.com';
 
-        if (smtpHost && smtpUser && smtpPass) {
-            this.transporter = nodemailer.createTransport({
-                host: smtpHost,
-                port: smtpPort || 587,
-                secure: false,
-                auth: { user: smtpUser, pass: smtpPass },
-            });
-            this.logger.log(`SMTP configured: ${smtpHost}:${smtpPort}`);
-        } else {
-            this.logger.warn('SMTP not configured — emails will only be logged to console');
-        }
+    if (smtpHost && smtpUser && smtpPass) {
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort || 587,
+        secure: false,
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+      this.logger.log(`SMTP configured: ${smtpHost}:${smtpPort}`);
+    } else {
+      this.logger.warn(
+        'SMTP not configured — emails will only be logged to console',
+      );
     }
+  }
 
-    private async sendEmail(to: string, subject: string, html: string) {
-        if (this.transporter && to.includes('@')) {
-            try {
-                await this.transporter.sendMail({
-                    from: `"UB Karaoke" <${this.fromEmail}>`,
-                    to,
-                    subject,
-                    html,
-                });
-                this.logger.log(`Email sent to ${to}: ${subject}`);
-            } catch (err) {
-                this.logger.error(`Failed to send email to ${to}: ${err.message}`);
-            }
-        }
-        // Always log to console as backup
-        console.log(`\n==================================================\n   [${subject}] To: ${to}\n==================================================\n`);
+  private async sendEmail(to: string, subject: string, html: string) {
+    if (this.transporter && to.includes('@')) {
+      try {
+        await this.transporter.sendMail({
+          from: `"UB Karaoke" <${this.fromEmail}>`,
+          to,
+          subject,
+          html,
+        });
+        this.logger.log(`Email sent to ${to}: ${subject}`);
+      } catch (err) {
+        this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+      }
     }
+    // Always log to console as backup
+    console.log(
+      `\n==================================================\n   [${subject}] To: ${to}\n==================================================\n`,
+    );
+  }
 
-    private async logNotification(type: NotificationType, contact: string, message: string, userId?: number) {
-        // Best-effort DB logging for mock
+  private async logNotification(
+    type: NotificationType,
+    contact: string,
+    message: string,
+    userId?: number,
+  ) {
+    // Best-effort DB logging for mock
+  }
+
+  async create(data: Partial<Notification>) {
+    const notification = this.notificationsRepository.create(data);
+    return this.notificationsRepository.save(notification);
+  }
+
+  /**
+   * Create an in-app notification for all staff and managers in an organization.
+   * Called after key booking events so the bell shows actionable items for staff.
+   */
+  async sendOrgNotification(
+    organizationId: string,
+    title: string,
+    message: string,
+    bookingId?: string,
+  ) {
+    if (!organizationId) return;
+    try {
+      const staffMembers = await this.staffRepository.find({
+        where: {
+          organizationId,
+          role: In([StaffRole.STAFF, StaffRole.MANAGER]),
+        },
+        select: ['id'],
+      });
+
+      if (staffMembers.length === 0) return;
+
+      const rows = staffMembers.map((s) =>
+        this.notificationsRepository.create({
+          staffId: s.id,
+          organizationId,
+          bookingId: bookingId ?? undefined,
+          type: NotificationType.PUSH,
+          status: NotificationStatus.SENT,
+          title,
+          message,
+        }),
+      );
+
+      await this.notificationsRepository.save(rows);
+      this.logger.log(
+        `[ORG NOTIFY] "${title}" sent to ${staffMembers.length} staff in org ${organizationId}`,
+      );
+    } catch (err) {
+      this.logger.error(`Failed to send org notification: ${err.message}`);
     }
+  }
 
-    async create(data: Partial<Notification>) {
-        const notification = this.notificationsRepository.create(data);
-        return this.notificationsRepository.save(notification);
-    }
-
-    /**
-     * Create an in-app notification for all staff and managers in an organization.
-     * Called after key booking events so the bell shows actionable items for staff.
-     */
-    async sendOrgNotification(
-        organizationId: string,
-        title: string,
-        message: string,
-        bookingId?: string,
-    ) {
-        if (!organizationId) return;
-        try {
-            const staffMembers = await this.staffRepository.find({
-                where: {
-                    organizationId,
-                    role: In([StaffRole.STAFF, StaffRole.MANAGER]),
-                },
-                select: ['id'],
-            });
-
-            if (staffMembers.length === 0) return;
-
-            const rows = staffMembers.map(s =>
-                this.notificationsRepository.create({
-                    staffId: s.id,
-                    organizationId,
-                    bookingId: bookingId ?? undefined,
-                    type: NotificationType.PUSH,
-                    status: NotificationStatus.SENT,
-                    title,
-                    message,
-                }),
-            );
-
-            await this.notificationsRepository.save(rows);
-            this.logger.log(`[ORG NOTIFY] "${title}" sent to ${staffMembers.length} staff in org ${organizationId}`);
-        } catch (err) {
-            this.logger.error(`Failed to send org notification: ${err.message}`);
-        }
-    }
-
-    async sendVerificationCode(contact: string, code: string) {
-        const subject = 'Your Verification Code';
-        const html = `
+  async sendVerificationCode(contact: string, code: string) {
+    const subject = 'Your Verification Code';
+    const html = `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
                 <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
                 <p>Your verification code is:</p>
@@ -117,16 +133,18 @@ export class NotificationsService {
                 <p style="color:#888;font-size:13px">This code expires in 10 minutes. If you did not request this, please ignore this email.</p>
             </div>
         `;
-        await this.sendEmail(contact, subject, html);
-        // Also log to console for phone / non-email contacts
-        if (!contact.includes('@')) {
-            console.log(`\n==================================================\n   VERIFICATION CODE for ${contact}: [ ${code} ]\n==================================================\n`);
-        }
+    await this.sendEmail(contact, subject, html);
+    // Also log to console for phone / non-email contacts
+    if (!contact.includes('@')) {
+      console.log(
+        `\n==================================================\n   VERIFICATION CODE for ${contact}: [ ${code} ]\n==================================================\n`,
+      );
     }
+  }
 
-    async sendPasswordResetToken(contact: string, token: string) {
-        const subject = 'Password Reset';
-        const html = `
+  async sendPasswordResetToken(contact: string, token: string) {
+    const subject = 'Password Reset';
+    const html = `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
                 <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
                 <p>Your password reset token is:</p>
@@ -134,15 +152,17 @@ export class NotificationsService {
                 <p style="color:#888;font-size:13px">If you did not request this, please ignore this email.</p>
             </div>
         `;
-        await this.sendEmail(contact, subject, html);
-        if (!contact.includes('@')) {
-            console.log(`\n==================================================\n   RESET TOKEN for ${contact}: [ ${token} ]\n==================================================\n`);
-        }
+    await this.sendEmail(contact, subject, html);
+    if (!contact.includes('@')) {
+      console.log(
+        `\n==================================================\n   RESET TOKEN for ${contact}: [ ${token} ]\n==================================================\n`,
+      );
     }
+  }
 
-    async sendLoginOtp(contact: string, otp: string) {
-        const subject = 'Your Login Code';
-        const html = `
+  async sendLoginOtp(contact: string, otp: string) {
+    const subject = 'Your Login Code';
+    const html = `
             <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff">
                 <h2 style="margin:0 0 16px;color:#b000ff">UB Karaoke</h2>
                 <p>Your one-time login code is:</p>
@@ -150,103 +170,130 @@ export class NotificationsService {
                 <p style="color:#888;font-size:13px">This code expires in 5 minutes.</p>
             </div>
         `;
-        await this.sendEmail(contact, subject, html);
-        if (!contact.includes('@')) {
-            console.log(`\n==================================================\n   LOGIN OTP for ${contact}: [ ${otp} ]\n==================================================\n`);
-        }
-
-        // Try to verify if it's email or phone to guess type
-        const type = contact.includes('@') ? NotificationType.EMAIL : NotificationType.SMS;
-
-        // We could log this if we had a user attached. Since auth flow might be pre-login for OTP, 
-        // logging it might be tricky without userId. 
-        // For the purpose of this task, I'll allow creating explicit notifications via 'create' method
-        // which can be called by other modules.
+    await this.sendEmail(contact, subject, html);
+    if (!contact.includes('@')) {
+      console.log(
+        `\n==================================================\n   LOGIN OTP for ${contact}: [ ${otp} ]\n==================================================\n`,
+      );
     }
 
-    async sendBookingNotification(
-        bookingId: string,
-        type: 'created' | 'reserved' | 'approved' | 'rejected' | 'checked_in' | 'completed' | 'expired' | 'reminder',
-        userId?: string,
-        organizationId?: string
-    ) {
-        const titles = {
-            created: 'Booking Created',
-            reserved: 'Slot Reserved',
-            approved: 'Booking Approved',
-            rejected: 'Booking Rejected',
-            checked_in: 'Checked In',
-            completed: 'Booking Completed',
-            expired: 'Reservation Expired',
-            reminder: 'Payment Reminder'
-        };
+    // Try to verify if it's email or phone to guess type
+    const type = contact.includes('@')
+      ? NotificationType.EMAIL
+      : NotificationType.SMS;
 
-        const messages = {
-            created: 'Your booking has been created and is pending approval',
-            reserved: 'Your time slot has been reserved. Complete payment within 15 minutes.',
-            approved: 'Your booking has been approved!',
-            rejected: 'Your booking has been rejected',
-            checked_in: 'You have been checked in. Enjoy your session!',
-            completed: 'Your booking is complete. Thank you!',
-            expired: 'Your booking reservation has expired',
-            reminder: 'Your reservation expires soon. Complete payment now!'
-        };
+    // We could log this if we had a user attached. Since auth flow might be pre-login for OTP,
+    // logging it might be tricky without userId.
+    // For the purpose of this task, I'll allow creating explicit notifications via 'create' method
+    // which can be called by other modules.
+  }
 
-        const title = titles[type];
-        const message = messages[type];
+  async sendBookingNotification(
+    bookingId: string,
+    type:
+      | 'created'
+      | 'reserved'
+      | 'approved'
+      | 'rejected'
+      | 'checked_in'
+      | 'completed'
+      | 'expired'
+      | 'reminder',
+    userId?: string,
+    organizationId?: string,
+  ) {
+    const titles = {
+      created: 'Booking Created',
+      reserved: 'Slot Reserved',
+      approved: 'Booking Approved',
+      rejected: 'Booking Rejected',
+      checked_in: 'Checked In',
+      completed: 'Booking Completed',
+      expired: 'Reservation Expired',
+      reminder: 'Payment Reminder',
+    };
 
-        if (userId) {
-            // Create in-app notification for user
-            await this.create({
-                userId,
-                bookingId,
-                type: NotificationType.PUSH,
-                status: NotificationStatus.SENT,
-                title,
-                message,
-                organizationId
-            });
+    const messages = {
+      created: 'Your booking has been created and is pending approval',
+      reserved:
+        'Your time slot has been reserved. Complete payment within 15 minutes.',
+      approved: 'Your booking has been approved!',
+      rejected: 'Your booking has been rejected',
+      checked_in: 'You have been checked in. Enjoy your session!',
+      completed: 'Your booking is complete. Thank you!',
+      expired: 'Your booking reservation has expired',
+      reminder: 'Your reservation expires soon. Complete payment now!',
+    };
 
-            this.logger.log(`[NOTIFICATION] Booking ${type}: ${message} (User: ${userId})`);
-        }
+    const title = titles[type];
+    const message = messages[type];
+
+    if (userId) {
+      // Create in-app notification for user
+      await this.create({
+        userId,
+        bookingId,
+        type: NotificationType.PUSH,
+        status: NotificationStatus.SENT,
+        title,
+        message,
+        organizationId,
+      });
+
+      this.logger.log(
+        `[NOTIFICATION] Booking ${type}: ${message} (User: ${userId})`,
+      );
+    }
+  }
+
+  async getUserNotifications(
+    where: { userId?: string; staffId?: string },
+    limit: number = 20,
+  ) {
+    return this.notificationsRepository.find({
+      where,
+      order: { createdAt: 'DESC' },
+      take: limit,
+      relations: ['booking'],
+    });
+  }
+
+  async getUnreadCount(where: {
+    userId?: string;
+    staffId?: string;
+  }): Promise<number> {
+    return this.notificationsRepository.count({
+      where: { ...where, readAt: IsNull() },
+    });
+  }
+
+  async markAsRead(
+    notificationId: string,
+    where: { userId?: string; staffId?: string },
+  ) {
+    const notification = await this.notificationsRepository.findOne({
+      where: { id: notificationId, ...where },
+    });
+
+    if (notification && !notification.readAt) {
+      notification.readAt = new Date();
+      await this.notificationsRepository.save(notification);
     }
 
-    async getUserNotifications(where: { userId?: string; staffId?: string }, limit: number = 20) {
-        return this.notificationsRepository.find({
-            where,
-            order: { createdAt: 'DESC' },
-            take: limit,
-            relations: ['booking']
-        });
-    }
+    return notification;
+  }
 
-    async getUnreadCount(where: { userId?: string; staffId?: string }): Promise<number> {
-        return this.notificationsRepository.count({
-            where: { ...where, readAt: IsNull() }
-        });
-    }
+  async markAllAsRead(where: { userId?: string; staffId?: string }) {
+    await this.notificationsRepository.update(
+      { ...where, readAt: IsNull() },
+      { readAt: new Date() },
+    );
+  }
 
-    async markAsRead(notificationId: string, where: { userId?: string; staffId?: string }) {
-        const notification = await this.notificationsRepository.findOne({
-            where: { id: notificationId, ...where }
-        });
-
-        if (notification && !notification.readAt) {
-            notification.readAt = new Date();
-            await this.notificationsRepository.save(notification);
-        }
-
-        return notification;
-    }
-
-    async markAllAsRead(where: { userId?: string; staffId?: string }) {
-        await this.notificationsRepository.update(
-            { ...where, readAt: IsNull() },
-            { readAt: new Date() }
-        );
-    }
-
-    async deleteNotification(notificationId: string, where: { userId?: string; staffId?: string }) {
-        await this.notificationsRepository.delete({ id: notificationId, ...where });
-    }
+  async deleteNotification(
+    notificationId: string,
+    where: { userId?: string; staffId?: string },
+  ) {
+    await this.notificationsRepository.delete({ id: notificationId, ...where });
+  }
 }

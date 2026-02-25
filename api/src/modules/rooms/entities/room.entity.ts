@@ -1,12 +1,12 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
-    OneToMany,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Booking } from '../../bookings/entities/booking.entity';
@@ -19,116 +19,116 @@ import { RoomImage } from './room-image.entity';
 
 @Entity('rooms')
 export class Room {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'venueId' })
-    venueId: string;
+  @Column({ name: 'venueId' })
+  venueId: string;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column({ nullable: true })
-    type: string; // Standard, VIP, Party, Themed, Small
+  @Column({ nullable: true })
+  type: string; // Standard, VIP, Party, Themed, Small
 
-    @Column()
-    capacity: number;
+  @Column()
+  capacity: number;
 
-    @Column('decimal', { name: 'hourlyRate', precision: 10, scale: 2 })
-    hourlyRate: number;
+  @Column('decimal', { name: 'hourlyRate', precision: 10, scale: 2 })
+  hourlyRate: number;
 
-    @Column({ name: 'isVIP', default: false })
-    isVIP: boolean;
+  @Column({ name: 'isVIP', default: false })
+  isVIP: boolean;
 
-    @Column()
-    condition: string;
+  @Column()
+  condition: string;
 
-    @Column('jsonb', { name: 'amenities' })
-    amenities: string[];
+  @Column('jsonb', { name: 'amenities' })
+  amenities: string[];
 
-    // @Column('jsonb', { name: 'features', nullable: true })
-    // features: string[];
+  // @Column('jsonb', { name: 'features', nullable: true })
+  // features: string[];
 
-    @Column('jsonb', { name: 'images', nullable: true })
-    /**
-     * @deprecated Use imagesList instead
-     */
-    images: string[];
+  @Column('jsonb', { name: 'images', nullable: true })
+  /**
+   * @deprecated Use imagesList instead
+   */
+  images: string[];
 
-    @Column('jsonb', { name: 'specs', nullable: true })
-    specs: {
-        microphones?: number;
-        speaker?: string;
-        screen?: number;
-        seating?: string;
-        ac?: string;
-        sound?: string;
-        lighting?: string[];
-        cleaning?: number;
-    };
+  @Column('jsonb', { name: 'specs', nullable: true })
+  specs: {
+    microphones?: number;
+    speaker?: string;
+    screen?: number;
+    seating?: string;
+    ac?: string;
+    sound?: string;
+    lighting?: string[];
+    cleaning?: number;
+  };
 
-    @Column('jsonb', { name: 'partySupport', nullable: true })
-    partySupport: {
-        birthday?: boolean;
-        decoration?: boolean;
-    };
+  @Column('jsonb', { name: 'partySupport', nullable: true })
+  partySupport: {
+    birthday?: boolean;
+    decoration?: boolean;
+  };
 
-    @Column({ name: 'view360Url', nullable: true })
-    view360Url: string;
+  @Column({ name: 'view360Url', nullable: true })
+  view360Url: string;
 
-    @Column({ name: 'is_active', default: true })
-    isActive: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
-    @Column({ name: 'isBookingEnabled', default: true })
-    isBookingEnabled: boolean;
+  @Column({ name: 'isBookingEnabled', default: true })
+  isBookingEnabled: boolean;
 
-    @Column({ name: 'sort_order', default: 0 })
-    sortOrder: number;
+  @Column({ name: 'sort_order', default: 0 })
+  sortOrder: number;
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
-    createdAt: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
-    updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt: Date;
 
-    @Column({ name: 'created_by', nullable: true })
-    createdBy: string;
+  @Column({ name: 'created_by', nullable: true })
+  createdBy: string;
 
-    @Column({ name: 'updated_by', nullable: true })
-    updatedBy: string;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedBy: string;
 
-    @ManyToOne(() => Venue, (venue) => venue.rooms)
-    @JoinColumn({ name: 'venueId' })
-    venue: Venue;
+  @ManyToOne(() => Venue, (venue) => venue.rooms)
+  @JoinColumn({ name: 'venueId' })
+  venue: Venue;
 
-    @ManyToOne(() => Organization)
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+  @ManyToOne(() => Organization)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true })
-    organizationId: string;
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId: string;
 
-    @OneToMany(() => Booking, (booking) => booking.room)
-    bookings: Booking[];
+  @OneToMany(() => Booking, (booking) => booking.room)
+  bookings: Booking[];
 
-    @ManyToOne(() => RoomType, (type) => type.rooms, { nullable: true })
-    @JoinColumn({ name: 'roomTypeId' })
-    roomType: RoomType;
+  @ManyToOne(() => RoomType, (type) => type.rooms, { nullable: true })
+  @JoinColumn({ name: 'roomTypeId' })
+  roomType: RoomType;
 
-    @Column({ nullable: true })
-    roomTypeId: string;
+  @Column({ nullable: true })
+  roomTypeId: string;
 
-    @ManyToMany(() => RoomFeature, (feature) => feature.rooms)
-    @JoinTable({
-        name: 'room_features_rooms',
-        joinColumn: { name: 'roomId', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'featureId', referencedColumnName: 'id' }
-    })
-    roomFeatures: RoomFeature[];
+  @ManyToMany(() => RoomFeature, (feature) => feature.rooms)
+  @JoinTable({
+    name: 'room_features_rooms',
+    joinColumn: { name: 'roomId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'featureId', referencedColumnName: 'id' },
+  })
+  roomFeatures: RoomFeature[];
 
-    @OneToMany(() => RoomPricing, (pricing) => pricing.room)
-    pricing: RoomPricing[];
+  @OneToMany(() => RoomPricing, (pricing) => pricing.room)
+  pricing: RoomPricing[];
 
-    @OneToMany(() => RoomImage, (image) => image.room)
-    imagesList: RoomImage[];
+  @OneToMany(() => RoomImage, (image) => image.room)
+  imagesList: RoomImage[];
 }

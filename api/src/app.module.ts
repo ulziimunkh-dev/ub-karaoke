@@ -38,7 +38,6 @@ const ignoreRouterExplorer = winston.format((info) => {
   return info;
 });
 
-
 @Module({
   imports: [
     WinstonModule.forRoot({
@@ -62,15 +61,17 @@ const ignoreRouterExplorer = winston.format((info) => {
           format: winston.format.combine(
             ignoreRouterExplorer(),
             winston.format.timestamp(),
-            winston.format.printf(({ timestamp, level, message, context, ...rest }) => {
-              return JSON.stringify({
-                timestamp,
-                level,
-                context,
-                message,
-                ...rest,
-              });
-            }),
+            winston.format.printf(
+              ({ timestamp, level, message, context, ...rest }) => {
+                return JSON.stringify({
+                  timestamp,
+                  level,
+                  context,
+                  message,
+                  ...rest,
+                });
+              },
+            ),
           ),
         }),
         new winston.transports.DailyRotateFile({
@@ -81,15 +82,17 @@ const ignoreRouterExplorer = winston.format((info) => {
           format: winston.format.combine(
             ignoreRouterExplorer(),
             winston.format.timestamp(),
-            winston.format.printf(({ timestamp, level, message, context, ...rest }) => {
-              return JSON.stringify({
-                timestamp,
-                level,
-                context,
-                message,
-                ...rest,
-              });
-            }),
+            winston.format.printf(
+              ({ timestamp, level, message, context, ...rest }) => {
+                return JSON.stringify({
+                  timestamp,
+                  level,
+                  context,
+                  message,
+                  ...rest,
+                });
+              },
+            ),
           ),
         }),
       ],
@@ -101,13 +104,15 @@ const ignoreRouterExplorer = winston.format((info) => {
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get('DATABASE_URL');
-        const dbOptions = dbUrl ? { url: dbUrl } : {
-          host: configService.get('DATABASE_HOST'),
-          port: configService.get<number>('DATABASE_PORT'),
-          username: configService.get('DATABASE_USER'),
-          password: configService.get('DATABASE_PASSWORD'),
-          database: configService.get('DATABASE_NAME'),
-        };
+        const dbOptions = dbUrl
+          ? { url: dbUrl }
+          : {
+              host: configService.get('DATABASE_HOST'),
+              port: configService.get<number>('DATABASE_PORT'),
+              username: configService.get('DATABASE_USER'),
+              password: configService.get('DATABASE_PASSWORD'),
+              database: configService.get('DATABASE_NAME'),
+            };
 
         return {
           type: 'postgres',
@@ -138,9 +143,15 @@ const ignoreRouterExplorer = winston.format((info) => {
             redisOptions = {
               host: parsed.hostname,
               port: parseInt(parsed.port) || 6379,
-              password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
-              username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
-              tls: redisUrl.startsWith('rediss://') ? { rejectUnauthorized: false } : undefined,
+              password: parsed.password
+                ? decodeURIComponent(parsed.password)
+                : undefined,
+              username: parsed.username
+                ? decodeURIComponent(parsed.username)
+                : undefined,
+              tls: redisUrl.startsWith('rediss://')
+                ? { rejectUnauthorized: false }
+                : undefined,
             };
           } catch (e) {
             // Fallback if URL parsing fails
@@ -191,8 +202,6 @@ const ignoreRouterExplorer = winston.format((info) => {
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestContextMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
   }
 }

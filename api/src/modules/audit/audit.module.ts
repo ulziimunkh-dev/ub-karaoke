@@ -8,9 +8,9 @@ import { User } from '../auth/entities/user.entity';
 
 @Global() // Make it global so we can inject AuditService everywhere easily
 @Module({
-    imports: [TypeOrmModule.forFeature([AuditLog, Staff, User])],
-    controllers: [AuditController],
-    providers: [AuditService],
-    exports: [AuditService],
+  imports: [TypeOrmModule.forFeature([AuditLog, Staff, User])],
+  controllers: [AuditController],
+  providers: [AuditService],
+  exports: [AuditService],
 })
-export class AuditModule { }
+export class AuditModule {}

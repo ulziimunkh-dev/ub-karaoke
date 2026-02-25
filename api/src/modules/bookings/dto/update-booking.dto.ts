@@ -4,11 +4,11 @@ import { IsEnum, IsOptional } from 'class-validator';
 import { BookingStatus, BookingPaymentStatus } from '../enums/booking.enums';
 
 export class UpdateBookingDto extends PartialType(CreateBookingDto) {
-    @IsEnum(BookingStatus)
-    @IsOptional()
-    status?: BookingStatus;
+  @IsEnum(BookingStatus)
+  @IsOptional()
+  status?: BookingStatus;
 
-    @IsEnum(BookingPaymentStatus)
-    @IsOptional()
-    paymentStatus?: BookingPaymentStatus;
+  @IsEnum(BookingPaymentStatus)
+  @IsOptional()
+  paymentStatus?: BookingPaymentStatus;
 }

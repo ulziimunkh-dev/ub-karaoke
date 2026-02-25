@@ -10,20 +10,22 @@ import { Staff } from '../staff/entities/staff.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([User, Staff]),
-        PassportModule,
-        JwtModule.registerAsync({
-            imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
-                secret: configService.get<string>('JWT_SECRET') || 'your-secret-key-change-in-production',
-                signOptions: { expiresIn: '7d' },
-            }),
-            inject: [ConfigService],
-        }),
-    ],
-    controllers: [AuthController],
-    providers: [AuthService, JwtStrategy],
-    exports: [AuthService],
+  imports: [
+    TypeOrmModule.forFeature([User, Staff]),
+    PassportModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret:
+          configService.get<string>('JWT_SECRET') ||
+          'your-secret-key-change-in-production',
+        signOptions: { expiresIn: '7d' },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

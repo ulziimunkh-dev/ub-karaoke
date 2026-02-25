@@ -12,9 +12,18 @@ import { RoomSettingsService } from './room-settings.service';
 import { RoomSettingsController } from './room-settings.controller';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Room, RoomType, RoomFeature, RoomPricing, RoomImage, RoomAvailability])],
-    controllers: [RoomsController, RoomSettingsController],
-    providers: [RoomsService, RoomSettingsService],
-    exports: [RoomsService, RoomSettingsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Room,
+      RoomType,
+      RoomFeature,
+      RoomPricing,
+      RoomImage,
+      RoomAvailability,
+    ]),
+  ],
+  controllers: [RoomsController, RoomSettingsController],
+  providers: [RoomsService, RoomSettingsService],
+  exports: [RoomsService, RoomSettingsService],
 })
-export class RoomsModule { }
+export class RoomsModule {}

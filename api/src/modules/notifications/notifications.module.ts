@@ -9,10 +9,9 @@ import { Staff } from '../staff/entities/staff.entity';
 
 @Global()
 @Module({
-    imports: [TypeOrmModule.forFeature([Notification, Staff])],
-    controllers: [NotificationsController],
-    providers: [NotificationsService, NotificationsGateway],
-    exports: [NotificationsService, NotificationsGateway],
+  imports: [TypeOrmModule.forFeature([Notification, Staff])],
+  controllers: [NotificationsController],
+  providers: [NotificationsService, NotificationsGateway],
+  exports: [NotificationsService, NotificationsGateway],
 })
-export class NotificationsModule { }
-
+export class NotificationsModule {}

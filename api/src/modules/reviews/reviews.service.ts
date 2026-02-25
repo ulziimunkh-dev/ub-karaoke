@@ -8,84 +8,91 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 
 @Injectable()
 export class ReviewsService {
-    constructor(
-        @InjectRepository(Review)
-        private reviewsRepository: Repository<Review>,
-        @InjectRepository(Venue)
-        private venuesRepository: Repository<Venue>,
-    ) { }
+  constructor(
+    @InjectRepository(Review)
+    private reviewsRepository: Repository<Review>,
+    @InjectRepository(Venue)
+    private venuesRepository: Repository<Venue>,
+  ) {}
 
-    async create(createReviewDto: CreateReviewDto, creatorId?: string): Promise<Review> {
-        const review = this.reviewsRepository.create({
-            ...createReviewDto,
-            createdBy: creatorId,
-        });
-        const saved = await this.reviewsRepository.save(review);
+  async create(
+    createReviewDto: CreateReviewDto,
+    creatorId?: string,
+  ): Promise<Review> {
+    const review = this.reviewsRepository.create({
+      ...createReviewDto,
+      createdBy: creatorId,
+    });
+    const saved = await this.reviewsRepository.save(review);
 
-        // Update venue rating
-        await this.updateVenueRating(createReviewDto.venueId);
+    // Update venue rating
+    await this.updateVenueRating(createReviewDto.venueId);
 
-        return saved;
+    return saved;
+  }
+
+  async findAll(venueId?: string): Promise<Review[]> {
+    if (venueId) {
+      return this.reviewsRepository.find({
+        where: { venueId },
+        order: { createdAt: 'DESC' },
+      });
+    }
+    return this.reviewsRepository.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findOne(id: string): Promise<Review> {
+    const review = await this.reviewsRepository.findOne({
+      where: { id },
+      relations: ['venue'],
+    });
+
+    if (!review) {
+      throw new NotFoundException(`Review with ID ${id} not found`);
     }
 
-    async findAll(venueId?: string): Promise<Review[]> {
-        if (venueId) {
-            return this.reviewsRepository.find({
-                where: { venueId },
-                order: { createdAt: 'DESC' },
-            });
-        }
-        return this.reviewsRepository.find({ order: { createdAt: 'DESC' } });
+    return review;
+  }
+
+  async update(
+    id: string,
+    updateReviewDto: UpdateReviewDto,
+    updaterId?: string,
+  ): Promise<Review> {
+    const review = await this.findOne(id);
+    Object.assign(review, updateReviewDto);
+    if (updaterId) {
+      review.updatedBy = updaterId;
+    }
+    const updated = await this.reviewsRepository.save(review);
+
+    // Update venue rating if rating changed
+    if (updateReviewDto.rating !== undefined) {
+      await this.updateVenueRating(review.venueId);
     }
 
-    async findOne(id: string): Promise<Review> {
-        const review = await this.reviewsRepository.findOne({
-            where: { id },
-            relations: ['venue'],
-        });
+    return updated;
+  }
 
-        if (!review) {
-            throw new NotFoundException(`Review with ID ${id} not found`);
-        }
+  async remove(id: string): Promise<void> {
+    const review = await this.findOne(id);
+    const venueId = review.venueId;
+    await this.reviewsRepository.remove(review);
+    await this.updateVenueRating(venueId);
+  }
 
-        return review;
-    }
+  private async updateVenueRating(venueId: string): Promise<void> {
+    const reviews = await this.reviewsRepository.find({ where: { venueId } });
 
-    async update(id: string, updateReviewDto: UpdateReviewDto, updaterId?: string): Promise<Review> {
-        const review = await this.findOne(id);
-        Object.assign(review, updateReviewDto);
-        if (updaterId) {
-            review.updatedBy = updaterId;
-        }
-        const updated = await this.reviewsRepository.save(review);
+    const totalReviews = reviews.length;
+    const avgRating =
+      totalReviews > 0
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
 
-        // Update venue rating if rating changed
-        if (updateReviewDto.rating !== undefined) {
-            await this.updateVenueRating(review.venueId);
-        }
-
-        return updated;
-    }
-
-    async remove(id: string): Promise<void> {
-        const review = await this.findOne(id);
-        const venueId = review.venueId;
-        await this.reviewsRepository.remove(review);
-        await this.updateVenueRating(venueId);
-    }
-
-    private async updateVenueRating(venueId: string): Promise<void> {
-        const reviews = await this.reviewsRepository.find({ where: { venueId } });
-
-        const totalReviews = reviews.length;
-        const avgRating =
-            totalReviews > 0
-                ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-                : 0;
-
-        await this.venuesRepository.update(venueId, {
-            rating: Math.round(avgRating * 100) / 100,
-            totalReviews,
-        });
-    }
+    await this.venuesRepository.update(venueId, {
+      rating: Math.round(avgRating * 100) / 100,
+      totalReviews,
+    });
+  }
 }

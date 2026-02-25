@@ -1,46 +1,63 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+} from 'typeorm';
 import { Organization } from './organization.entity';
 import { Plan } from '../../plans/entities/plan.entity';
 
 @Entity('organization_plan_history')
 export class OrganizationPlanHistory {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'organization_id' })
-    organizationId: string;
+  @Column({ name: 'organization_id' })
+  organizationId: string;
 
-    @ManyToOne(() => Organization, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+  @ManyToOne(() => Organization, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
-    @Column({ name: 'plan_id', nullable: true })
-    planId: string;
+  @Column({ name: 'plan_id', nullable: true })
+  planId: string;
 
-    @ManyToOne(() => Plan, { nullable: true })
-    @JoinColumn({ name: 'plan_id' })
-    plan: Plan;
+  @ManyToOne(() => Plan, { nullable: true })
+  @JoinColumn({ name: 'plan_id' })
+  plan: Plan;
 
-    // Snapshot fields
-    @Column({ name: 'plan_name' })
-    planName: string;
+  // Snapshot fields
+  @Column({ name: 'plan_name' })
+  planName: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
-    price: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  price: number;
 
-    @Column({ name: 'commission_rate', type: 'decimal', precision: 5, scale: 2, default: 0 })
-    commissionRate: number;
+  @Column({
+    name: 'commission_rate',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 0,
+  })
+  commissionRate: number;
 
-    // Period
-    @Column({ name: 'start_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    startDate: Date;
+  // Period
+  @Column({
+    name: 'start_date',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  startDate: Date;
 
-    @Column({ name: 'end_date', type: 'timestamp', nullable: true })
-    endDate: Date;
+  @Column({ name: 'end_date', type: 'timestamp', nullable: true })
+  endDate: Date;
 
-    @Column({ default: 'active' })
-    status: string; // active, completed, changed
+  @Column({ default: 'active' })
+  status: string; // active, completed, changed
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
-    createdAt: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date;
 }

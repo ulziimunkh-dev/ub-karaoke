@@ -28,8 +28,11 @@ async function bootstrap() {
   // Enable CORS
   const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
-    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-      // 1. Allow if no origin (like mobile apps or curl) 
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // 1. Allow if no origin (like mobile apps or curl)
       if (!origin) {
         callback(null, true);
         return;
@@ -37,7 +40,9 @@ async function bootstrap() {
 
       // Cleanup URLs for comparison (remove trailing slashes and prefix)
       const cleanOrigin = origin.replace(/\/$/, '').toLowerCase();
-      const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '').toLowerCase() : null;
+      const cleanFrontendUrl = frontendUrl
+        ? frontendUrl.replace(/\/$/, '').toLowerCase()
+        : null;
 
       // Log for debugging (This is critical while we still have connection issues)
       console.log(`[CORS DEBUG] Request from Origin: "${origin}"`);
@@ -62,7 +67,9 @@ async function bootstrap() {
       }
 
       // LOGGING FOR PERMANENT FAILURE
-      console.warn(`[CORS BLOCKED] Reason: Origin "${origin}" does not match FRONTEND_URL "${frontendUrl}"`);
+      console.warn(
+        `[CORS BLOCKED] Reason: Origin "${origin}" does not match FRONTEND_URL "${frontendUrl}"`,
+      );
 
       callback(null, false);
     },

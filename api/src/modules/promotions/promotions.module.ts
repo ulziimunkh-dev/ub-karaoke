@@ -7,9 +7,9 @@ import { Venue } from '../venues/entities/venue.entity';
 import { Booking } from '../bookings/entities/booking.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Promotion, Venue, Booking])],
-    controllers: [PromotionsController],
-    providers: [PromotionsService],
-    exports: [PromotionsService],
+  imports: [TypeOrmModule.forFeature([Promotion, Venue, Booking])],
+  controllers: [PromotionsController],
+  providers: [PromotionsService],
+  exports: [PromotionsService],
 })
-export class PromotionsModule { }
+export class PromotionsModule {}

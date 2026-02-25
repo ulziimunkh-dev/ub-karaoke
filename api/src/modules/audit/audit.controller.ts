@@ -7,22 +7,23 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('audit')
 @UseGuards(JwtAuthGuard)
 export class AuditController {
-    constructor(private readonly auditService: AuditService) { }
+  constructor(private readonly auditService: AuditService) {}
 
-    @Get()
-    findAll(
-        @Req() req: any,
-        @Query('action') action?: string,
-        @Query('staffId') staffId?: string,
-        @Query('organizationId') organizationId?: string,
-    ) {
-        const targetOrgId = req.user.role === 'sysadmin' ? organizationId : req.user.organizationId;
-        return this.auditService.findAll(targetOrgId, action, staffId);
-    }
+  @Get()
+  findAll(
+    @Req() req: any,
+    @Query('action') action?: string,
+    @Query('staffId') staffId?: string,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    const targetOrgId =
+      req.user.role === 'sysadmin' ? organizationId : req.user.organizationId;
+    return this.auditService.findAll(targetOrgId, action, staffId);
+  }
 
-    @Get('resource/:resource/:id')
-    // @Roles('admin')
-    findByResource(@Param('resource') resource: string, @Param('id') id: string) {
-        return this.auditService.findByResource(resource, id);
-    }
+  @Get('resource/:resource/:id')
+  // @Roles('admin')
+  findByResource(@Param('resource') resource: string, @Param('id') id: string) {
+    return this.auditService.findByResource(resource, id);
+  }
 }

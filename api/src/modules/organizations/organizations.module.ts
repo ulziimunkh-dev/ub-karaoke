@@ -13,13 +13,20 @@ import { OrganizationPayout } from './entities/organization-payout.entity';
 import { OrganizationPayoutItem } from './entities/organization-payout-item.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Organization, OrganizationPlanHistory, OrganizationPayoutAccount, OrganizationEarning, OrganizationPayout, OrganizationPayoutItem]),
-        AuditModule,
-        PlansModule,
-    ],
-    controllers: [OrganizationsController, FinanceController],
-    providers: [OrganizationsService],
-    exports: [OrganizationsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Organization,
+      OrganizationPlanHistory,
+      OrganizationPayoutAccount,
+      OrganizationEarning,
+      OrganizationPayout,
+      OrganizationPayoutItem,
+    ]),
+    AuditModule,
+    PlansModule,
+  ],
+  controllers: [OrganizationsController, FinanceController],
+  providers: [OrganizationsService],
+  exports: [OrganizationsService],
 })
-export class OrganizationsModule { }
+export class OrganizationsModule {}

@@ -1,13 +1,13 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    OneToMany,
-    ManyToOne,
-    JoinColumn,
-    AfterLoad,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 import { Room } from '../../rooms/entities/room.entity';
 import { Review } from '../../reviews/entities/review.entity';
@@ -17,122 +17,132 @@ import { RoomPricing } from '../../rooms/entities/room-pricing.entity';
 
 @Entity('venues')
 export class Venue {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column('text')
-    description: string;
+  @Column('text')
+  description: string;
 
-    @Column()
-    address: string;
+  @Column()
+  address: string;
 
-    @Column()
-    district: string;
+  @Column()
+  district: string;
 
-    @Column()
-    phone: string;
+  @Column()
+  phone: string;
 
-    @Column({ nullable: true })
-    email: string;
+  @Column({ nullable: true })
+  email: string;
 
-    @Column({ name: 'priceRange', nullable: true })
-    priceRange: string;
+  @Column({ name: 'priceRange', nullable: true })
+  priceRange: string;
 
-    @Column('decimal', { precision: 3, scale: 2, default: 0 })
-    rating: number;
+  @Column('decimal', { precision: 3, scale: 2, default: 0 })
+  rating: number;
 
-    @Column({ name: 'totalReviews', default: 0 })
-    totalReviews: number;
+  @Column({ name: 'totalReviews', default: 0 })
+  totalReviews: number;
 
-    @Column('jsonb', { name: 'amenities' })
-    amenities: string[];
+  @Column('jsonb', { name: 'amenities' })
+  amenities: string[];
 
-    @Column('jsonb', { name: 'openingHours' })
-    openingHours: Record<string, string>;
+  @Column('jsonb', { name: 'openingHours' })
+  openingHours: Record<string, string>;
 
-    @Column('jsonb', { name: 'images' })
-    images: string[];
+  @Column('jsonb', { name: 'images' })
+  images: string[];
 
-    @Column({ name: 'featuredImage', nullable: true })
-    featuredImage: string;
+  @Column({ name: 'featuredImage', nullable: true })
+  featuredImage: string;
 
-    @Column({ name: 'gmap_location', nullable: true })
-    gmapLocation: string;
+  @Column({ name: 'gmap_location', nullable: true })
+  gmapLocation: string;
 
-    latitude: number | null;
-    longitude: number | null;
+  latitude: number | null;
+  longitude: number | null;
 
-    @AfterLoad()
-    populateCoordinates() {
-        if (this.gmapLocation && typeof this.gmapLocation === 'string') {
-            const coords = this.gmapLocation.split(',').map((s) => s.trim());
-            if (coords.length === 2) {
-                const lat = parseFloat(coords[0]);
-                const lng = parseFloat(coords[1]);
-                this.latitude = !isNaN(lat) ? lat : null;
-                this.longitude = !isNaN(lng) ? lng : null;
-            } else {
-                this.latitude = null;
-                this.longitude = null;
-            }
-        } else {
-            this.latitude = null;
-            this.longitude = null;
-        }
+  @AfterLoad()
+  populateCoordinates() {
+    if (this.gmapLocation && typeof this.gmapLocation === 'string') {
+      const coords = this.gmapLocation.split(',').map((s) => s.trim());
+      if (coords.length === 2) {
+        const lat = parseFloat(coords[0]);
+        const lng = parseFloat(coords[1]);
+        this.latitude = !isNaN(lat) ? lat : null;
+        this.longitude = !isNaN(lng) ? lng : null;
+      } else {
+        this.latitude = null;
+        this.longitude = null;
+      }
+    } else {
+      this.latitude = null;
+      this.longitude = null;
     }
+  }
 
-    @Column({ name: 'isBookingEnabled', default: true })
-    isBookingEnabled: boolean;
+  @Column({ name: 'isBookingEnabled', default: true })
+  isBookingEnabled: boolean;
 
-    @Column({ name: 'is_active', default: true })
-    isActive: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
-    @Column({ name: 'bookingWindowStart', nullable: true })
-    bookingWindowStart: string;
+  @Column({ name: 'bookingWindowStart', nullable: true })
+  bookingWindowStart: string;
 
-    @Column({ name: 'bookingWindowEnd', nullable: true })
-    bookingWindowEnd: string;
+  @Column({ name: 'bookingWindowEnd', nullable: true })
+  bookingWindowEnd: string;
 
-    @Column({ name: 'advanceBookingDays', default: 3 })
-    advanceBookingDays: number;
+  @Column({ name: 'advanceBookingDays', default: 3 })
+  advanceBookingDays: number;
 
-    @Column('decimal', { name: 'minBookingHours', precision: 5, scale: 2, default: 1.0 })
-    minBookingHours: number;
+  @Column('decimal', {
+    name: 'minBookingHours',
+    precision: 5,
+    scale: 2,
+    default: 1.0,
+  })
+  minBookingHours: number;
 
-    @Column('decimal', { name: 'maxBookingHours', precision: 5, scale: 2, default: 6.0 })
-    maxBookingHours: number;
+  @Column('decimal', {
+    name: 'maxBookingHours',
+    precision: 5,
+    scale: 2,
+    default: 6.0,
+  })
+  maxBookingHours: number;
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
-    createdAt: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
-    updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt: Date;
 
-    @Column({ name: 'created_by', nullable: true })
-    createdBy: string;
+  @Column({ name: 'created_by', nullable: true })
+  createdBy: string;
 
-    @Column({ name: 'updated_by', nullable: true })
-    updatedBy: string;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedBy: string;
 
-    @ManyToOne(() => Organization, org => org.venues)
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+  @ManyToOne(() => Organization, (org) => org.venues)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true })
-    organizationId: string;
+  @Column({ name: 'organization_id', nullable: true })
+  organizationId: string;
 
-    @OneToMany(() => Room, (room) => room.venue)
-    rooms: Room[];
+  @OneToMany(() => Room, (room) => room.venue)
+  rooms: Room[];
 
-    @OneToMany(() => Review, (review) => review.venue)
-    reviews: Review[];
+  @OneToMany(() => Review, (review) => review.venue)
+  reviews: Review[];
 
-    @OneToMany(() => VenueOperatingHours, (hours) => hours.venue)
-    operatingHours: VenueOperatingHours[];
+  @OneToMany(() => VenueOperatingHours, (hours) => hours.venue)
+  operatingHours: VenueOperatingHours[];
 
-    @OneToMany(() => RoomPricing, (pricing) => pricing.venue)
-    pricing: RoomPricing[];
+  @OneToMany(() => RoomPricing, (pricing) => pricing.venue)
+  pricing: RoomPricing[];
 }

@@ -1,55 +1,55 @@
 import { IsNumber, IsString, IsDateString, IsOptional } from 'class-validator';
 
 export class CreateBookingDto {
-    @IsString()
-    @IsOptional()
-    userId?: string;
+  @IsString()
+  @IsOptional()
+  userId?: string;
 
-    @IsString()
-    @IsOptional()
-    roomId: string;
+  @IsString()
+  @IsOptional()
+  roomId: string;
 
-    @IsString({ each: true })
-    @IsOptional()
-    roomIds: string[];
+  @IsString({ each: true })
+  @IsOptional()
+  roomIds: string[];
 
-    @IsString()
-    venueId: string;
+  @IsString()
+  venueId: string;
 
-    @IsDateString()
-    date: string;
+  @IsDateString()
+  date: string;
 
-    @IsString()
-    startTime: string;
+  @IsString()
+  startTime: string;
 
-    @IsString()
-    endTime: string;
+  @IsString()
+  endTime: string;
 
-    @IsNumber()
-    duration: number;
+  @IsNumber()
+  duration: number;
 
-    @IsNumber()
-    totalPrice: number;
+  @IsNumber()
+  totalPrice: number;
 
-    @IsString()
-    customerName: string;
+  @IsString()
+  customerName: string;
 
-    @IsString()
-    customerPhone: string;
+  @IsString()
+  customerPhone: string;
 
-    @IsString()
-    @IsOptional()
-    paymentMethod?: string;
+  @IsString()
+  @IsOptional()
+  paymentMethod?: string;
 
-    @IsString()
-    @IsOptional()
-    source?: string;
+  @IsString()
+  @IsOptional()
+  source?: string;
 
-    @IsNumber()
-    @IsOptional()
-    pointsToUse?: number;
+  @IsNumber()
+  @IsOptional()
+  pointsToUse?: number;
 
-    @IsString()
-    @IsOptional()
-    promoCode?: string;
+  @IsString()
+  @IsOptional()
+  promoCode?: string;
 }

@@ -2,20 +2,20 @@ import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { PaymentMethod, PaymentStatus } from '../entities/payment.entity';
 
 export class CreatePaymentDto {
-    @IsNumber()
-    amount: number;
+  @IsNumber()
+  amount: number;
 
-    @IsEnum(PaymentMethod)
-    method: PaymentMethod;
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
 
-    @IsString()
-    bookingId: string;
+  @IsString()
+  bookingId: string;
 
-    @IsOptional()
-    @IsString()
-    transactionId?: string;
+  @IsOptional()
+  @IsString()
+  transactionId?: string;
 
-    @IsOptional()
-    @IsEnum(PaymentStatus)
-    status?: PaymentStatus;
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  status?: PaymentStatus;
 }

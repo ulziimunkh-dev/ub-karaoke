@@ -1,63 +1,71 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Organization } from './organization.entity';
 
 export enum PayoutProvider {
-    BANK = 'BANK',
-    QPAY = 'QPAY',
+  BANK = 'BANK',
+  QPAY = 'QPAY',
 }
 
 export enum PayoutAccountStatus {
-    PENDING = 'PENDING',
-    VERIFIED = 'VERIFIED',
-    DISABLED = 'DISABLED',
+  PENDING = 'PENDING',
+  VERIFIED = 'VERIFIED',
+  DISABLED = 'DISABLED',
 }
 
 @Entity('organization_payout_accounts')
 export class OrganizationPayoutAccount {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'organization_id' })
-    organizationId: string;
+  @Column({ name: 'organization_id' })
+  organizationId: string;
 
-    @ManyToOne(() => Organization, (org) => org.payoutAccounts)
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+  @ManyToOne(() => Organization, (org) => org.payoutAccounts)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
-    @Column({
-        type: 'enum',
-        enum: PayoutProvider,
-    })
-    provider: PayoutProvider;
+  @Column({
+    type: 'enum',
+    enum: PayoutProvider,
+  })
+  provider: PayoutProvider;
 
-    @Column({ name: 'account_name', type: 'text', nullable: true })
-    accountName: string;
+  @Column({ name: 'account_name', type: 'text', nullable: true })
+  accountName: string;
 
-    @Column({ name: 'account_number', type: 'text', nullable: true })
-    accountNumber: string;
+  @Column({ name: 'account_number', type: 'text', nullable: true })
+  accountNumber: string;
 
-    @Column({ name: 'bank_name', type: 'text', nullable: true })
-    bankName: string;
+  @Column({ name: 'bank_name', type: 'text', nullable: true })
+  bankName: string;
 
-    @Column({ name: 'is_default', default: false })
-    isDefault: boolean;
+  @Column({ name: 'is_default', default: false })
+  isDefault: boolean;
 
-    @Column({
-        type: 'enum',
-        enum: PayoutAccountStatus,
-        default: PayoutAccountStatus.PENDING,
-    })
-    status: PayoutAccountStatus;
+  @Column({
+    type: 'enum',
+    enum: PayoutAccountStatus,
+    default: PayoutAccountStatus.PENDING,
+  })
+  status: PayoutAccountStatus;
 
-    @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
-    @Column({ name: 'created_by', nullable: true })
-    createdBy: string;
+  @Column({ name: 'created_by', nullable: true })
+  createdBy: string;
 
-    @Column({ name: 'updated_by', nullable: true })
-    updatedBy: string;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedBy: string;
 }

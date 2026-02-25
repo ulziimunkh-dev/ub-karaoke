@@ -16,23 +16,23 @@ import { VenueOperatingHours } from '../venues/entities/venue-operating-hours.en
 import { User } from '../auth/entities/user.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([
-            Booking,
-            BookingStatusHistory,
-            BookingPromotion,
-            Room,
-            RoomAvailability,
-            Venue,
-            VenueOperatingHours,
-            User
-        ]),
-        ScheduleModule.forRoot(),
-        PromotionsModule,
-        RoomsModule
-    ],
-    controllers: [BookingsController],
-    providers: [BookingsService, BookingsCleanupService],
-    exports: [BookingsService],
+  imports: [
+    TypeOrmModule.forFeature([
+      Booking,
+      BookingStatusHistory,
+      BookingPromotion,
+      Room,
+      RoomAvailability,
+      Venue,
+      VenueOperatingHours,
+      User,
+    ]),
+    ScheduleModule.forRoot(),
+    PromotionsModule,
+    RoomsModule,
+  ],
+  controllers: [BookingsController],
+  providers: [BookingsService, BookingsCleanupService],
+  exports: [BookingsService],
 })
-export class BookingsModule { }
+export class BookingsModule {}

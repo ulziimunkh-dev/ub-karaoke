@@ -1,58 +1,63 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Organization } from '../../organizations/entities/organization.entity';
 
 @Entity('reviews')
 export class Review {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ name: 'venueId' })
-    venueId: string;
+  @Column({ name: 'venueId' })
+  venueId: string;
 
-    @Column({ name: 'userId', nullable: true })
-    userId: string;
+  @Column({ name: 'userId', nullable: true })
+  userId: string;
 
-    @Column({ name: 'userName' })
-    userName: string;
+  @Column({ name: 'userName' })
+  userName: string;
 
-    @Column()
-    rating: number;
+  @Column()
+  rating: number;
 
-    @Column('text')
-    comment: string;
+  @Column('text')
+  comment: string;
 
-    @Column({ default: false })
-    verified: boolean;
+  @Column({ default: false })
+  verified: boolean;
 
-    @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
-    createdAt: Date;
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
-    updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt: Date;
 
-    @Column({ name: 'created_by', nullable: true })
-    createdBy: string;
+  @Column({ name: 'created_by', nullable: true })
+  createdBy: string;
 
-    @Column({ name: 'updated_by', nullable: true })
-    updatedBy: string;
+  @Column({ name: 'updated_by', nullable: true })
+  updatedBy: string;
 
-    @ManyToOne(() => Organization)
-    @JoinColumn({ name: 'organization_id' })
-    organization: Organization;
+  @ManyToOne(() => Organization)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
-    @Column({ name: 'organization_id', nullable: true, insert: false, update: false })
-    organizationId: string;
+  @Column({
+    name: 'organization_id',
+    nullable: true,
+    insert: false,
+    update: false,
+  })
+  organizationId: string;
 
-    @ManyToOne(() => Venue, (venue) => venue.reviews)
-    @JoinColumn({ name: 'venueId' })
-    venue: Venue;
+  @ManyToOne(() => Venue, (venue) => venue.reviews)
+  @JoinColumn({ name: 'venueId' })
+  venue: Venue;
 }
