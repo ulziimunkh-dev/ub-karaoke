@@ -12,21 +12,34 @@ import { InputText } from 'primereact/inputtext';
 import { Checkbox } from 'primereact/checkbox';
 import { Toast } from 'primereact/toast';
 import { Dropdown } from 'primereact/dropdown';
+import { InputNumber } from 'primereact/inputnumber';
 import { confirmDialog, ConfirmDialog } from 'primereact/confirmdialog';
 
 const Finance = () => {
     const {
         earnings, payouts, payoutAccounts,
-        currentUser, venues, refreshData,
+        currentUser, venues, organizations, refreshData,
         requestPayout, addPayoutAccount, updatePayoutAccount, deletePayoutAccount, updatePayoutStatus
     } = useData();
     const { t } = useLanguage();
+
+    // Default arrays to prevent crash on undefined
+    const safeEarnings = earnings || [];
+    const safePayouts = payouts || [];
+    const safePayoutAccounts = payoutAccounts || [];
+    const safeVenues = venues || [];
+    const safeOrganizations = organizations || [];
+
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedEarnings, setSelectedEarnings] = useState([]);
     const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
     const [editingAccountId, setEditingAccountId] = useState(null);
+    const [isManualPayoutModalOpen, setIsManualPayoutModalOpen] = useState(false);
     const [payoutForm, setPayoutForm] = useState({ payoutAccountId: '' });
+    const [manualPayoutForm, setManualPayoutForm] = useState({
+        organizationId: '', venueId: '', amount: 0, payoutAccountId: ''
+    });
     const [accountForm, setAccountForm] = useState({
         bankName: '', accountNumber: '', accountName: '', isDefault: true, provider: 'BANK'
     });
@@ -35,9 +48,9 @@ const Finance = () => {
     const isSysAdmin = currentUser?.role === 'sysadmin';
 
     // Analytics calculation
-    const totalEarnings = earnings.reduce((sum, e) => sum + Number(e.netAmount), 0);
-    const pendingEarnings = earnings.filter(e => e.status === 'PENDING').reduce((sum, e) => sum + Number(e.netAmount), 0);
-    const totalPayouts = payouts.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.totalAmount), 0);
+    const totalEarnings = safeEarnings.reduce((sum, e) => sum + Number(e?.netAmount || 0), 0);
+    const pendingEarnings = safeEarnings.filter(e => e?.status === 'PENDING').reduce((sum, e) => sum + Number(e?.netAmount || 0), 0);
+    const totalPayouts = safePayouts.filter(p => p?.status === 'PAID').reduce((sum, p) => sum + Number(p?.totalAmount || 0), 0);
 
     const formatCurrency = (value) => {
         return Number(value).toLocaleString() + '₮';
@@ -64,11 +77,15 @@ const Finance = () => {
 
     const handleRequestPayout = async () => {
         if (selectedEarnings.length === 0) {
-            toast.current.show({ severity: 'warn', summary: t('selectionRequired'), detail: t('payoutItemsSelection') });
-            return;
+            const pendingEarningsList = safeEarnings.filter(e => e.status === 'PENDING');
+            if (pendingEarningsList.length === 0) {
+                toast.current.show({ severity: 'warn', summary: t('selectionRequired'), detail: t('payoutItemsSelection') });
+                return;
+            }
+            setSelectedEarnings(pendingEarningsList);
         }
 
-        const defaultAccount = payoutAccounts.find(a => a.isDefault) || payoutAccounts[0];
+        const defaultAccount = safePayoutAccounts.find(a => a.isDefault) || safePayoutAccounts[0];
         if (!defaultAccount) {
             toast.current.show({ severity: 'error', summary: t('error'), detail: t('addPayoutAccountFirst') });
             return;
@@ -88,8 +105,32 @@ const Finance = () => {
             setSelectedEarnings([]);
             toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutRequestedSuccess') });
             refreshData?.();
-        } catch {
-            toast.current.show({ severity: 'error', summary: t('error'), detail: t('payoutRequestFailed') });
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || err.message || t('payoutRequestFailed');
+            toast.current.show({ severity: 'error', summary: t('error'), detail: errorMsg });
+        }
+    };
+
+    const submitManualPayoutRequest = async () => {
+        try {
+            if (!manualPayoutForm.organizationId || !manualPayoutForm.payoutAccountId || manualPayoutForm.amount <= 0) {
+                toast.current.show({ severity: 'warn', summary: t('validationError'), detail: t('pleaseFillAllFields') });
+                return;
+            }
+
+            await requestPayout({
+                organizationId: manualPayoutForm.organizationId,
+                venueId: manualPayoutForm.venueId || undefined,
+                totalAmount: manualPayoutForm.amount,
+                payoutAccountId: manualPayoutForm.payoutAccountId
+            });
+            setIsManualPayoutModalOpen(false);
+            setManualPayoutForm({ organizationId: '', venueId: '', amount: 0, payoutAccountId: '' });
+            toast.current.show({ severity: 'success', summary: t('success'), detail: t('payoutRequestedSuccess') });
+            refreshData?.();
+        } catch (err) {
+            const errorMsg = err.response?.data?.message || err.message || t('payoutRequestFailed');
+            toast.current.show({ severity: 'error', summary: t('error'), detail: errorMsg });
         }
     };
 
@@ -195,18 +236,25 @@ const Finance = () => {
                         className="p-button-outlined p-button-sm"
                         onClick={handleOpenAddModal}
                     />
+                    {isSysAdmin && (
+                        <Button
+                            label={t('manualPayout')}
+                            icon="pi pi-pencil"
+                            className="p-button-outlined p-button-sm border-[#eb79b2] text-[#eb79b2]"
+                            onClick={() => setIsManualPayoutModalOpen(true)}
+                        />
+                    )}
                     <Button
                         label={t('requestPayout')}
                         icon="pi pi-money-bill"
                         className="p-button-primary p-button-sm"
                         onClick={handleRequestPayout}
-                        disabled={selectedEarnings.length === 0}
                     />
                 </div>
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className={`grid grid-cols-1 ${isSysAdmin ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 mb-8`}>
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl">
                     <div className="flex flex-col">
                         <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('totalNetEarnings')}</span>
@@ -219,6 +267,20 @@ const Finance = () => {
                         <span className="text-2xl font-black text-[#ff9800]">{formatCurrency(pendingEarnings)}</span>
                     </div>
                 </Card>
+                {isSysAdmin && (
+                    <Card className="bg-[#1e1e2d] border border-[#b000ff]/30 shadow-xl relative overflow-hidden group">
+                        <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#b000ff]/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+                        <div className="flex flex-col">
+                            <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('pendingPayouts')}</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black text-[#eb79b2]">
+                                    {(payouts || []).filter(p => p.status === 'PENDING').length}
+                                </span>
+                                <span className="text-xs text-gray-500 font-bold uppercase">{t('requests')}</span>
+                            </div>
+                        </div>
+                    </Card>
+                )}
                 <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl">
                     <div className="flex flex-col">
                         <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">{t('totalPaidOut')}</span>
@@ -230,7 +292,7 @@ const Finance = () => {
             <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)} className="custom-tabview">
                 <TabPanel header={t('earningsTab')} leftIcon="pi pi-chart-line mr-2">
                     <DataTable
-                        value={earnings}
+                        value={safeEarnings}
                         selection={selectedEarnings}
                         onSelectionChange={e => setSelectedEarnings(e.value)}
                         dataKey="id"
@@ -241,8 +303,8 @@ const Finance = () => {
                     >
                         <Column selectionMode="multiple" headerStyle={{ width: '3em' }}></Column>
                         <Column field="id" header={t('id')} body={(r) => `#E-${r.id}`} className="text-xs text-gray-500"></Column>
-                        <Column field="createdAt" header={t('date')} body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
-                        <Column field="venueId" header={t('venue')} body={(r) => venues.find(v => v.id === r.venueId)?.name || t('na')}></Column>
+                        <Column field="createdAt" header={t('date')} body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : t('na')}></Column>
+                        <Column field="venueId" header={t('venue')} body={(r) => safeVenues.find(v => v.id === r.venueId)?.name || t('na')}></Column>
                         <Column field="grossAmount" header={t('gross')} body={(r) => formatCurrency(r.grossAmount)}></Column>
                         <Column field="commissionAmount" header={t('comm')} body={(r) => formatCurrency(r.commissionAmount)} className="text-red-400"></Column>
                         <Column field="netAmount" header={t('net')} body={(r) => <span className="font-bold text-green-400">{formatCurrency(r.netAmount)}</span>}></Column>
@@ -251,30 +313,34 @@ const Finance = () => {
                 </TabPanel>
 
                 <TabPanel header={t('payoutsTab')} leftIcon="pi pi-send mr-2">
-                    <DataTable value={payouts} paginator rows={10} className="mt-4">
+                    <DataTable value={safePayouts} paginator rows={10} className="mt-4">
                         <Column field="id" header={t('id')} body={(r) => `#P-${r.id}`} className="text-xs text-gray-500"></Column>
-                        <Column field="createdAt" header={t('date')} body={(r) => new Date(r.createdAt).toLocaleDateString()}></Column>
+                        <Column field="createdAt" header={t('date')} body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : t('na')}></Column>
+                        {isSysAdmin && (
+                            <Column field="organizationId" header={t('organization')} body={(r) => safeOrganizations.find(o => o.id === r.organizationId)?.name || t('na')}></Column>
+                        )}
                         <Column field="totalAmount" header={t('amount')} body={(r) => <span className="font-bold">{formatCurrency(r.totalAmount)}</span>}></Column>
                         <Column field="payoutAccount" header={t('bankAccount')} body={(r) => r.payoutAccount ? `${r.payoutAccount.bankName} (${r.payoutAccount.accountNumber})` : t('na')}></Column>
                         <Column field="status" header={t('status')} body={statusBodyTemplate}></Column>
-                        {isSysAdmin && (
-                            <Column header={t('actions')} body={(r) => (
-                                <div className="flex gap-2">
-                                    {r.status === 'PENDING' && (
-                                        <>
-                                            <Button icon="pi pi-check" className="p-button-rounded p-button-success p-button-text" onClick={() => handleUpdatePayoutStatus(r.id, 'PAID')} />
-                                            <Button icon="pi pi-times" className="p-button-rounded p-button-danger p-button-text" onClick={() => handleUpdatePayoutStatus(r.id, 'FAILED')} />
-                                        </>
-                                    )}
-                                </div>
-                            )} />
-                        )}
+                        <Column header={t('actions')} body={(r) => (
+                            <div className="flex gap-2">
+                                {isSysAdmin && r.status === 'PENDING' && (
+                                    <>
+                                        <Button icon="pi pi-check" className="p-button-rounded p-button-success p-button-text" onClick={() => handleUpdatePayoutStatus(r.id, 'PAID')} tooltip={t('markPaid')} />
+                                        <Button icon="pi pi-times" className="p-button-rounded p-button-danger p-button-text" onClick={() => handleUpdatePayoutStatus(r.id, 'FAILED')} tooltip={t('markFailed')} />
+                                    </>
+                                )}
+                                {!isSysAdmin && r.status === 'PENDING' && (
+                                    <span className="text-xs text-gray-500 italic">{t('awaitingAction')}</span>
+                                )}
+                            </div>
+                        )} />
                     </DataTable>
                 </TabPanel>
 
                 <TabPanel header={t('bankAccountsTab')} leftIcon="pi pi-building mr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {payoutAccounts.map(account => (
+                        {safePayoutAccounts.map(account => (
                             <Card key={account.id} className="relative bg-[#1e1e2d] border border-white/5">
                                 <div className="flex justify-between items-start mb-4">
                                     <div>
@@ -297,20 +363,57 @@ const Finance = () => {
             </TabView>
 
             {/* Payout Request Modal */}
-            <Dialog header={t('requestPayout')} visible={isPayoutModalOpen} className="w-[400px]" onHide={() => setIsPayoutModalOpen(false)}>
+            <Dialog header={t('requestPayout')} visible={isPayoutModalOpen} className="w-[600px]" onHide={() => setIsPayoutModalOpen(false)}>
                 <div className="flex flex-col gap-4">
-                    <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/30">
-                        <p className="text-sm text-blue-200 m-0">{t('requestPayoutItems', { count: selectedEarnings.length })}</p>
-                        <h2 className="text-2xl font-black text-white mt-1">
-                            {formatCurrency(selectedEarnings.reduce((sum, e) => sum + Number(e.netAmount), 0))}
-                        </h2>
+                    <div className="bg-[#1e1e2d] border border-white/5 rounded-xl p-4 flex flex-col gap-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <h3 className="text-white font-bold m-0">{t('requestPayoutItems', { count: selectedEarnings.length })}</h3>
+                        </div>
+
+                        <div className="max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                            <table className="w-full text-sm text-left text-gray-400 border-collapse">
+                                <thead className="text-xs text-gray-500 uppercase bg-black/20 sticky top-0 z-10 backdrop-blur-md">
+                                    <tr>
+                                        <th className="px-4 py-3 rounded-tl-lg">{t('id')}</th>
+                                        <th className="px-4 py-3 text-right">{t('gross')}</th>
+                                        <th className="px-4 py-3 text-right">{t('comm')}</th>
+                                        <th className="px-4 py-3 text-right rounded-tr-lg">{t('net')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {selectedEarnings.map((e) => (
+                                        <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <td className="px-4 py-3">#E-{e.id}</td>
+                                            <td className="px-4 py-3 text-right">{formatCurrency(e.grossAmount)}</td>
+                                            <td className="px-4 py-3 text-right text-red-400">-{formatCurrency(e.commissionAmount)}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-green-400">{formatCurrency(e.netAmount)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="flex flex-col gap-2 p-4 bg-black/30 rounded-lg mt-2 border border-white/5 text-sm font-semibold">
+                            <div className="flex justify-between text-gray-400">
+                                <span>{t('totalGross') || 'Нийт орлого (Gross)'}:</span>
+                                <span>{formatCurrency(selectedEarnings.reduce((sum, e) => sum + Number(e.grossAmount), 0))}</span>
+                            </div>
+                            <div className="flex justify-between text-red-400">
+                                <span>{t('totalCommission') || 'Шимтгэл (Commission)'}:</span>
+                                <span>-{formatCurrency(selectedEarnings.reduce((sum, e) => sum + Number(e.commissionAmount), 0))}</span>
+                            </div>
+                            <div className="flex justify-between text-lg font-black mt-2 pt-3 border-t border-white/10 text-white">
+                                <span>{t('totalNet') || 'Татах дүн (Net)'}:</span>
+                                <span className="text-green-400">{formatCurrency(selectedEarnings.reduce((sum, e) => sum + Number(e.netAmount), 0))}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">{t('selectBankAccount')}</label>
+                        <label className="text-xs font-bold text-gray-500 uppercase px-1">{t('selectBankAccount')}</label>
                         <Dropdown
                             value={payoutForm.payoutAccountId}
-                            options={payoutAccounts}
+                            options={safePayoutAccounts}
                             optionLabel="bankName"
                             optionValue="id"
                             placeholder={t('selectAccountLabel')}
@@ -322,6 +425,73 @@ const Finance = () => {
                     <div className="flex justify-end gap-2 mt-4">
                         <Button label={t('cancel')} className="p-button-text" onClick={() => setIsPayoutModalOpen(false)} />
                         <Button label={t('submitRequest')} className="p-button-primary" onClick={submitPayoutRequest} />
+                    </div>
+                </div>
+            </Dialog>
+
+            <Dialog header={t('manualPayout')} visible={isManualPayoutModalOpen} className="w-[450px]" onHide={() => setIsManualPayoutModalOpen(false)}>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('organization')}</label>
+                        <Dropdown
+                            value={manualPayoutForm.organizationId}
+                            options={safeOrganizations}
+                            optionLabel="name"
+                            optionValue="id"
+                            placeholder={t('selectOrganization')}
+                            className="w-full"
+                            onChange={(e) => {
+                                setManualPayoutForm({ ...manualPayoutForm, organizationId: e.value, venueId: '', payoutAccountId: '' });
+                            }}
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('venue')} ({t('optional')})</label>
+                        <Dropdown
+                            value={manualPayoutForm.venueId}
+                            options={safeVenues.filter(v => v.organizationId === manualPayoutForm.organizationId)}
+                            optionLabel="name"
+                            optionValue="id"
+                            placeholder={t('selectVenue')}
+                            className="w-full"
+                            disabled={!manualPayoutForm.organizationId}
+                            onChange={(e) => setManualPayoutForm({ ...manualPayoutForm, venueId: e.value })}
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('amount')}</label>
+                        <InputNumber
+                            value={manualPayoutForm.amount}
+                            onValueChange={(e) => setManualPayoutForm({ ...manualPayoutForm, amount: e.value })}
+                            mode="currency"
+                            currency="MNT"
+                            locale="mn-MN"
+                            className="w-full"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">{t('selectBankAccount')}</label>
+                        <Dropdown
+                            value={manualPayoutForm.payoutAccountId}
+                            options={safePayoutAccounts.filter(a => a.organizationId === manualPayoutForm.organizationId)}
+                            optionLabel="bankName"
+                            optionValue="id"
+                            placeholder={t('selectAccountLabel')}
+                            className="w-full"
+                            disabled={!manualPayoutForm.organizationId}
+                            onChange={(e) => setManualPayoutForm({ ...manualPayoutForm, payoutAccountId: e.value })}
+                        />
+                        {manualPayoutForm.organizationId && safePayoutAccounts.filter(a => a.organizationId === manualPayoutForm.organizationId).length === 0 && (
+                            <small className="text-red-400 italic">No bank accounts found for this organization.</small>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button label={t('cancel')} className="p-button-text" onClick={() => setIsManualPayoutModalOpen(false)} />
+                        <Button label={t('submitRequest')} className="p-button-primary" onClick={submitManualPayoutRequest} />
                     </div>
                 </div>
             </Dialog>

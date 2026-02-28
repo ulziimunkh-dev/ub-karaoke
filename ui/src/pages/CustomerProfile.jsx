@@ -14,6 +14,7 @@ const CustomerProfile = () => {
         currentUser,
         bookings,
         venues,
+        settings,
         updateBookingStatus,
         logout,
         updateProfile,
@@ -49,11 +50,67 @@ const CustomerProfile = () => {
     const historyBookings = myBookings.filter(b => ['Completed', 'Cancelled', 'Refunded', 'EXPIRED', 'expired'].includes(b.status));
 
     const handleCancel = (id) => {
+        const booking = myBookings.find(b => b.id === id);
+        let refundMessage = <span className="text-xs">{t('cancelBookingMessage')}</span>;
+
+        if (booking && booking.status === 'Confirmed') {
+            const totalPrice = Number(booking.totalPrice) || Number(booking.total) || 0;
+            if (totalPrice > 0 && booking.date && booking.startTime) {
+                try {
+                    const bDateStr = typeof booking.date === 'string' ? booking.date : (booking.date?.toISOString ? booking.date.toISOString() : '');
+                    let startTimeStr = booking.startTime;
+                    if (startTimeStr && typeof startTimeStr === 'string' && !startTimeStr.includes('T')) {
+                        // assume 'HH:MM'
+                        startTimeStr = `${bDateStr.split('T')[0]}T${startTimeStr}:00`;
+                    } else if (startTimeStr && startTimeStr.toISOString) {
+                        startTimeStr = startTimeStr.toISOString();
+                    }
+
+                    const startTime = new Date(startTimeStr);
+                    if (!isNaN(startTime.getTime())) {
+                        const now = new Date();
+                        const diffHours = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+                        const tier1Hours = Number(settings?.refund_tier1_hours ?? 24);
+                        const tier1Fee = Number(settings?.refund_tier1_fee_percent ?? 0);
+                        const tier2Hours = Number(settings?.refund_tier2_hours ?? 4);
+                        const tier2Fee = Number(settings?.refund_tier2_fee_percent ?? 50);
+                        const tier3Fee = Number(settings?.refund_tier3_fee_percent ?? 100);
+
+                        let feePercent = tier3Fee;
+                        if (diffHours >= tier1Hours) feePercent = tier1Fee;
+                        else if (diffHours >= tier2Hours) feePercent = tier2Fee;
+
+                        const feeAmount = (totalPrice * feePercent) / 100;
+                        const refundAmount = Math.max(0, totalPrice - feeAmount);
+
+                        refundMessage = (
+                            <div className="flex flex-col gap-2">
+                                <p className="text-sm m-0 leading-snug">{t('cancelBookingMessage')}</p>
+                                <div className="bg-black/20 border border-white/10 rounded-lg p-3 mt-2">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Estimated Refund Math:</p>
+                                    <p className="text-xs m-0">
+                                        You are cancelling <b>{Math.max(0, diffHours).toFixed(1)} h</b> before the booking.
+                                    </p>
+                                    <p className="text-xs m-0">Cancellation Fee: <b className="text-[#b000ff]">{feePercent}% ({feeAmount.toLocaleString()} ₮)</b></p>
+                                    <div className="h-px bg-white/10 my-2"></div>
+                                    <p className="text-sm font-black m-0 tracking-widest text-[#4CAF50]">REDUND: {refundAmount.toLocaleString()} ₮</p>
+                                </div>
+                            </div>
+                        );
+                    }
+                } catch (err) {
+                    console.error("Error calculating refund summary UI: ", err);
+                }
+            }
+        }
+
         confirmDialog({
-            message: t('cancelBookingMessage'),
+            message: refundMessage,
             header: t('cancelBookingHeader'),
             icon: 'pi pi-exclamation-triangle',
-            acceptClassName: 'p-button-danger',
+            acceptClassName: 'p-button-danger rounded-xl font-bold uppercase tracking-widest text-xs h-10 px-6',
+            rejectClassName: 'p-button-text text-gray-400 font-bold uppercase tracking-widest text-xs h-10 hover:text-white transition-colors',
             acceptLabel: t('yesCancel'),
             rejectLabel: t('goBack'),
             accept: () => updateBookingStatus(id, 'CANCELLED'),

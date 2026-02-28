@@ -35,6 +35,24 @@ export const DataProvider = ({ children }) => {
     const [isExtending, setIsExtending] = useState(false);
     const [showResumeModal, setShowResumeModal] = useState(false);
 
+    // Helper to prevent storing sensitive info in localStorage
+    const saveSafeUser = (userObj) => {
+        if (!userObj) {
+            localStorage.removeItem('user');
+            return;
+        }
+        const safeUser = {
+            id: userObj.id,
+            email: userObj.email,
+            phoneNumber: userObj.phoneNumber,
+            firstName: userObj.firstName,
+            lastName: userObj.lastName,
+            role: userObj.role,
+            organizationId: userObj.organizationId,
+            isActive: userObj.isActive
+        };
+        localStorage.setItem('user', JSON.stringify(safeUser));
+    };
 
     // Load initial data
     // Load initial data
@@ -147,7 +165,7 @@ export const DataProvider = ({ children }) => {
                             }
 
                             // Set activeVenueId
-                            const orgVenues = processedVenues.filter(v => v.organizationId === userData.organizationId);
+                            const orgVenues = (processedVenues || []).filter(v => v.organizationId === userData.organizationId);
                             if (orgVenues.length > 0) {
                                 const savedVenueId = localStorage.getItem('activeVenueId');
                                 if (savedVenueId && orgVenues.some(v => v.id === savedVenueId)) {
@@ -188,11 +206,21 @@ export const DataProvider = ({ children }) => {
                         } catch (e) {
                             console.error('Failed to load room/promo config:', e);
                         }
+
+                        // Load system settings
+                        try {
+                            const backendSettings = await api.getSettings();
+                            if (backendSettings && Object.keys(backendSettings).length > 0) {
+                                setSettings(prev => ({ ...prev, ...backendSettings }));
+                            }
+                        } catch (e) {
+                            console.error('Failed to load system settings:', e);
+                        }
                     }
                 } catch (error) {
                     console.error('Session validation failed:', error);
                     localStorage.removeItem('access_token');
-                    localStorage.removeItem('user');
+                    saveSafeUser(null);
                 }
             }
         } catch (error) {
@@ -205,7 +233,7 @@ export const DataProvider = ({ children }) => {
     // --- AUTH ---
     const handleLoginSuccess = async (data) => {
         localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        saveSafeUser(data.user);
         setCurrentUser(data.user);
 
         // Load all data with the new token
@@ -217,7 +245,7 @@ export const DataProvider = ({ children }) => {
             const data = await api.login(identifier, password, orgCode);
             setCurrentUser(data.user);
             localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('user', JSON.stringify(data.user));
+            saveSafeUser(data.user);
             handleLoginSuccess(data);
             return data.user;
         } catch (error) {
@@ -249,10 +277,10 @@ export const DataProvider = ({ children }) => {
         }
 
         setCurrentUser(null);
-        setActiveBooking(null);
+        setActiveBooking(false);
         setShowResumeModal(false);
         localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
+        saveSafeUser(null);
 
         return redirectPath;
     };
@@ -262,7 +290,7 @@ export const DataProvider = ({ children }) => {
             const response = await api.signup(data);
             setCurrentUser(response.user);
             localStorage.setItem('access_token', response.access_token);
-            localStorage.setItem('user', JSON.stringify(response.user));
+            saveSafeUser(response.user);
             return response.user;
         } catch (error) {
             console.error('Registration failed:', error);
@@ -274,7 +302,7 @@ export const DataProvider = ({ children }) => {
         try {
             const updatedUser = await api.updateProfile(profileData, currentUser?.userType);
             setCurrentUser(prev => ({ ...prev, ...updatedUser }));
-            localStorage.setItem('user', JSON.stringify({ ...currentUser, ...updatedUser }));
+            saveSafeUser({ ...currentUser, ...updatedUser });
             return updatedUser;
         } catch (error) {
             console.error('Profile update failed:', error);
@@ -367,7 +395,7 @@ export const DataProvider = ({ children }) => {
             await api.updateBooking(id, { status });
             setBookings(prev => prev.map(b => (b.id === id ? { ...b, status } : b)));
             if (activeBooking && activeBooking.id === id && status !== 'RESERVED') {
-                setActiveBooking(null);
+                setActiveBooking(false);
             }
         } catch (error) {
             console.error('Failed to update booking status:', error);
@@ -403,7 +431,7 @@ export const DataProvider = ({ children }) => {
             const updated = await api.confirmBookingPayment(id, paymentData);
             setBookings(prev => prev.map(b => (b.id === id ? updated : b)));
             if (activeBooking && activeBooking.id === id) {
-                setActiveBooking(null);
+                setActiveBooking(false);
             }
             return updated;
         } catch (error) {

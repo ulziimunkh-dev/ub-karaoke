@@ -92,10 +92,10 @@ const ManagerDashboard = ({ onNavigate }) => {
                     <Button icon="pi pi-refresh" outlined onClick={refreshData} className="h-10 w-10 border-white/10 text-white/50 hover:text-white" />
                     <div className="h-6 w-[1px] bg-white/10 mx-1"></div>
                     <div className="px-4 py-2 bg-black/40 rounded-xl border border-white/5">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block leading-none mb-1">Status</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block leading-none mb-1"></span>
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                            <span className="text-xs font-bold text-white uppercase tracking-tighter">Operational</span>
+                            <span className="text-xs font-bold text-white uppercase tracking-tighter">Live</span>
                         </div>
                     </div>
                 </div>

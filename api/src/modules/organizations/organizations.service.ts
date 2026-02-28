@@ -18,6 +18,8 @@ import { OrganizationPayoutAccount } from './entities/organization-payout-accoun
 import { OrganizationEarning } from './entities/organization-earning.entity';
 import { OrganizationPayout } from './entities/organization-payout.entity';
 import { OrganizationPayoutItem } from './entities/organization-payout-item.entity';
+import { AppSettingsService } from '../app-settings/app-settings.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrganizationsService {
@@ -38,7 +40,9 @@ export class OrganizationsService {
     private cacheManager: Cache,
     private auditService: AuditService,
     private plansService: PlansService,
-  ) {}
+    private appSettingsService: AppSettingsService,
+    private notificationsService: NotificationsService,
+  ) { }
 
   async create(
     createOrganizationDto: CreateOrganizationDto,
@@ -396,17 +400,32 @@ export class OrganizationsService {
   async createPayout(
     organizationId: string,
     data: Partial<OrganizationPayout>,
-    earningIds: string[],
+    earningIds?: string[],
     userId?: string,
+    isSysAdmin: boolean = false,
   ) {
     const organization = await this.findOne(organizationId);
 
-    // Calculate total from earnings
-    const earnings = await this.earningsRepository.findByIds(earningIds);
-    const totalAmount = earnings.reduce(
-      (sum, earning) => sum + parseFloat(earning.netAmount.toString()),
-      0,
-    );
+    // Calculate total from earnings if provided, otherwise use totalAmount from data
+    let totalAmount = 0;
+    let earnings: OrganizationEarning[] = [];
+    if (earningIds && earningIds.length > 0) {
+      earnings = await this.earningsRepository.findByIds(earningIds);
+      totalAmount = earnings.reduce(
+        (sum, earning) => sum + parseFloat(earning.netAmount.toString()),
+        0,
+      );
+    } else {
+      totalAmount = parseFloat(data.totalAmount?.toString() || '0');
+    }
+
+    // Check minimum payout limit (skip for sysadmins)
+    if (!isSysAdmin) {
+      const minLimit = await this.appSettingsService.getSetting('payout_min_limit', 0);
+      if (totalAmount < minLimit) {
+        throw new Error(`Payout amount (${totalAmount.toLocaleString()}₮) is below the minimum limit of ${minLimit.toLocaleString()}₮`);
+      }
+    }
 
     const payout = this.payoutsRepository.create({
       ...data,
@@ -417,30 +436,38 @@ export class OrganizationsService {
 
     const savedPayout = await this.payoutsRepository.save(payout);
 
-    // Create payout items
-    const items = earningIds.map((earningId) => {
-      const earning = earnings.find((e) => e.id === earningId);
-      return this.payoutItemsRepository.create({
-        payoutId: savedPayout.id,
-        earningId,
-        amount: earning?.netAmount || 0,
+    // Create payout items if earnings provided
+    if (earningIds && earningIds.length > 0) {
+      const items = earningIds.map((earningId) => {
+        const earning = earnings.find((e) => e.id === earningId);
+        return this.payoutItemsRepository.create({
+          payoutId: savedPayout.id,
+          earningId,
+          amount: earning?.netAmount || 0,
+        });
       });
-    });
 
-    await this.payoutItemsRepository.save(items);
+      await this.payoutItemsRepository.save(items);
 
-    // Update earnings status to PAID
-    await this.earningsRepository.update(earningIds, { status: 'PAID' as any });
+      // Update earnings status to PAID
+      await this.earningsRepository.update(earningIds, { status: 'PAID' as any });
+    }
+
+    // Notify admins
+    await this.notificationsService.notifyAdminsOfPayoutRequest(savedPayout);
 
     return savedPayout;
   }
 
-  async getPayouts(organizationId: string, filters?: { status?: string }) {
+  async getPayouts(organizationId?: string, filters?: { status?: string }) {
     const query = this.payoutsRepository
       .createQueryBuilder('payout')
       .leftJoinAndSelect('payout.payoutAccount', 'account')
-      .leftJoinAndSelect('payout.items', 'items')
-      .where('payout.organizationId = :organizationId', { organizationId });
+      .leftJoinAndSelect('payout.items', 'items');
+
+    if (organizationId) {
+      query.where('payout.organizationId = :organizationId', { organizationId });
+    }
 
     if (filters?.status) {
       query.andWhere('payout.status = :status', { status: filters.status });

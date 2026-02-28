@@ -18,8 +18,9 @@ import {
   PaymentProvider,
   TransactionStatus,
 } from './entities/payment-transaction.entity';
-import { Refund } from './entities/refund.entity';
+import { Refund, RefundStatus } from './entities/refund.entity';
 import { Booking } from '../bookings/entities/booking.entity';
+import { SystemSetting } from '../app-settings/entities/system-setting.entity';
 import { QpayService } from './qpay.service';
 import { BookingsService } from '../bookings/bookings.service';
 
@@ -36,10 +37,12 @@ export class PaymentsService {
     private transactionsRepository: Repository<PaymentTransaction>,
     @InjectRepository(Refund)
     private refundsRepository: Repository<Refund>,
+    @InjectRepository(SystemSetting)
+    private settingsRepository: Repository<SystemSetting>,
     private readonly auditService: AuditService,
     private readonly qpayService: QpayService,
     private readonly bookingsService: BookingsService,
-  ) {}
+  ) { }
 
   async create(
     createPaymentDto: CreatePaymentDto,
@@ -116,6 +119,116 @@ export class PaymentsService {
       organizationId: user.organizationId,
     });
     return this.refundsRepository.save(refund);
+  }
+
+  /**
+   * Automatically process a refund for a cancelled booking based on time-tiered policy
+   */
+  async processRefundForBooking(bookingId: string): Promise<Refund | null> {
+    // 1. Find a completed payment for this booking
+    const payments = await this.paymentsRepository.find({
+      where: { bookingId, status: PaymentStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (payments.length === 0) {
+      this.logger.log(`No completed payments found for booking ${bookingId} to refund.`);
+      return null;
+    }
+
+    const payment = payments[0];
+
+    // Check if a refund already exists for this payment
+    const existingRefund = await this.refundsRepository.findOne({
+      where: { paymentId: payment.id }
+    });
+
+    if (existingRefund) {
+      this.logger.log(`Refund already exists for payment ${payment.id}`);
+      return existingRefund;
+    }
+
+    // 2. Find the booking to get startTime
+    const booking = await this.bookingsRepository.findOne({ where: { id: bookingId } });
+    if (!booking || !booking.startTime) {
+      this.logger.error(`Cannot process refund: Booking ${bookingId} missing or has no startTime.`);
+      return null;
+    }
+
+    // 3. Fetch system settings for refund tiers
+    const settings = await this.settingsRepository.find();
+    const getSetting = (key: string, defaultVal: number): number => {
+      const s = settings.find(st => st.key === key);
+      return s ? Number(s.value) : defaultVal;
+    };
+
+    const tier1Hours = getSetting('refund_tier1_hours', 24);
+    const tier1FeePercent = getSetting('refund_tier1_fee_percent', 0);
+    const tier2Hours = getSetting('refund_tier2_hours', 4);
+    const tier2FeePercent = getSetting('refund_tier2_fee_percent', 50);
+    const tier3FeePercent = getSetting('refund_tier3_fee_percent', 100);
+
+    // 4. Calculate time difference in hours between NOW and booking start time
+    const now = new Date();
+    const timeDiffMs = booking.startTime.getTime() - now.getTime();
+    const hoursRemaining = timeDiffMs / (1000 * 60 * 60);
+
+    let feePercent = tier3FeePercent; // Default to highest fee
+    let reason = `Cancellation within ${tier2Hours}h (${feePercent}% fee)`;
+
+    if (hoursRemaining >= tier1Hours) {
+      feePercent = tier1FeePercent;
+      reason = `Cancellation ${tier1Hours}h+ in advance (${feePercent}% fee)`;
+    } else if (hoursRemaining >= tier2Hours) {
+      feePercent = tier2FeePercent;
+      reason = `Cancellation ${tier2Hours}-${tier1Hours}h in advance (${feePercent}% fee)`;
+    }
+
+    // Ensure percent is between 0 and 100
+    feePercent = Math.max(0, Math.min(100, feePercent));
+
+    // 5. Calculate final refund amount
+    const feeAmount = (payment.amount * feePercent) / 100;
+    const finalRefundAmount = Math.max(0, payment.amount - feeAmount);
+
+    if (finalRefundAmount === 0) {
+      this.logger.log(`Refund fee is 100% for payment ${payment.id}. No refund created.`);
+      return null;
+    }
+
+    // 6. Create Refund record
+    const refund = this.refundsRepository.create({
+      paymentId: payment.id,
+      amount: finalRefundAmount,
+      reason: reason,
+      status: RefundStatus.PENDING,
+      organizationId: payment.organizationId,
+    });
+
+    const savedRefund = await this.refundsRepository.save(refund);
+
+    // Audit Log
+    await this.auditService.log({
+      action: 'REFUND_REQUESTED_AUTO',
+      resource: 'Refund',
+      resourceId: savedRefund.id,
+      details: {
+        paymentId: payment.id,
+        bookingId: booking.id,
+        originalAmount: payment.amount,
+        feePercent: feePercent,
+        feeAmount: feeAmount,
+        refundAmount: finalRefundAmount,
+        hoursRemaining: hoursRemaining,
+      },
+      actorId: booking.userId || 'SYSTEM',
+      actorType: booking.userId ? 'USER' : 'SYSTEM',
+      organizationId: payment.organizationId,
+    });
+
+    this.logger.log(`Created auto-refund ${savedRefund.id} for payment ${payment.id}. Amount: ${finalRefundAmount}`);
+
+    return savedRefund;
   }
 
   // ==================== QPay Methods ====================

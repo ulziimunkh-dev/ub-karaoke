@@ -9,6 +9,8 @@ import {
   NotificationStatus,
 } from './entities/notification.entity';
 import { Staff, StaffRole } from '../staff/entities/staff.entity';
+import { AppSettingsService } from '../app-settings/app-settings.service';
+import { OrganizationPayout } from '../organizations/entities/organization-payout.entity';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
@@ -23,6 +25,7 @@ export class NotificationsService {
     @InjectRepository(Staff)
     private staffRepository: Repository<Staff>,
     private configService: ConfigService,
+    private appSettingsService: AppSettingsService,
   ) {
     const smtpHost = this.configService.get<string>('SMTP_HOST');
     const smtpPort = this.configService.get<number>('SMTP_PORT');
@@ -139,6 +142,54 @@ export class NotificationsService {
       console.log(
         `\n==================================================\n   VERIFICATION CODE for ${contact}: [ ${code} ]\n==================================================\n`,
       );
+    }
+  }
+
+  async notifyAdminsOfPayoutRequest(payout: OrganizationPayout) {
+    try {
+      // Get explicit emails from config
+      const adminEmailsStr = await this.appSettingsService.getSetting('ADMIN_EMAILS');
+      let emails: string[] = [];
+
+      if (adminEmailsStr) {
+        emails = adminEmailsStr.split(',').map(e => e.trim()).filter(e => !!e);
+      } else {
+        // Fallback to sysadmins from DB
+        const sysadmins = await this.staffRepository.find({
+          where: { role: StaffRole.SYSADMIN },
+          select: ['email'],
+        });
+        emails = sysadmins.map(s => s.email).filter(e => !!e);
+      }
+
+      if (emails.length === 0) return;
+
+      const subject = `[ACTION REQUIRED] New Payout Request - #${payout.id}`;
+      const amount = new Intl.NumberFormat('mn-MN', { style: 'currency', currency: 'MNT' }).format(payout.totalAmount);
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#161622;border-radius:16px;color:#fff;border: 1px solid #b000ff33">
+          <h2 style="margin:0 0 16px;color:#b000ff">Payout Management</h2>
+          <p>A new payout request has been received and requires your attention.</p>
+          <div style="background:#0a0a12;border-radius:12px;padding:24px;margin:24px 0;border-left:4px solid #eb79b2">
+            <p style="margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase">Request ID</p>
+            <p style="margin:0 0 16px;font-size:18px;font-weight:bold">#P-${payout.id}</p>
+            <p style="margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase">Amount</p>
+            <p style="margin:0 0 16px;font-size:24px;font-weight:bold;color:#eb79b2">${amount}</p>
+            <p style="margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase">Organization ID</p>
+            <p style="margin:0;font-size:16px">${payout.organizationId}</p>
+          </div>
+          <p>Please log in to the admin dashboard to process this request.</p>
+          <div style="text-align:center;margin-top:32px">
+            <a href="${this.configService.get('FRONTEND_URL')}/sysadmin" style="background:#b000ff;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold">Go to Dashboard</a>
+          </div>
+        </div>
+      `;
+
+      for (const email of emails) {
+        await this.sendEmail(email, subject, html);
+      }
+    } catch (err) {
+      this.logger.error(`Failed to notify admins of payout: ${err.message}`);
     }
   }
 

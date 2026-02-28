@@ -19,6 +19,7 @@ import { api } from '../utils/api';
 import AuditLogViewer from './staff/AuditLogViewer';
 import ProfileModal from './common/ProfileModal';
 import NotificationBell from './NotificationBell';
+import StaffOnboardingTour from './admin/StaffOnboardingTour';
 
 const StaffPortal = ({ embedded = false }) => {
     const {
@@ -284,10 +285,11 @@ const StaffPortal = ({ embedded = false }) => {
 
     return (
         <div className="staff-portal">
+            <StaffOnboardingTour embedded={embedded} />
             <Toast ref={toast} />
 
             <div className="flex justify-between items-center mb-6 bg-[#1e1e2d] p-4 rounded-xl border border-white/5">
-                <div>
+                <div className="tour-venue-selector" style={{ position: 'relative' }}>
                     <h2 className="text-xl font-black text-white m-0 uppercase tracking-tighter">
                         {t('roomDashboard')} <span className="text-[#b000ff]">POS</span>
                     </h2>
@@ -306,10 +308,12 @@ const StaffPortal = ({ embedded = false }) => {
                 </div>
                 {!embedded && (
                     <div className="flex items-center gap-4">
-                        <NotificationBell />
+                        <div className="tour-notification-bell">
+                            <NotificationBell />
+                        </div>
                         <div className="h-6 w-[1px] bg-white/10"></div>
                         <div
-                            className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all"
+                            className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded-lg transition-all tour-profile-menu"
                             onClick={() => setIsProfileModalOpen(true)}
                         >
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#b000ff] to-[#5d00ff] flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
@@ -342,57 +346,59 @@ const StaffPortal = ({ embedded = false }) => {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {selectedVenue?.rooms.map(room => (
-                    <Card
-                        key={room.id}
-                        className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl ${(room.status || '').toUpperCase() === 'OCCUPIED' ? 'bg-[#2d1e2a]' : 'bg-[#1e1e2d]'}`}
-                        onClick={() => (room.status || '').toUpperCase() === 'CLEANING' ? handleFinishCleaning(room) : handleRoomClick(room)}
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <h3 className="m-0 text-lg font-black text-white">{room.name}</h3>
-                            <Tag value={t((room.status || 'AVAILABLE').toLowerCase()) || room.status || 'AVAILABLE'} severity={getStatusSeverity(room.status || 'AVAILABLE')} />
-                        </div>
+            <div>
+                <div style={{ position: 'relative' }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 tour-room-grid">
+                    {selectedVenue?.rooms.map(room => (
+                        <Card
+                            key={room.id}
+                            className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl ${(room.status || '').toUpperCase() === 'OCCUPIED' ? 'bg-[#2d1e2a]' : 'bg-[#1e1e2d]'}`}
+                            onClick={() => (room.status || '').toUpperCase() === 'CLEANING' ? handleFinishCleaning(room) : handleRoomClick(room)}
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="m-0 text-lg font-black text-white">{room.name}</h3>
+                                <Tag value={t((room.status || 'AVAILABLE').toLowerCase()) || room.status || 'AVAILABLE'} severity={getStatusSeverity(room.status || 'AVAILABLE')} />
+                            </div>
 
-                        <div className="flex items-center gap-2 mb-3">
-                            {/* Room Level Online Status Toggle */}
-                            <Button
-                                icon={`pi ${room.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
-                                className={`p-button-rounded p-button-text p-button-sm w-8 h-8 ${room.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
-                                tooltip={room.isBookingEnabled === false ? t('reOpen') : t('closeBranch')}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    updateRoom(selectedVenue.id, room.id, { isBookingEnabled: room.isBookingEnabled === false }); // Toggle
-                                }}
-                            />
-                            <span className="text-[10px] text-gray-500 uppercase font-bold">
-                                {room.isBookingEnabled === false ? t('inactive') : t('active')}
-                            </span>
-                        </div>
-
-                        {getActiveBooking(selectedVenue.id, room.id) ? (
-                            <div className="flex flex-col gap-1">
-                                <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">{t('customer')}</span>
-                                <span className="text-sm font-bold text-white truncate">
-                                    {getActiveBooking(selectedVenue.id, room.id).customerName}
-                                </span>
-                                <span className="text-[10px] text-[#b000ff] font-black uppercase">
-                                    {formatTime(getActiveBooking(selectedVenue.id, room.id).startTime)} {getDuration(getActiveBooking(selectedVenue.id, room.id).startTime, getActiveBooking(selectedVenue.id, room.id).endTime)}
+                            <div className="flex items-center gap-2 mb-3">
+                                {/* Room Level Online Status Toggle */}
+                                <Button
+                                    icon={`pi ${room.isBookingEnabled === false ? 'pi-lock' : 'pi-globe'}`}
+                                    className={`p-button-rounded p-button-text p-button-sm w-8 h-8 ${room.isBookingEnabled === false ? 'text-red-400 bg-red-500/10' : 'text-green-400 bg-green-500/10'}`}
+                                    tooltip={room.isBookingEnabled === false ? t('reOpen') : t('closeBranch')}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateRoom(selectedVenue.id, room.id, { isBookingEnabled: room.isBookingEnabled === false }); // Toggle
+                                    }}
+                                />
+                                <span className="text-[10px] text-gray-500 uppercase font-bold">
+                                    {room.isBookingEnabled === false ? t('inactive') : t('active')}
                                 </span>
                             </div>
-                        ) : (
-                            <div className="h-10 flex items-center">
-                                <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">{t('noActiveSession')}</span>
-                            </div>
-                        )}
 
-                        {(room.status || '').toUpperCase() === 'CLEANING' && (
-                            <div className="mt-4 pt-4 border-t border-white/5 text-center">
-                                <span className="text-[10px] text-orange-400 font-black uppercase heartbeat">{t('tapToFinishCleaning')}</span>
-                            </div>
-                        )}
-                    </Card>
-                ))}
+                            {getActiveBooking(selectedVenue.id, room.id) ? (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">{t('customer')}</span>
+                                    <span className="text-sm font-bold text-white truncate">
+                                        {getActiveBooking(selectedVenue.id, room.id).customerName}
+                                    </span>
+                                    <span className="text-[10px] text-[#b000ff] font-black uppercase">
+                                        {formatTime(getActiveBooking(selectedVenue.id, room.id).startTime)} {getDuration(getActiveBooking(selectedVenue.id, room.id).startTime, getActiveBooking(selectedVenue.id, room.id).endTime)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="h-10 flex items-center">
+                                    <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest italic">{t('noActiveSession')}</span>
+                                </div>
+                            )}
+
+                            {(room.status || '').toUpperCase() === 'CLEANING' && (
+                                <div className="mt-4 pt-4 border-t border-white/5 text-center">
+                                    <span className="text-[10px] text-orange-400 font-black uppercase heartbeat">{t('tapToFinishCleaning')}</span>
+                                </div>
+                            )}
+                        </Card>
+                    ))}
+                </div>
             </div>
 
             {/* Room Action Modal */}

@@ -20,6 +20,7 @@ import { FilesModule } from './modules/files/files.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { AccountsModule } from './modules/accounts/accounts.module';
+import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -186,6 +187,7 @@ const ignoreRouterExplorer = winston.format((info) => {
     PlansModule,
     PromotionsModule,
     AccountsModule,
+    AppSettingsModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/',

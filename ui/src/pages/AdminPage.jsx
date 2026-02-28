@@ -206,7 +206,7 @@ const AdminPage = () => {
                                     <span className="hidden lg:inline text-[10px] font-black text-gray-500 uppercase tracking-widest pl-2">{t('orgsLabel')}:</span>
                                     <Dropdown
                                         value={selectedOrgId}
-                                        options={organizations.map(org => ({ label: org.name, value: org.id }))}
+                                        options={(organizations || []).map(org => ({ label: org.name, value: org.id }))}
                                         onChange={(e) => {
                                             setSelectedOrgId(e.value);
                                             setActiveVenueId(null);
@@ -223,8 +223,8 @@ const AdminPage = () => {
                                 <Dropdown
                                     value={activeVenueId}
                                     options={currentUser.role === 'sysadmin'
-                                        ? venues.filter(v => !selectedOrgId || v.organizationId === selectedOrgId).map(v => ({ label: v.name, value: v.id }))
-                                        : venues.filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
+                                        ? (venues || []).filter(v => !selectedOrgId || v.organizationId === selectedOrgId).map(v => ({ label: v.name, value: v.id }))
+                                        : (venues || []).filter(v => v.organizationId === currentUser.organizationId).map(v => ({ label: v.name, value: v.id }))
                                     }
                                     onChange={(e) => setActiveVenueId(e.value)}
                                     placeholder={t('selectBranchContext')}
@@ -237,7 +237,7 @@ const AdminPage = () => {
                     </div>
                 )}
 
-                {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard /> : <ManagerDashboard onNavigate={setActiveTab} />)}
+                {activeTab === 'dashboard' && (currentUser.role === 'sysadmin' ? <AdminDashboard onNavigate={setActiveTab} /> : <ManagerDashboard onNavigate={setActiveTab} />)}
                 {activeTab === 'organizations' && <OrganizationManagement />}
                 {activeTab === 'venues' && <VenueManagement />}
                 {activeTab === 'bookings' && <BookingsManagement />}

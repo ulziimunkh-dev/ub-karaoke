@@ -14,6 +14,8 @@ import { RoomAvailability } from '../rooms/entities/room-availability.entity';
 import { Venue } from '../venues/entities/venue.entity';
 import { VenueOperatingHours } from '../venues/entities/venue-operating-hours.entity';
 import { User } from '../auth/entities/user.entity';
+import { PaymentsModule } from '../payments/payments.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -30,9 +32,10 @@ import { User } from '../auth/entities/user.entity';
     ScheduleModule.forRoot(),
     PromotionsModule,
     RoomsModule,
+    forwardRef(() => PaymentsModule),
   ],
   controllers: [BookingsController],
   providers: [BookingsService, BookingsCleanupService],
   exports: [BookingsService],
 })
-export class BookingsModule {}
+export class BookingsModule { }

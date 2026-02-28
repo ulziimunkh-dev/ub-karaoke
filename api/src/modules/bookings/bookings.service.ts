@@ -3,6 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Inject,
+  forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, In, Between, LessThan, Brackets } from 'typeorm';
@@ -24,9 +27,12 @@ import { User } from '../auth/entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { PromotionsService } from '../promotions/promotions.service';
+import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
@@ -48,6 +54,8 @@ export class BookingsService {
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly promotionsService: PromotionsService,
+    @Inject(forwardRef(() => PaymentsService))
+    private readonly paymentsService: PaymentsService,
   ) { }
 
   async create(
@@ -640,6 +648,10 @@ export class BookingsService {
           room.status = RoomStatus.CLEANING;
           await this.roomsRepository.save(room);
         }
+      } else if (updateBookingDto.status === BookingStatus.CANCELLED) {
+        // Trigger auto-refund processing if cancelled
+        this.paymentsService.processRefundForBooking(id)
+          .catch(err => this.logger.error(`Failed to auto-process refund for booking ${id}: ${err.message}`));
       }
     }
 

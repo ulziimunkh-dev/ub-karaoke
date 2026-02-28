@@ -13,6 +13,7 @@ import { RoomType } from '../modules/rooms/entities/room-type.entity';
 import { RoomFeature } from '../modules/rooms/entities/room-feature.entity';
 import { RoomStatus } from '../modules/bookings/enums/booking.enums';
 import * as bcrypt from 'bcrypt';
+import { SystemSetting } from '../modules/app-settings/entities/system-setting.entity';
 
 export const seed = async (dataSource: DataSource) => {
   console.log('🌱 Starting TypeORM Seed...');
@@ -44,6 +45,7 @@ export const seed = async (dataSource: DataSource) => {
     'plans',
     'room_types',
     'room_features',
+    'system_settings',
   ];
 
   // We wrap table names in double quotes to handle case-sensitivity in Postgres
@@ -428,6 +430,30 @@ export const seed = async (dataSource: DataSource) => {
       updatedBy: adminId,
     });
     await roomFeatureRepo.save(rf);
+  }
+
+  // 8. System Settings
+  console.log('⚙️ Seeding System Settings...');
+  // Seed Default System Settings
+  console.log('Seeding system settings...');
+  const settingsRepo = dataSource.getRepository(SystemSetting);
+
+  const defaultSettings = [
+    { key: 'payout_min_limit', value: '100000', description: 'Minimum amount required to request a payout' },
+    { key: 'ADMIN_EMAILS', value: '', description: 'Comma-separated list of admin emails for notifications' },
+    { key: 'taxRate', value: '10', description: 'Default tax rate percentage' },
+    { key: 'serviceCharge', value: '10', description: 'Default service charge percentage' },
+    { key: 'currency', value: 'MNT', description: 'Default system currency' },
+    { key: 'refund_tier1_hours', value: '24', description: 'Hours before booking for 0% cancellation fee' },
+    { key: 'refund_tier1_fee_percent', value: '0', description: 'Fee percentage for Tier 1 cancellation' },
+    { key: 'refund_tier2_hours', value: '4', description: 'Hours before booking for partial cancellation fee' },
+    { key: 'refund_tier2_fee_percent', value: '50', description: 'Fee percentage for Tier 2 cancellation' },
+    { key: 'refund_tier3_fee_percent', value: '100', description: 'Fee percentage for late cancellation (Tier 3)' },
+  ];
+
+  for (const s of defaultSettings) {
+    const setting = settingsRepo.create(s);
+    await settingsRepo.save(setting);
   }
 
   console.log('✨ TypeORM Seed Completed!');

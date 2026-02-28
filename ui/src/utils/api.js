@@ -444,7 +444,7 @@ export const api = {
     },
 
     getFileUrl: (path) => {
-        if (!path) return '';
+        if (!path) return null;
         if (path.startsWith('http')) return path;
         // Gallery avatars are served from frontend public folder
         // Robust handling for both /avatars/ and avatars/
@@ -453,5 +453,14 @@ export const api = {
         }
         const base = API_URL;
         return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
-    }
+    },
+    // --- SETTINGS ---
+    getSettings: async () => {
+        const response = await apiInstance.get('/settings');
+        return response.data;
+    },
+    updateSettings: async (settings) => {
+        const response = await apiInstance.post('/settings', settings);
+        return response.data;
+    },
 };

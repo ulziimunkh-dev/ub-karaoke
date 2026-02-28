@@ -3,18 +3,19 @@ import { Button } from 'primereact/button';
 import { useData } from '../../contexts/DataContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
-const AdminDashboard = () => {
-    const { users, organizations, bookings, refreshData } = useData();
+const AdminDashboard = ({ onNavigate }) => {
+    const { users, organizations, bookings, payouts, refreshData } = useData();
     const { t } = useLanguage();
 
     const globalRevenue = bookings.reduce((sum, b) => b.status === 'Confirmed' || b.status === 'Paid' ? sum + b.total : sum, 0);
     const totalRequests = bookings.filter(b => b.status === 'Pending').length;
+    const pendingPayoutsCount = payouts.filter(p => p.status === 'PENDING').length;
 
     const metrics = [
         { label: t('globalOrganizations'), value: organizations.length, icon: 'pi-building', color: 'from-[#2196F3] to-[#00BCD4]' },
         { label: t('platformRevenue'), value: `${globalRevenue.toLocaleString()}₮`, icon: 'pi-wallet', color: 'from-[#4CAF50] to-[#8BC34A]' },
+        { label: t('pendingPayouts'), value: pendingPayoutsCount, icon: 'pi-money-bill', color: 'from-[#FF9800] to-[#FF5722]' },
         { label: t('totalRegisteredUsers'), value: users.length, icon: 'pi-users', color: 'from-[#b000ff] to-[#eb79b2]' },
-        { label: t('pendingInquiries'), value: totalRequests, icon: 'pi-inbox', color: 'from-[#FF9800] to-[#FF5722]' },
     ];
 
     return (
@@ -42,10 +43,10 @@ const AdminDashboard = () => {
                     />
                     <div className="h-6 w-[1px] bg-white/10 mx-1"></div>
                     <div className="px-4 py-2 bg-black/40 rounded-xl border border-white/5">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block leading-none mb-1">Status</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block leading-none mb-1"></span>
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                            <span className="text-xs font-bold text-white uppercase tracking-tighter">Operational</span>
+                            <span className="text-xs font-bold text-white uppercase tracking-tighter">Live</span>
                         </div>
                     </div>
                 </div>
@@ -99,12 +100,12 @@ const AdminDashboard = () => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {[
-                            { label: t('manageUsers'), icon: 'pi-users', color: 'from-[#b000ff] to-[#eb79b2]', desc: 'Manage system users & access' },
-                            { label: t('venueConfig'), icon: 'pi-building', color: 'from-[#2196F3] to-[#00BCD4]', desc: 'Configure branches & rooms' },
-                            { label: t('systemSettings'), icon: 'pi-cog', color: 'from-[#FF9800] to-[#FF5722]', desc: 'Global platform configuration' },
-                            { label: t('auditTrail'), icon: 'pi-eye', color: 'from-[#4CAF50] to-[#8BC34A]', desc: 'Review security & audit logs' }
+                            { id: 'users', label: t('manageUsers'), icon: 'pi-users', color: 'from-[#b000ff] to-[#eb79b2]', desc: 'Manage system users & access' },
+                            { id: 'venues', label: t('venueConfig'), icon: 'pi-building', color: 'from-[#2196F3] to-[#00BCD4]', desc: 'Configure branches & rooms' },
+                            { id: 'finance', label: t('managePayouts'), icon: 'pi-money-bill', color: 'from-[#FF9800] to-[#FF5722]', desc: t('payoutManagement') },
+                            { id: 'audit', label: t('auditTrail'), icon: 'pi-eye', color: 'from-[#4CAF50] to-[#8BC34A]', desc: 'Review security & audit logs' }
                         ].map((btn, idx) => (
-                            <button key={idx} className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 hover:border-white/20 transition-all hover:bg-black/60 group/btn text-left cursor-pointer">
+                            <button key={idx} onClick={() => onNavigate?.(btn.id)} className="flex items-center gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 hover:border-white/20 transition-all hover:bg-black/60 group/btn text-left cursor-pointer">
                                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${btn.color} flex items-center justify-center text-white text-xl shadow-lg ring-4 ring-white/5 group-hover/btn:scale-110 transition-transform`}>
                                     <i className={`pi ${btn.icon}`}></i>
                                 </div>

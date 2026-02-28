@@ -15,6 +15,7 @@ import { Galleria } from 'primereact/galleria';
 import { Divider } from 'primereact/divider';
 import { api } from '../utils/api';
 import BookingCountdown from './BookingCountdown';
+import { isMobileDevice, isTabletDevice } from '../utils/device';
 
 const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const { t } = useLanguage();
@@ -25,6 +26,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [previewRoom, setPreviewRoom] = useState(null);
     const [phoneRevealed, setPhoneRevealed] = useState(false);
     const [showVenueGallery, setShowVenueGallery] = useState(false);
+    const [isMobileDeviceUser] = useState(isMobileDevice() || isTabletDevice());
 
     // Close on ESC key
     useEffect(() => {
@@ -508,7 +510,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                         </div>
 
                                                         <Tag
-                                                            value={isOpen ? '🟢 OPEN' : `🔴 CLOSED (Taking bookings)`}
+                                                            value={isOpen ? '🟢 OPEN' : `🔴 ${t('closedTakingBookings')}`}
                                                             className={`text-[10px] font-black h-6 ${isOpen ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}
                                                             rounded
                                                         />
@@ -1012,8 +1014,11 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                             </div>
                                         )}
 
+
+
+
                                         {/* Bank Deep Links */}
-                                        {qpayPayment.qpayUrls && qpayPayment.qpayUrls.length > 0 && (
+                                        {qpayPayment.qpayUrls && qpayPayment.qpayUrls.length > 0 && isMobileDeviceUser && (
                                             <div className="mt-4">
                                                 <p className="text-sm text-gray-400 mb-3">{t('orOpenBank')}</p>
                                                 <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
@@ -1023,7 +1028,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                             href={bankUrl.link}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#b000ff]/40 rounded-lg transition-all text-sm text-gray-300 hover:text-white"
+                                                            className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#b000ff]/40 rounded-lg transition-all text-sm text-gray-400 hover:text-white"
                                                         >
                                                             <i className="pi pi-external-link text-xs"></i>
                                                             <span className="font-medium">{bankUrl.description || bankUrl.name}</span>

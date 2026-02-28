@@ -20,7 +20,7 @@ import { OrganizationsService } from '../organizations/organizations.service';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class FinanceController {
-  constructor(private readonly organizationsService: OrganizationsService) {}
+  constructor(private readonly organizationsService: OrganizationsService) { }
 
   @Get('earnings')
   @ApiOperation({ summary: 'Get organization earnings' })
@@ -64,9 +64,10 @@ export class FinanceController {
     if (!req.user.organizationId && req.user.role !== 'sysadmin') {
       throw new ForbiddenException('Not associated with an organization');
     }
+
     const orgId =
-      req.user.role === 'sysadmin' && filters.organizationId
-        ? filters.organizationId
+      req.user.role === 'sysadmin'
+        ? filters.organizationId || null
         : req.user.organizationId;
 
     return this.organizationsService.getPayouts(orgId, filters);
@@ -91,6 +92,7 @@ export class FinanceController {
       },
       data.earningIds,
       req.user.id,
+      req.user.role === 'sysadmin',
     );
   }
 
