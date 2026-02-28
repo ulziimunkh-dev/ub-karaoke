@@ -68,16 +68,31 @@ export class Venue {
   @AfterLoad()
   populateCoordinates() {
     if (this.gmapLocation && typeof this.gmapLocation === 'string') {
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      // Try plain "lat, lng" format first (e.g. "47.9188, 106.9176")
       const coords = this.gmapLocation.split(',').map((s) => s.trim());
       if (coords.length === 2) {
-        const lat = parseFloat(coords[0]);
-        const lng = parseFloat(coords[1]);
-        this.latitude = !isNaN(lat) ? lat : null;
-        this.longitude = !isNaN(lng) ? lng : null;
-      } else {
-        this.latitude = null;
-        this.longitude = null;
+        const parsedLat = parseFloat(coords[0]);
+        const parsedLng = parseFloat(coords[1]);
+        if (!isNaN(parsedLat) && !isNaN(parsedLng) && Math.abs(parsedLat) <= 90 && Math.abs(parsedLng) <= 180) {
+          lat = parsedLat;
+          lng = parsedLng;
+        }
       }
+
+      // If plain format didn't work, try extracting from Google Maps URL (e.g. @47.9188,106.9176)
+      if (lat === null && this.gmapLocation.includes('http')) {
+        const match = this.gmapLocation.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+        if (match) {
+          lat = parseFloat(match[1]);
+          lng = parseFloat(match[2]);
+        }
+      }
+
+      this.latitude = lat;
+      this.longitude = lng;
     } else {
       this.latitude = null;
       this.longitude = null;

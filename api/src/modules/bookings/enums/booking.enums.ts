@@ -21,3 +21,10 @@ export enum BookingPaymentStatus {
   PARTIAL = 'PARTIAL',
   REFUNDED = 'REFUNDED',
 }
+
+export enum RoomStatus {
+  AVAILABLE = 'AVAILABLE',
+  OCCUPIED = 'OCCUPIED',
+  CLEANING = 'CLEANING',
+  RESERVED = 'RESERVED',
+}

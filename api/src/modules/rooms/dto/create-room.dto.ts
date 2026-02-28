@@ -77,5 +77,9 @@ export class CreateRoomDto {
 
   @IsNumber()
   @IsOptional()
+  bufferMinutes?: number;
+
+  @IsNumber()
+  @IsOptional()
   sortOrder?: number;
 }

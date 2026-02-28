@@ -155,6 +155,10 @@ export const api = {
         const response = await apiInstance.patch(`/rooms/${id}/status`, { isActive });
         return response.data;
     },
+    updateRoomOperationalStatus: async (id, status) => {
+        const response = await apiInstance.patch(`/rooms/${id}/room-status`, { status });
+        return response.data;
+    },
     reorderRooms: async (orders) => {
         const response = await apiInstance.post('/rooms/reorder', orders);
         return response.data;
@@ -204,6 +208,10 @@ export const api = {
     },
     extendBookingReservation: async (id) => {
         const response = await apiInstance.patch(`/bookings/${id}/extend-reservation`);
+        return response.data;
+    },
+    extendBookingTime: async (id, data) => {
+        const response = await apiInstance.patch(`/bookings/${id}/extend-time`, data);
         return response.data;
     },
     getBookingStatus: async (id) => {

@@ -101,6 +101,15 @@ export class Booking {
   @Column({ name: 'group_id', nullable: true })
   groupId: string;
 
+  @Column({ name: 'blocked_until', type: 'timestamp', nullable: true })
+  blockedUntil: Date;
+
+  @Column({ name: 'override_reason', type: 'text', nullable: true })
+  overrideReason: string;
+
+  @Column({ name: 'override_staff_id', nullable: true })
+  overrideStaffId: string;
+
   @ManyToOne(() => Room, (room) => room.bookings)
   @JoinColumn({ name: 'roomId' })
   room: Room;

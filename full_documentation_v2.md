@@ -49,8 +49,8 @@ The system uses the following core entities:
 - **User**: Stores registered users, including customers, staff, and admins. Includes role-based access control (RBAC).
 - **Organization**: Business entities that own and manage venues. Includes subscription plan tracking (`planId`, `planStartedAt`, `planEndsAt`).
 - **Venue**: Represents a karaoke establishment, including metadata like district, address, price range, and booking rules.
-- **Room**: Individual karaoke rooms within a venue, each with specific capacities, rates, and features.
-- **Booking**: Records of room reservations made by customers.
+- **Room**: Individual karaoke rooms within a venue, each with specific capacities, rates, features, operational status (`AVAILABLE`, `OCCUPIED`, `CLEANING`, `RESERVED`), and configurable buffer times (`bufferMinutes`).
+- **Booking**: Records of room reservations made by customers. Includes `blockedUntil` timestamp for buffer-aware conflict detection, and override logging for buffer overrides.
 - **Promotion**: Discount codes with specific values (PERCENT/FIXED) and validity periods, linked to organizations or venues.
 - **Review**: Customer-generated feedback and ratings for venues.
 - **Verification**: Email/Phone number confirmation for users and staff.
@@ -79,8 +79,8 @@ The backend is organized into functional modules:
 | **Auth** | Handles JWT-based authentication and authorization. |
 | **Users** | User profile management and role assignments. |
 | **Venues** | CRUD operations for venue details and management. |
-| **Rooms** | Management of room availability and specifications. |
-| **Bookings** | Core logic for creating, viewing, and cancelling reservations. |
+| **Rooms** | Management of room availability, specifications, operational status, and buffer times. |
+| **Bookings** | Core logic for creating, viewing, extending, and cancelling reservations. Buffer-aware conflict detection. |
 | **Promotions** | Management of discount codes and validation logic. |
 | **Reviews** | Handling user feedback and calculating venue ratings. |
 
@@ -166,6 +166,9 @@ graph TD
 - **Organization Management**: System Admins can manage organizations, including manual overrides for **Subscription Plan Dates** (Start/End).
 - **Promo Code Management**: Admins can create and manage promotional codes (percentage or fixed discounts) with validity periods.
 - **Booking Tracking**: Real-time tracking of bookings for staff to manage venue operations.
+- **Room Status Management**: Staff can view and manage room operational statuses (`AVAILABLE` → `OCCUPIED` → `CLEANING` → `AVAILABLE`).
+- **Booking Extension**: Staff can extend active walk-in bookings by 1-3 hours, with optional buffer time override and mandatory reason logging.
+- **Buffer Time System**: Per-room configurable buffer times (default 15 min, VIP 25 min) between bookings for cleaning/preparation.
 - **Finance & Payouts**: Management of venue earnings and withdrawal/payout requests for organization owners.
 
 ### 1.5 Reviews & Ratings

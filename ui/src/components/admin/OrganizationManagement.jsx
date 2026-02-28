@@ -270,148 +270,202 @@ const OrganizationManagement = () => {
             </div>
 
             <Dialog
-                header={editingOrg ? t('editOrganization') : t('newOrganizationHeader')}
+                header={
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#b000ff]/20 to-[#eb79b2]/20 flex items-center justify-center">
+                            <i className={`pi ${editingOrg ? 'pi-pencil' : 'pi-plus'} text-[#eb79b2]`}></i>
+                        </div>
+                        <div>
+                            <h3 className="m-0 text-lg font-bold text-white tracking-tight">{editingOrg ? `${t('editOrganization')}: ${editingOrg.name}` : t('newOrganizationHeader')}</h3>
+                            <p className="m-0 text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t('organizationManagement') || 'Organization Management'}</p>
+                        </div>
+                    </div>
+                }
                 visible={isModalOpen}
                 onHide={() => setIsModalOpen(false)}
-                style={{ width: '700px' }}
+                className="w-full max-w-[95vw] sm:max-w-[750px]"
                 modal
             >
-                <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
-                    <div className="field">
-                        <label htmlFor="name" className="block text-sm font-bold mb-2">{t('organizationName')}</label>
-                        <InputText
-                            id="name"
-                            value={orgForm.name}
-                            onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
-                            className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            required
-                        />
-                    </div>
-                    <div className="field">
-                        <label htmlFor="code" className="block text-sm font-bold mb-2">{t('internalCodeUnique')}</label>
-                        <InputText
-                            id="code"
-                            value={orgForm.code}
-                            onChange={(e) => setOrgForm({ ...orgForm, code: e.target.value })}
-                            className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            required
-                            placeholder="e.g. LUX_KARAOKE"
-                            disabled={!!editingOrg}
-                        />
-                    </div>
-                    <div className="field">
-                        <label className="block text-sm font-bold mb-2">{t('plan')}</label>
-                        <select
-                            value={orgForm.planId}
-                            onChange={(e) => setOrgForm({ ...orgForm, planId: e.target.value })}
-                            className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                        >
-                            <option value="">{t('selectPlan')}</option>
-                            {plans.map(p => (
-                                <option key={p.id} value={p.id}>{p.name} - {p.monthlyFee.toLocaleString()}₮</option>
-                            ))}
-                        </select>
-                    </div>
+                <form onSubmit={handleSave} className="flex flex-col gap-6 pt-2">
 
-                    {editingOrg && (
-                        <div className="grid grid-cols-3 gap-2 bg-gray-800 p-3 rounded">
-                            <div>
-                                <label className="text-xs text-gray-400">{t('planStatus')}</label>
-                                <div className="text-sm font-bold text-white">{editingOrg.status || '-'}</div>
+                    {/* ── Section 1: Organization Identity ── */}
+                    <div className="bg-white/5 p-5 rounded-xl border border-white/5 shadow-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#b000ff]/15 flex items-center justify-center">
+                                <i className="pi pi-tag text-[#b000ff] text-xs"></i>
                             </div>
-                            <div className="field m-0">
-                                <label className="text-xs text-gray-400 block mb-1">{t('startDate')}</label>
-                                <Calendar
-                                    value={orgForm.planStartedAt}
-                                    onChange={(e) => setOrgForm({ ...orgForm, planStartedAt: e.value })}
-                                    showIcon
-                                    className="w-full p-inputtext-sm"
-                                    dateFormat="yy-mm-dd"
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('organizationIdentity') || 'Identity'}</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left">
+                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('organizationName')}</label>
+                                <InputText
+                                    value={orgForm.name}
+                                    onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
+                                    className="h-11 shadow-sm px-4 bg-black/20 font-bold"
+                                    required
                                 />
                             </div>
-                            <div className="field m-0">
-                                <label className="text-xs text-gray-400 block mb-1">{t('endDate')}</label>
-                                <Calendar
-                                    value={orgForm.planEndsAt}
-                                    onChange={(e) => setOrgForm({ ...orgForm, planEndsAt: e.value })}
-                                    showIcon
-                                    className="w-full p-inputtext-sm"
-                                    dateFormat="yy-mm-dd"
+                            <div className="flex flex-col gap-1.5 md:col-span-2">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('internalCodeUnique')}</label>
+                                <InputText
+                                    value={orgForm.code}
+                                    onChange={(e) => setOrgForm({ ...orgForm, code: e.target.value })}
+                                    className="h-11 shadow-sm px-4 bg-black/20 font-black tracking-widest uppercase disabled:opacity-50"
+                                    required
+                                    placeholder="e.g. LUX_KARAOKE"
+                                    disabled={!!editingOrg}
                                 />
                             </div>
                         </div>
-                    )}
-
-                    <div className="field">
-                        <label className="block text-sm font-bold mb-2">{t('logo')}</label>
-                        <div className="flex items-center gap-4">
-                            {orgForm.logoUrl && <img src={orgForm.logoUrl} alt="logo" className="w-16 h-16 object-cover rounded border border-gray-600" />}
-                            <FileUpload mode="basic" name="file" accept="image/*" maxFileSize={1000000} customUpload uploadHandler={onFileUpload} auto chooseLabel={t('uploadLogo')} className="p-button-outlined p-button-secondary" />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="field">
-                            <label htmlFor="email" className="block text-sm font-bold mb-2">{t('email')}</label>
-                            <InputText
-                                id="email"
-                                value={orgForm.email}
-                                onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })}
-                                className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            />
-                        </div>
-                        <div className="field">
-                            <label htmlFor="phone" className="block text-sm font-bold mb-2">{t('phone')}</label>
-                            <InputText
-                                id="phone"
-                                value={orgForm.phone}
-                                onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })}
-                                className="w-full h-10 px-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            />
-                        </div>
-                    </div>
-                    <div className="field">
-                        <label htmlFor="address" className="block text-sm font-bold mb-2">{t('address')}</label>
-                        <InputTextarea
-                            id="address"
-                            value={orgForm.address}
-                            onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })}
-                            className="w-full p-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            rows={2}
-                        />
-                    </div>
-                    <div className="field">
-                        <label htmlFor="description" className="block text-sm font-bold mb-2">{t('description')}</label>
-                        <InputTextarea
-                            id="description"
-                            value={orgForm.description}
-                            onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })}
-                            className="w-full p-3 bg-[#f8f9fa] border-0 rounded-lg text-black"
-                            rows={3}
-                        />
                     </div>
 
-                    <div className="mt-6 flex justify-end gap-3">
-                        <Button label={t('cancel')} outlined onClick={() => setIsModalOpen(false)} className="h-10 px-6" />
-                        <Button label={t('saveChanges')} type="submit" className="h-10 px-6 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-bold" />
+                    {/* ── Section 2: Subscription & Plan ── */}
+                    <div className="bg-white/5 p-5 rounded-xl border border-white/5 shadow-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#eb79b2]/15 flex items-center justify-center">
+                                <i className="pi pi-shield text-[#eb79b2] text-xs"></i>
+                            </div>
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('subscriptionPlan') || 'Subscription & Plan'}</h4>
+                        </div>
+                        <div className="grid grid-cols-1 gap-5 text-left">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('plan')}</label>
+                                <select
+                                    value={orgForm.planId}
+                                    onChange={(e) => setOrgForm({ ...orgForm, planId: e.target.value })}
+                                    className="w-full h-11 px-4 bg-black/20 border-white/10 rounded-lg text-white font-bold appearance-none outline-none focus:border-[#eb79b2]/50"
+                                >
+                                    <option value="" className="bg-gray-900">{t('selectPlan')}</option>
+                                    {plans.map(p => (
+                                        <option key={p.id} value={p.id} className="bg-gray-900">{p.name} - {p.monthlyFee.toLocaleString()}₮</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {editingOrg && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-black/30 p-4 rounded-xl border border-white/5">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{t('planStatus')}</label>
+                                        <Tag value={(editingOrg.status || '-').toUpperCase()} severity={editingOrg.status === 'active' ? 'success' : 'warning'} className="text-[10px] px-2 py-1 w-fit" />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">{t('startDate')}</label>
+                                        <Calendar
+                                            value={orgForm.planStartedAt}
+                                            onChange={(e) => setOrgForm({ ...orgForm, planStartedAt: e.value })}
+                                            showIcon
+                                            className="w-full h-9 p-inputtext-sm text-xs font-bold"
+                                            dateFormat="yy-mm-dd"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">{t('endDate')}</label>
+                                        <Calendar
+                                            value={orgForm.planEndsAt}
+                                            onChange={(e) => setOrgForm({ ...orgForm, planEndsAt: e.value })}
+                                            showIcon
+                                            className="w-full h-9 p-inputtext-sm text-xs font-bold"
+                                            dateFormat="yy-mm-dd"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ── Section 3: Business Details ── */}
+                    <div className="bg-white/5 p-5 rounded-xl border border-white/5 shadow-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#b000ff]/15 flex items-center justify-center">
+                                <i className="pi pi-info-circle text-[#b000ff] text-xs"></i>
+                            </div>
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('businessDetails') || 'Business Details'}</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left">
+                            <div className="md:col-span-2 flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('logo')}</label>
+                                <div className="flex items-center gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
+                                    {orgForm.logoUrl ? (
+                                        <img src={orgForm.logoUrl} alt="logo" className="w-16 h-16 object-cover rounded-xl border border-white/10 shadow-lg" />
+                                    ) : (
+                                        <div className="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center border border-white/10">
+                                            <i className="pi pi-image text-gray-600"></i>
+                                        </div>
+                                    )}
+                                    <FileUpload mode="basic" name="file" accept="image/*" maxFileSize={1000000} customUpload uploadHandler={onFileUpload} auto chooseLabel={t('uploadLogo')} className="p-button-outlined p-button-sm font-bold" />
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('email')}</label>
+                                <InputText
+                                    value={orgForm.email}
+                                    onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })}
+                                    className="h-11 bg-black/20 border-white/10 px-4 font-bold"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('phone')}</label>
+                                <InputText
+                                    value={orgForm.phone}
+                                    onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })}
+                                    className="h-11 bg-black/20 border-white/10 px-4 font-bold"
+                                />
+                            </div>
+                            <div className="md:col-span-2 flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('address')}</label>
+                                <InputTextarea
+                                    value={orgForm.address}
+                                    onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })}
+                                    className="p-4 bg-black/20 border-white/10 rounded-lg text-white font-bold"
+                                    rows={2}
+                                />
+                            </div>
+                            <div className="md:col-span-2 flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('description')}</label>
+                                <InputTextarea
+                                    value={orgForm.description}
+                                    onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })}
+                                    className="p-4 bg-black/20 border-white/10 rounded-lg text-white font-bold"
+                                    rows={3}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Actions ── */}
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button label={t('cancel')} text onClick={() => setIsModalOpen(false)} className="h-11 px-6 font-bold text-white/50 hover:text-white" />
+                        <Button label={t('saveChanges')} type="submit" className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-lg shadow-xl" />
                     </div>
                 </form>
             </Dialog>
 
             <Dialog
-                header={t('planHistoryFor', { name: selectedOrgForHistory?.name })}
+                header={
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#eb79b2]/20 to-[#b000ff]/20 flex items-center justify-center">
+                            <i className="pi pi-clock text-[#eb79b2] text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 className="m-0 text-lg font-bold text-white tracking-tight">{t('planHistory')}</h3>
+                            <p className="m-0 text-[10px] text-gray-500 font-bold uppercase tracking-widest">{selectedOrgForHistory?.name}</p>
+                        </div>
+                    </div>
+                }
                 visible={isHistoryModalOpen}
                 onHide={() => setIsHistoryModalOpen(false)}
-                style={{ width: '800px' }}
+                className="w-full max-w-[95vw] sm:max-w-[850px]"
                 modal
             >
-                <div className="bg-gray-900 p-3 rounded border border-gray-700">
-                    <DataTable value={planHistory} size="small" emptyMessage={t('noHistoryFound')} stripedRows>
-                        <Column field="planName" header={t('plan')} sortable></Column>
-                        <Column field="startDate" header={t('startDate')} body={(row) => new Date(row.startDate).toLocaleString()} sortable></Column>
-                        <Column field="endDate" header={t('endDate')} body={(row) => row.endDate ? new Date(row.endDate).toLocaleString() : <Tag severity="success" value={t('active')} />} sortable></Column>
-                        <Column field="price" header={t('price')} body={(row) => `${Number(row.price).toLocaleString()}₮`} sortable></Column>
-                        <Column field="commissionRate" header={t('commissionRateLabel') || 'Comm %'} body={(row) => `${row.commissionRate}%`}></Column>
-                        <Column field="status" header={t('status')} body={(row) => <Tag severity={row.status === 'active' ? 'success' : 'info'} value={row.status || t('active')} />}></Column>
+                <div className="bg-white/5 rounded-2xl border border-white/5 shadow-xl overflow-hidden mt-4">
+                    <DataTable value={planHistory} className="text-sm datatable-modern" emptyMessage={t('noHistoryFound')}>
+                        <Column field="planName" header={t('plan')} className="font-bold text-white"></Column>
+                        <Column field="startDate" header={t('startDate')} body={(row) => new Date(row.startDate).toLocaleString()} className="text-xs"></Column>
+                        <Column field="endDate" header={t('endDate')} body={(row) => row.endDate ? new Date(row.endDate).toLocaleString() : <Tag severity="success" value={t('active')} className="text-[10px] font-black uppercase" />} className="text-xs"></Column>
+                        <Column field="price" header={t('price')} body={(row) => <span className="font-black text-green-400 tabular-nums">{Number(row.price).toLocaleString()}₮</span>}></Column>
+                        <Column field="commissionRate" header={t('commissionRateLabel') || 'Comm %'} body={(row) => `${row.commissionRate}%`} className="text-[10px] font-bold"></Column>
+                        <Column field="status" header={t('status')} body={(row) => <Tag severity={row.status === 'active' ? 'success' : 'info'} value={row.status?.toUpperCase() || t('active')} className="text-[9px] font-black uppercase tracking-widest" />}></Column>
                     </DataTable>
                 </div>
             </Dialog>

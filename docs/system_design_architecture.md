@@ -321,6 +321,8 @@ erDiagram
         boolean isVIP
         string condition
         jsonb amenities
+        int buffer_minutes "Default 15 (VIP 25)"
+        enum status "AVAILABLE OCCUPIED CLEANING RESERVED"
         boolean is_active
         int sort_order
         uuid organization_id FK
@@ -365,10 +367,13 @@ erDiagram
         uuid venueId FK
         timestamp startTime
         timestamp endTime
+        timestamp blocked_until "endTime + bufferMinutes"
         decimal totalPrice
         enum status
         string customerName
         string customerPhone
+        text override_reason "Buffer override log"
+        uuid override_staff_id FK
         uuid organization_id FK
     }
 
@@ -498,11 +503,17 @@ classDiagram
         +create()
         +approve()
         +reject()
+        +extendTime()
     }
     class BookingsService {
         +create()
         +updateStatus()
-        +checkConflicts()
+        +checkTimeConflicts()
+        +extendBookingTime()
+        +confirmPayment()
+    }
+    class RoomsService {
+        +updateOperationalStatus()
     }
     BookingsController --> BookingsService
     BookingsService --> AuditService
@@ -613,7 +624,42 @@ stateDiagram-v2
     COMPLETED --> [*]
 ```
 
-### 8.4.4. Use Case Diagram
+### 8.4.4. Entity State Diagram: Room Operational Status
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE
+
+    AVAILABLE --> RESERVED: Online Booking Confirmed
+    AVAILABLE --> OCCUPIED: Walk-in Check-in / Manual Booking
+
+    RESERVED --> OCCUPIED: Customer Arrives (Check-in)
+    RESERVED --> AVAILABLE: Booking Cancelled / No-show
+
+    OCCUPIED --> CLEANING: Session Ends (Check-out)
+    OCCUPIED --> OCCUPIED: Booking Extended (Staff)
+
+    CLEANING --> AVAILABLE: Staff Marks Ready (Tap to Finish)
+
+    note right of AVAILABLE
+        Default state.
+        Room is ready for new bookings.
+    end note
+
+    note right of OCCUPIED
+        Active session in progress.
+        Can be extended by staff.
+        Buffer override logged if used.
+    end note
+
+    note right of CLEANING
+        Post-session cleanup.
+        Duration = room.bufferMinutes
+        (15 min standard, 25 min VIP)
+    end note
+```
+
+### 8.4.5. Use Case Diagram
 
 ```mermaid
 graph TD

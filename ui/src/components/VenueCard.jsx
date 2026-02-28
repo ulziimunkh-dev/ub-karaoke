@@ -214,14 +214,14 @@ const VenueCard = ({ venue, onBook, distance }) => {
 
                 {/* Action Button */}
                 <button
-                    className={`w-full h-10 md:h-12 rounded-full font-bold text-sm md:text-base transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter flex items-center justify-center gap-2 ${venue.isBookingEnabled === false || (!isOpen && venue.isBookingEnabled !== false)
+                    className={`w-full h-10 md:h-12 rounded-full font-bold text-sm md:text-base transition-all duration-300 transform active:scale-[0.98] uppercase tracking-tighter flex items-center justify-center gap-2 ${venue.isBookingEnabled === false
                         ? 'bg-transparent border border-white/10 text-gray-500 cursor-not-allowed'
                         : 'bg-neon-purple-pattern text-white shadow-[0_0_20px_rgba(176,0,255,0.3)] hover:shadow-[0_0_30px_rgba(176,0,255,0.5)]'
                         }`}
-                    onClick={() => (isOpen || venue.isBookingEnabled === false) && onBook(venue)}
-                    disabled={!isOpen && venue.isBookingEnabled !== false}
+                    onClick={() => venue.isBookingEnabled !== false && onBook(venue)}
+                    disabled={venue.isBookingEnabled === false}
                 >
-                    {venue.isBookingEnabled === false ? t('viewDetails') : (!isOpen ? t('closed') : t('bookNow'))}
+                    {venue.isBookingEnabled === false ? t('viewDetails') : t('bookNow')}
                 </button>
             </div>
         </div>

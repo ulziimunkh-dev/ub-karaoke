@@ -200,73 +200,77 @@ const PromotionsManagement = () => {
     }
 
     return (
-        <div className="promotions-management">
+        <div className="promotions-management pt-2">
             <Toast ref={toast} />
             <ConfirmDialog />
 
             {/* ── Page Header ── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #b000ff, #eb79b2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className="pi pi-ticket" style={{ color: 'white', fontSize: '1.1rem' }}></i>
+            <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center shadow-[0_8px_20px_rgba(176,0,255,0.3)]">
+                        <i className="pi pi-ticket text-white text-xl"></i>
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>{t('promotions')}</h2>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>{t('promotionsPageDesc')}</p>
+                        <h2 className="m-0 text-2xl font-black text-white tracking-tight">{t('promotions')}</h2>
+                        <p className="m-0 text-text-muted text-xs font-medium mt-1">{t('promotionsPageDesc')}</p>
                     </div>
                 </div>
                 <Button
                     icon="pi pi-plus"
                     label={t('addNew')}
                     onClick={openCreateDialog}
-                    style={{ background: 'linear-gradient(135deg, #b000ff, #eb79b2)', border: 'none', fontWeight: 700, height: 40, padding: '0 1.25rem' }}
+                    className="h-11 px-8 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-wider rounded-xl shadow-lg"
                 />
             </div>
 
             {/* ── Filters Row ── */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', background: 'rgba(30,30,45,0.6)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 280 }}>
-                    <i className="pi pi-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#888', fontSize: '0.85rem', zIndex: 1 }} />
+            <div className="flex flex-wrap gap-4 items-center mb-8 p-6 bg-white/5 rounded-2xl border border-white/5 shadow-xl backdrop-blur-md">
+                <div className="relative flex-1 min-w-[280px]">
+                    <i className="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm z-10" />
                     <InputText
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder={t('searchPromoCodes')}
-                        style={{ width: '100%', paddingLeft: 36, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', color: 'white', height: 38, fontSize: '0.85rem' }}
+                        className="w-full h-11 pl-11 bg-black/20 border-white/10 text-white font-medium rounded-xl"
                     />
                 </div>
-                <Calendar
-                    value={dateRange}
-                    onChange={e => setDateRange(e.value)}
-                    selectionMode="range"
-                    placeholder={t('filterByPeriod')}
-                    showIcon
-                    showButtonBar
-                    dateFormat="yy-mm-dd"
-                    style={{ flex: '0 0 auto', maxWidth: 250 }}
-                    inputStyle={{ height: 38, fontSize: '0.85rem', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', color: 'white' }}
-                />
+                <div className="flex-0 min-w-[220px]">
+                    <Calendar
+                        value={dateRange}
+                        onChange={e => setDateRange(e.value)}
+                        selectionMode="range"
+                        placeholder={t('filterByPeriod')}
+                        showIcon
+                        showButtonBar
+                        dateFormat="yy-mm-dd"
+                        className="w-full h-11"
+                        inputClassName="bg-black/20 border-white/10 text-white rounded-xl px-4"
+                    />
+                </div>
                 <Button
                     icon={showInactive ? 'pi pi-eye' : 'pi pi-eye-slash'}
                     label={showInactive ? t('showingAll') : t('activeOnly')}
                     onClick={() => setShowInactive(!showInactive)}
                     outlined
                     severity={showInactive ? 'help' : 'secondary'}
-                    style={{ height: 38, fontSize: '0.8rem', fontWeight: 600 }}
+                    className="h-11 rounded-xl font-bold px-6 border-white/10"
                 />
             </div>
 
             {/* ── Promo Cards Grid ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
                 {filteredPromos.length === 0 && (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 1rem', color: '#666', background: '#1e1e2d', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <i className="pi pi-ticket" style={{ fontSize: '2.5rem', marginBottom: '0.75rem', display: 'block', opacity: 0.3 }}></i>
-                        <p style={{ margin: 0, fontSize: '0.95rem', fontStyle: 'italic' }}>{searchQuery ? t('noMatchingPromos') : t('noActivePromos')}</p>
+                    <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white/5 rounded-3xl border border-dashed border-white/10 opacity-60">
+                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                            <i className="pi pi-ticket text-3xl text-gray-400"></i>
+                        </div>
+                        <p className="text-gray-400 font-bold tracking-wide italic">{searchQuery ? t('noMatchingPromos') : t('noActivePromos')}</p>
                         {!searchQuery && (
                             <Button
                                 label={t('createFirstPromo')}
-                                className="p-button-text"
                                 icon="pi pi-plus"
-                                style={{ marginTop: '0.75rem', color: '#b000ff', display: 'inline-flex', marginLeft: 'auto', marginRight: 'auto' }}
+                                text
+                                className="mt-4 font-black uppercase text-[#eb79b2] hover:bg-white/5"
                                 onClick={openCreateDialog}
                             />
                         )}
@@ -279,45 +283,79 @@ const PromotionsManagement = () => {
                     return (
                         <div
                             key={promo.id}
-                            style={{
-                                background: '#1e1e2d', borderRadius: 14,
-                                border: '1px solid rgba(255,255,255,0.05)',
-                                padding: '1.25rem', transition: 'border-color 0.2s',
-                                opacity: promo.isActive ? 1 : 0.6,
-                            }}
-                            className="promo-card"
+                            className={`group relative bg-white/5 rounded-2xl border border-white/5 p-6 transition-all duration-300 hover:bg-white/[0.08] hover:border-white/10 hover:shadow-2xl hover:-translate-y-1 ${!promo.isActive ? 'opacity-50 grayscale' : 'shadow-xl'}`}
                         >
-                            {/* Top: Code + Status + Actions */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                                        <span style={{ fontWeight: 900, color: '#ff9800', letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: '1.1rem' }}>{promo.code}</span>
-                                        <Tag value={status.label} severity={status.severity} style={{ fontSize: '0.65rem' }} />
-                                    </div>
-                                    <Tag
-                                        value={promo.discountType === 'PERCENT' ? `${promo.value}% ${t('off')}` : `-${Number(promo.value).toLocaleString()}₮`}
-                                        style={{ background: 'rgba(176,0,255,0.15)', color: '#eb79b2', fontSize: '0.75rem' }}
-                                    />
-                                </div>
-                                <div style={{ display: 'flex', gap: 2 }}>
-                                    <Button icon="pi pi-pencil" className="p-button-rounded p-button-text p-button-sm" style={{ color: '#b000ff', width: 32, height: 32 }} onClick={() => openEditDialog(promo)} tooltip={t('edit')} tooltipOptions={{ position: 'top' }} />
-                                    <Button icon="pi pi-trash" className="p-button-rounded p-button-text p-button-danger p-button-sm" style={{ width: 32, height: 32 }} onClick={() => handleDeletePromo(promo)} tooltip={t('delete')} tooltipOptions={{ position: 'top' }} />
-                                </div>
+                            {/* Actions overlay */}
+                            <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                <Button
+                                    icon="pi pi-pencil"
+                                    rounded
+                                    text
+                                    className="w-8 h-8 bg-black/40 text-blue-400 hover:bg-black/60"
+                                    onClick={() => openEditDialog(promo)}
+                                />
+                                <Button
+                                    icon="pi pi-trash"
+                                    rounded
+                                    text
+                                    className="w-8 h-8 bg-black/40 text-red-400 hover:bg-black/60"
+                                    onClick={() => handleDeletePromo(promo)}
+                                />
                             </div>
 
-                            {/* Info rows */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', fontSize: '0.78rem', color: '#999' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <i className="pi pi-calendar" style={{ fontSize: '0.7rem', color: '#6c9cf7' }}></i>
-                                    <span>{new Date(promo.validFrom).toLocaleDateString()} — {new Date(promo.validTo).toLocaleDateString()}</span>
+                            <div className="flex flex-col gap-5">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xl font-black text-white tracking-widest uppercase">{promo.code}</span>
+                                            <div className={`w-1.5 h-1.5 rounded-full ${status.severity === 'success' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : status.severity === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            <Tag
+                                                value={promo.discountType === 'PERCENT' ? `${promo.value}% ${t('off')}` : `-${Number(promo.value).toLocaleString()}₮`}
+                                                className="bg-gradient-to-r from-[#b000ff]/20 to-[#eb79b2]/20 border border-[#eb79b2]/20 text-[#eb79b2] font-black uppercase text-[9px] px-2 py-0.5 tracking-wider"
+                                            />
+                                            <Tag
+                                                value={status.label.toUpperCase()}
+                                                severity={status.severity}
+                                                className="text-[8px] font-black uppercase tracking-widest"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <i className="pi pi-building" style={{ fontSize: '0.7rem', color: '#ff9800' }}></i>
-                                    <span>{getVenueLabel(promo)}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <i className="pi pi-users" style={{ fontSize: '0.7rem', color: '#4caf50' }}></i>
-                                    <span>{usageCount} {t('timesUsed')}</span>
+
+                                <div className="space-y-3 pt-3 border-t border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                            <i className="pi pi-calendar text-blue-400 text-[10px]"></i>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{t('validPeriod') || 'VALID PERIOD'}</span>
+                                            <span className="text-xs text-white/80 font-bold">
+                                                {new Date(promo.validFrom).toLocaleDateString()} – {new Date(promo.validTo).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                            <i className="pi pi-building text-orange-400 text-[10px]"></i>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{t('availability') || 'AVAILABILITY'}</span>
+                                            <span className="text-xs text-white/80 font-bold truncate max-w-[180px]">{getVenueLabel(promo)}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
+                                            <i className="pi pi-users text-green-400 text-[10px]"></i>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{t('totalUsage') || 'TOTAL USAGE'}</span>
+                                            <span className="text-xs text-white/80 font-black">{usageCount} {t('timesUsed')}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -326,12 +364,17 @@ const PromotionsManagement = () => {
             </div>
 
             {/* ── Promo Usage History ── */}
-            <div style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <i className="pi pi-history" style={{ color: '#eb79b2' }}></i>
-                        {t('promoUsageHistory')}
-                    </h3>
+            <div className="bg-white/5 p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#eb79b2]/10 border border-[#eb79b2]/20 flex items-center justify-center">
+                            <i className="pi pi-history text-[#eb79b2] text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 className="m-0 text-xl font-black text-white uppercase tracking-wider">{t('promoUsageHistory')}</h3>
+                            <p className="m-0 text-gray-500 text-xs font-bold mt-1 uppercase tracking-widest">{t('trackingDetail') || 'TRACKING ALL SUCCESSFUL APPLICATIONS'}</p>
+                        </div>
+                    </div>
                     <Dropdown
                         value={selectedPromoFilter}
                         options={[
@@ -341,66 +384,60 @@ const PromotionsManagement = () => {
                         onChange={e => setSelectedPromoFilter(e.value)}
                         placeholder={t('filterByPromo')}
                         showClear
-                        style={{ width: 240, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)' }}
+                        className="w-full md:w-64 h-11 bg-black/20 border-white/10 text-white font-bold rounded-xl"
                     />
                 </div>
 
-                <div style={{ background: '#1e1e2d', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                <div className="relative z-10">
                     {promoBookings.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#666' }}>
-                            <i className="pi pi-inbox" style={{ fontSize: '2rem', marginBottom: '0.5rem', display: 'block', opacity: 0.3 }}></i>
-                            <p style={{ margin: 0, fontStyle: 'italic', fontSize: '0.9rem' }}>{t('noPromoBookings')}</p>
+                        <div className="py-20 flex flex-col items-center justify-center opacity-40">
+                            <i className="pi pi-inbox text-5xl mb-4"></i>
+                            <p className="font-bold tracking-widest uppercase text-sm italic">{t('noPromoBookings')}</p>
                         </div>
                     ) : (
                         <DataTable
                             value={promoBookings}
                             paginator
                             rows={10}
-                            rowsPerPageOptions={[5, 10, 25]}
-                            className="promo-bookings-table"
+                            className="datatable-modern"
                             emptyMessage={t('noResults')}
                             sortField="createdAt"
                             sortOrder={-1}
-                            stripedRows
                         >
                             <Column
                                 field="promoCode"
                                 header={t('promoCode')}
                                 sortable
-                                body={(row) => (
-                                    <span style={{ fontWeight: 900, color: '#ff9800', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{row.promoCode}</span>
-                                )}
+                                className="font-black text-[#ff9800] tracking-wider uppercase"
                             />
                             <Column
                                 field="promoDiscount"
                                 header={t('discount')}
                                 body={(row) => (
-                                    <Tag value={row.promoDiscount} style={{ background: 'rgba(176,0,255,0.15)', color: '#eb79b2' }} />
+                                    <Tag
+                                        value={row.promoDiscount}
+                                        className="bg-[#b000ff]/10 border border-[#b000ff]/20 text-[#eb79b2] font-black px-3 py-1"
+                                    />
                                 )}
                             />
                             <Column
                                 field="customerName"
                                 header={t('customer')}
                                 sortable
-                                body={(row) => (
-                                    <span style={{ color: 'white', fontWeight: 500 }}>{row.customerName || row.user?.name || '—'}</span>
-                                )}
+                                className="font-bold text-white/90"
+                                body={(row) => row.customerName || row.user?.name || '—'}
                             />
                             <Column
                                 field="venueName"
                                 header={t('venue')}
                                 sortable
-                                body={(row) => (
-                                    <span style={{ color: '#999' }}>{row.venueName}</span>
-                                )}
+                                className="text-gray-400 font-medium"
                             />
                             <Column
                                 field="totalPrice"
                                 header={t('totalPrice')}
                                 sortable
-                                body={(row) => (
-                                    <span style={{ color: 'white', fontWeight: 700 }}>{Number(row.totalPrice || 0).toLocaleString()}₮</span>
-                                )}
+                                body={(row) => <span className="font-black text-green-400 tabular-nums">{Number(row.totalPrice || 0).toLocaleString()}₮</span>}
                             />
                             <Column
                                 field="status"
@@ -415,18 +452,15 @@ const PromotionsManagement = () => {
                                         'PENDING': 'warning',
                                         'CHECKED_IN': 'info',
                                     };
-                                    return <Tag value={row.status} severity={statusMap[row.status] || 'info'} />;
+                                    return <Tag value={row.status.toUpperCase()} severity={statusMap[row.status] || 'info'} className="text-[10px] font-black px-2" />;
                                 }}
                             />
                             <Column
                                 field="createdAt"
                                 header={t('date')}
                                 sortable
-                                body={(row) => (
-                                    <span style={{ color: '#777', fontSize: '0.78rem' }}>
-                                        {new Date(row.createdAt).toLocaleDateString()} {new Date(row.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                )}
+                                className="text-gray-500 font-mono text-xs"
+                                body={(row) => `${new Date(row.createdAt).toLocaleDateString()} ${new Date(row.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                             />
                         </DataTable>
                     )}
@@ -436,156 +470,181 @@ const PromotionsManagement = () => {
             {/* ── Create / Edit Dialog ── */}
             <Dialog
                 header={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #b000ff, #eb79b2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <i className={`pi ${isEditing ? 'pi-pencil' : 'pi-plus'}`} style={{ color: 'white' }}></i>
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center shadow-lg">
+                            <i className={`pi ${isEditing ? 'pi-pencil' : 'pi-plus'} text-white text-lg`}></i>
                         </div>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'white' }}>{isEditing ? t('editPromoCode') : t('addNewPromoCode')}</h3>
-                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#888' }}>{isEditing ? t('editPromoDesc') : t('addPromoDesc')}</p>
+                            <h3 className="m-0 text-xl font-bold text-white tracking-tight">{isEditing ? t('editPromoCode') : t('addNewPromoCode')}</h3>
+                            <p className="m-0 text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mt-0.5">{isEditing ? t('editPromoDesc') : t('addPromoDesc')}</p>
                         </div>
                     </div>
                 }
                 visible={isPromoModalOpen}
                 onHide={() => { setIsPromoModalOpen(false); setEditingPromo(null); }}
-                style={{ width: '100%', maxWidth: 480 }}
-                footer={
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', paddingTop: '0.5rem' }}>
-                        <Button label={t('cancel')} icon="pi pi-times" onClick={() => { setIsPromoModalOpen(false); setEditingPromo(null); }} className="p-button-text" style={{ color: '#999' }} />
+                className="w-full max-w-[95vw] sm:max-w-[550px]"
+                modal
+            >
+                <form onSubmit={(e) => { e.preventDefault(); handleSavePromo(); }} className="flex flex-col gap-6 pt-4">
+
+                    {/* -- Section 1: Activation Code -- */}
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5 shadow-xl">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#b000ff]/15 flex items-center justify-center">
+                                <i className="pi pi-tag text-[#b000ff] text-xs"></i>
+                            </div>
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('promoIdentity') || 'PROMO IDENTITY'}</h4>
+                        </div>
+                        <div className="flex flex-col gap-1.5 text-left">
+                            <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('rewardCode') || 'REWARD CODE'}</label>
+                            <InputText
+                                value={newPromo.code}
+                                onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                                placeholder="e.g. SUMMER24"
+                                className={`h-12 bg-black/20 border-white/10 px-4 font-black tracking-[0.3em] uppercase text-lg text-secondary text-center rounded-xl ${isEditing ? 'opacity-50' : ''}`}
+                                disabled={isEditing}
+                            />
+                            {isEditing && <p className="m-0 text-[8px] text-gray-500 font-bold uppercase tracking-widest text-center mt-2 italic">{t('codeNotEditable')}</p>}
+                        </div>
+                    </div>
+
+                    {/* -- Section 2: Discount Policy -- */}
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5 shadow-xl text-left">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#eb79b2]/15 flex items-center justify-center">
+                                <i className="pi pi-percentage text-[#eb79b2] text-xs"></i>
+                            </div>
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('discountPolicy') || 'DISCOUNT POLICY'}</h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-5">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('type')}</label>
+                                <Dropdown
+                                    value={newPromo.discountType}
+                                    options={[
+                                        { label: t('percentage'), value: 'PERCENT' },
+                                        { label: t('fixedAmount'), value: 'FIXED' }
+                                    ]}
+                                    onChange={e => setNewPromo({ ...newPromo, discountType: e.value })}
+                                    className="h-11 bg-black/20 border-white/10 font-bold rounded-xl"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('value')}</label>
+                                <InputNumber
+                                    value={newPromo.value}
+                                    onValueChange={e => setNewPromo({ ...newPromo, value: e.value })}
+                                    min={0}
+                                    suffix={newPromo.discountType === 'PERCENT' ? '%' : '₮'}
+                                    inputClassName="h-11 bg-black/20 border-white/10 text-white font-black px-4 rounded-xl"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* -- Section 3: Time & Scope -- */}
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5 shadow-xl text-left">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-7 h-7 rounded-lg bg-[#b000ff]/15 flex items-center justify-center">
+                                <i className="pi pi-calendar text-[#b000ff] text-xs"></i>
+                            </div>
+                            <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('timeScope') || 'TIME & SCOPE'}</h4>
+                        </div>
+                        <div className="flex flex-col gap-5">
+                            <div className="grid grid-cols-2 gap-5">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('startDate')}</label>
+                                    <Calendar
+                                        value={newPromo.validFrom}
+                                        onChange={e => setNewPromo({ ...newPromo, validFrom: e.value })}
+                                        showIcon
+                                        dateFormat="yy-mm-dd"
+                                        className="h-11"
+                                        inputClassName="bg-black/20 border-white/10 text-white font-bold px-4 rounded-xl"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('endDate')}</label>
+                                    <Calendar
+                                        value={newPromo.validTo}
+                                        onChange={e => setNewPromo({ ...newPromo, validTo: e.value })}
+                                        showIcon
+                                        minDate={newPromo.validFrom}
+                                        dateFormat="yy-mm-dd"
+                                        className="h-11"
+                                        inputClassName="bg-black/20 border-white/10 text-white font-bold px-4 rounded-xl"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="font-bold text-[10px] uppercase tracking-wider text-text-muted ml-1">{t('venue')}</label>
+                                <Dropdown
+                                    value={newPromo.venueId}
+                                    options={venueOptions}
+                                    optionGroupLabel="label"
+                                    optionGroupChildren="items"
+                                    onChange={e => setNewPromo({ ...newPromo, venueId: e.value })}
+                                    placeholder={t('selectVenue')}
+                                    filter
+                                    className="h-11 bg-black/20 border-white/10 font-bold rounded-xl"
+                                />
+                                <p className="m-0 text-[8px] text-gray-500 font-bold uppercase tracking-widest mt-1 italic">{t('venuePromoHint')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-2">
+                        <Button label={t('cancel')} text onClick={() => { setIsPromoModalOpen(false); setEditingPromo(null); }} className="h-11 px-6 font-bold text-white/50 hover:text-white" />
                         <Button
                             label={isEditing ? t('saveChanges') : t('createPromotion')}
-                            icon={isEditing ? 'pi pi-check' : 'pi pi-plus'}
-                            onClick={handleSavePromo}
-                            style={{ background: 'linear-gradient(135deg, #b000ff, #eb79b2)', border: 'none', fontWeight: 700, height: 40, padding: '0 1.25rem' }}
+                            type="submit"
+                            className="h-11 px-10 bg-gradient-to-r from-[#b000ff] to-[#eb79b2] border-none text-white font-black uppercase tracking-widest rounded-xl shadow-[0_8px_20px_rgba(176,0,255,0.3)]"
                         />
                     </div>
-                }
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingTop: '0.5rem' }}>
-                    {/* Promo Code */}
-                    <div>
-                        <label style={labelStyle}><i className="pi pi-tag" style={{ color: '#b000ff', fontSize: '0.7rem' }}></i> {t('promoCodeLabel')}</label>
-                        <InputText
-                            value={newPromo.code}
-                            onChange={e => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
-                            placeholder="e.g. WELCOME10"
-                            style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '0.15em' }}
-                            disabled={isEditing}
-                        />
-                        {isEditing && <small style={{ color: '#666', fontStyle: 'italic', fontSize: '0.7rem' }}>{t('codeNotEditable')}</small>}
-                    </div>
-
-                    {/* Type + Value */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                        <div>
-                            <label style={labelStyle}><i className="pi pi-percentage" style={{ color: '#eb79b2', fontSize: '0.7rem' }}></i> {t('type')}</label>
-                            <Dropdown
-                                value={newPromo.discountType}
-                                options={[
-                                    { label: t('percentage'), value: 'PERCENT' },
-                                    { label: t('fixedAmount'), value: 'FIXED' }
-                                ]}
-                                onChange={e => setNewPromo({ ...newPromo, discountType: e.value })}
-                                style={{ ...inputStyle, width: '100%' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={labelStyle}><i className="pi pi-money-bill" style={{ color: '#4caf50', fontSize: '0.7rem' }}></i> {t('value')}</label>
-                            <InputNumber
-                                value={newPromo.value}
-                                onValueChange={e => setNewPromo({ ...newPromo, value: e.value })}
-                                min={0}
-                                suffix={newPromo.discountType === 'PERCENT' ? '%' : '₮'}
-                                inputStyle={{ ...inputStyle, width: '100%' }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Date Range */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                        <div>
-                            <label style={labelStyle}><i className="pi pi-calendar" style={{ color: '#6c9cf7', fontSize: '0.7rem' }}></i> {t('startDate')}</label>
-                            <Calendar value={newPromo.validFrom} onChange={e => setNewPromo({ ...newPromo, validFrom: e.value })} showIcon dateFormat="yy-mm-dd" inputStyle={{ ...inputStyle, width: '100%' }} />
-                        </div>
-                        <div>
-                            <label style={labelStyle}><i className="pi pi-calendar-times" style={{ color: '#ff9800', fontSize: '0.7rem' }}></i> {t('endDate')}</label>
-                            <Calendar value={newPromo.validTo} onChange={e => setNewPromo({ ...newPromo, validTo: e.value })} showIcon minDate={newPromo.validFrom} dateFormat="yy-mm-dd" inputStyle={{ ...inputStyle, width: '100%' }} />
-                        </div>
-                    </div>
-
-                    {/* Venue */}
-                    <div>
-                        <label style={labelStyle}><i className="pi pi-building" style={{ color: '#ff9800', fontSize: '0.7rem' }}></i> {t('venue')}</label>
-                        <Dropdown
-                            value={newPromo.venueId}
-                            options={venueOptions}
-                            optionGroupLabel="label"
-                            optionGroupChildren="items"
-                            onChange={e => setNewPromo({ ...newPromo, venueId: e.value })}
-                            placeholder={t('selectVenue')}
-                            filter
-                            filterPlaceholder={t('searchVenue') || 'Search...'}
-                            style={{ ...inputStyle, width: '100%' }}
-                        />
-                        <small style={{ color: '#666', fontStyle: 'italic', fontSize: '0.7rem' }}>{t('venuePromoHint')}</small>
-                    </div>
-                </div>
+                </form>
             </Dialog>
 
             <style>{`
-                .promo-card:hover {
-                    border-color: rgba(176,0,255,0.3) !important;
-                }
-                .promotions-management .p-dialog .p-dialog-header {
-                    background: #1e1e2d !important;
-                    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-                    padding: 1rem 1.25rem !important;
-                }
-                .promotions-management .p-dialog .p-dialog-content {
-                    background: #1e1e2d !important;
-                    padding: 0 1.25rem !important;
-                }
-                .promotions-management .p-dialog .p-dialog-footer {
-                    background: #1e1e2d !important;
-                    border-top: 1px solid rgba(255,255,255,0.05) !important;
-                    padding: 0.75rem 1.25rem !important;
-                }
-                .promotions-management .p-dropdown {
-                    background: rgba(0,0,0,0.2) !important;
-                    border: 1px solid rgba(255,255,255,0.08) !important;
-                }
-                .promotions-management .p-dropdown:hover,
-                .promotions-management .p-dropdown.p-focus {
-                    border-color: #b000ff !important;
-                }
-                .promotions-management .p-calendar .p-inputtext {
-                    background: rgba(0,0,0,0.2) !important;
-                    border: 1px solid rgba(255,255,255,0.08) !important;
-                    color: white !important;
-                }
-                .promo-bookings-table .p-datatable-thead > tr > th {
-                    background: rgba(0,0,0,0.3) !important;
-                    color: #999 !important;
-                    border-color: rgba(255,255,255,0.05) !important;
-                    font-size: 0.7rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.1em;
-                    font-weight: 800;
-                }
-                .promo-bookings-table .p-datatable-tbody > tr {
+                .promotions-management .p-datatable.datatable-modern .p-datatable-thead > tr > th {
                     background: transparent !important;
-                    border-color: rgba(255,255,255,0.03) !important;
+                    border-bottom: 2px solid rgba(255,255,255,0.05) !important;
+                    padding: 1.25rem 1rem !important;
+                    color: #555 !important;
+                    font-size: 10px;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 0.15em;
                 }
-                .promo-bookings-table .p-datatable-tbody > tr:hover {
-                    background: rgba(176,0,255,0.05) !important;
+                .promotions-management .p-datatable.datatable-modern .p-datatable-tbody > tr {
+                    background: transparent !important;
+                    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
                 }
-                .promo-bookings-table .p-datatable-tbody > tr > td {
-                    border-color: rgba(255,255,255,0.03) !important;
-                    padding: 0.65rem 1rem;
+                .promotions-management .p-datatable.datatable-modern .p-datatable-tbody > tr:hover {
+                    background: rgba(255,255,255,0.02) !important;
                 }
-                .promo-bookings-table .p-paginator {
+                .promotions-management .p-datatable.datatable-modern .p-datatable-tbody > tr > td {
+                    padding: 1.25rem 1rem !important;
+                }
+                .promotions-management .p-paginator {
                     background: transparent !important;
                     border: none !important;
+                    padding: 1.5rem !important;
+                }
+                .promotions-management .p-calendar .p-button {
+                    background: transparent !important;
+                    border: none !important;
+                    color: #888 !important;
+                }
+                .promotions-management .p-dropdown-panel {
+                    background: #1a1a24 !important;
+                    border: 1px solid rgba(255,255,255,0.1) !important;
+                }
+                .promotions-management .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+                    color: white !important;
+                }
+                .promotions-management .p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
+                    background: rgba(176,0,255,0.1) !important;
                 }
             `}</style>
         </div>

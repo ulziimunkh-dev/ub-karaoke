@@ -63,9 +63,9 @@ export const DataProvider = ({ children }) => {
             const token = localStorage.getItem('access_token');
             const rawVenues = await api.getVenues(token ? { includeInactive: true } : {});
 
-            console.log(`[DataContext Debug] Fetched ${rawVenues.length} raw venues from API.`);
+
             rawVenues.forEach(v => {
-                console.log(`[DataContext Debug] Venue: ${v.name}, isActive: ${v.isActive}, rating: ${v.rating}, roomsCount: ${v.rooms?.length}`);
+
             });
 
             // Fix potential JSON string issues from API
@@ -525,15 +525,23 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const updateRoomStatus = async (venueId, roomId, isActive) => {
+    const updateRoomStatus = async (venueId, roomId, statusOrBool) => {
         try {
-            const updated = await api.updateRoomStatus(roomId, isActive);
+            let updated;
+            if (typeof statusOrBool === 'string') {
+                // Map legacy casing to uppercase enum
+                const statusMap = { 'Available': 'AVAILABLE', 'Occupied': 'OCCUPIED', 'Cleaning': 'CLEANING', 'Reserved': 'RESERVED' };
+                const mappedStatus = statusMap[statusOrBool] || statusOrBool.toUpperCase();
+                updated = await api.updateRoomOperationalStatus(roomId, mappedStatus);
+            } else {
+                updated = await api.updateRoomStatus(roomId, statusOrBool);
+            }
             setVenues(prev =>
                 prev.map(v => {
                     if (v.id === venueId) {
                         return {
                             ...v,
-                            rooms: v.rooms.map(r => (r.id === roomId ? updated : r))
+                            rooms: v.rooms.map(r => (r.id === roomId ? { ...r, ...updated } : r))
                         };
                     }
                     return v;

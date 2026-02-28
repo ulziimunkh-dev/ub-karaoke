@@ -107,23 +107,23 @@ const ignoreRouterExplorer = winston.format((info) => {
         const dbOptions = dbUrl
           ? { url: dbUrl }
           : {
-              host: configService.get('DATABASE_HOST'),
-              port: configService.get<number>('DATABASE_PORT'),
-              username: configService.get('DATABASE_USER'),
-              password: configService.get('DATABASE_PASSWORD'),
-              database: configService.get('DATABASE_NAME'),
-            };
+            host: configService.get('DATABASE_HOST'),
+            port: configService.get<number>('DATABASE_PORT'),
+            username: configService.get('DATABASE_USER'),
+            password: configService.get('DATABASE_PASSWORD'),
+            database: configService.get('DATABASE_NAME'),
+          };
 
         return {
           type: 'postgres',
           ...dbOptions,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: false, // Disabled in favor of migrations
+          synchronize: true, // Enabled for development — auto-sync entity schema
           logging: true,
           logger: new TypeOrmLoggerAdapter(),
           timezone: '+08:00',
           migrations: [join(__dirname, 'database', 'migrations', '*{.ts,.js}')],
-          migrationsRun: true, // Automatically run migrations on startup
+          migrationsRun: false, // Disabled while synchronize is enabled
         };
       },
       inject: [ConfigService],

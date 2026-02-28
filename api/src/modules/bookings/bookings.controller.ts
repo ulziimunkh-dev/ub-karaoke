@@ -26,7 +26,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiTags('bookings')
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(private readonly bookingsService: BookingsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -87,6 +87,25 @@ export class BookingsController {
     return this.bookingsService.extendReservation(id, req.user.id);
   }
 
+  @Patch(':id/extend-time')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Extend booking end time (staff walk-in extension)',
+  })
+  extendBookingTime(
+    @Param('id') id: string,
+    @Body()
+    body: {
+      newEndTime: string;
+      overrideBuffer?: boolean;
+      overrideReason?: string;
+    },
+    @Request() req: any,
+  ) {
+    return this.bookingsService.extendBookingTime(id, body, req.user.id);
+  }
+
   @Get(':id/status')
   @ApiOperation({ summary: 'Get booking status with expiration info' })
   async getBookingStatus(@Param('id') id: string) {
@@ -100,9 +119,9 @@ export class BookingsController {
       isExpired: booking.expiresAt && now > booking.expiresAt,
       remainingSeconds: booking.expiresAt
         ? Math.max(
-            0,
-            Math.floor((booking.expiresAt.getTime() - now.getTime()) / 1000),
-          )
+          0,
+          Math.floor((booking.expiresAt.getTime() - now.getTime()) / 1000),
+        )
         : null,
     };
   }

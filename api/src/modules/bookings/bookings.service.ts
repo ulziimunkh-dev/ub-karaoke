@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, In, Between, LessThan, Brackets } from 'typeorm';
 import { Booking } from './entities/booking.entity';
-import { BookingStatus, BookingSource } from './enums/booking.enums';
+import { BookingStatus, BookingSource, RoomStatus } from './enums/booking.enums';
 import { BookingStatusHistory } from './entities/booking-status-history.entity';
 import { BookingPromotion } from './entities/booking-promotion.entity';
 import { Room } from '../rooms/entities/room.entity';
@@ -48,7 +48,7 @@ export class BookingsService {
     private readonly notificationsService: NotificationsService,
     private readonly notificationsGateway: NotificationsGateway,
     private readonly promotionsService: PromotionsService,
-  ) {}
+  ) { }
 
   async create(
     createBookingDto: CreateBookingDto,
@@ -204,6 +204,10 @@ export class BookingsService {
           const finalPricePerRoom =
             basePricePerRoom - discountPerRoom - promoDiscountPerRoom;
 
+          // Calculate blocked_until = endTime + buffer
+          const bufferMs = (room.bufferMinutes ?? 15) * 60 * 1000;
+          const blockedUntil = new Date(endTime.getTime() + bufferMs);
+
           const booking = transactionalEntityManager
             .getRepository(Booking)
             .create({
@@ -216,6 +220,7 @@ export class BookingsService {
               loyaltyDiscount: discountPerRoom,
               startTime,
               endTime,
+              blockedUntil,
               createdBy: userId,
               status: BookingStatus.RESERVED,
               reservedAt: new Date(),
@@ -365,12 +370,17 @@ export class BookingsService {
           throw new BadRequestException('Room is already booked.');
         }
 
+        // Calculate blocked_until = endTime + buffer
+        const bufferMs = (room.bufferMinutes ?? 15) * 60 * 1000;
+        const blockedUntil = new Date(endTime.getTime() + bufferMs);
+
         const booking = transactionalEntityManager
           .getRepository(Booking)
           .create({
             ...createBookingDto,
             startTime,
             endTime,
+            blockedUntil,
             status: BookingStatus.CONFIRMED,
             source: BookingSource.WALK_IN,
             createdBy: user.id,
@@ -408,6 +418,10 @@ export class BookingsService {
           },
           transactionalEntityManager,
         );
+
+        // Set room status to OCCUPIED for walk-in bookings
+        room.status = RoomStatus.OCCUPIED;
+        await transactionalEntityManager.getRepository(Room).save(room);
 
         return savedBooking;
       },
@@ -469,7 +483,7 @@ export class BookingsService {
         `Booking #${id.slice(0, 8)} has been approved and confirmed.`,
         id,
       )
-      .catch(() => {});
+      .catch(() => { });
 
     return saved;
   }
@@ -529,7 +543,7 @@ export class BookingsService {
         `Booking #${id.slice(0, 8)} has been rejected.`,
         id,
       )
-      .catch(() => {});
+      .catch(() => { });
 
     return saved;
   }
@@ -616,6 +630,17 @@ export class BookingsService {
         booking.organizationId,
         true, // Most updates are by staff
       );
+
+      // Transition room to CLEANING when booking is completed
+      if (updateBookingDto.status === BookingStatus.COMPLETED) {
+        const room = await this.roomsRepository.findOne({
+          where: { id: booking.roomId },
+        });
+        if (room) {
+          room.status = RoomStatus.CLEANING;
+          await this.roomsRepository.save(room);
+        }
+      }
     }
 
     return saved;
@@ -642,13 +667,7 @@ export class BookingsService {
     const room = await roomRepo.findOne({ where: { id: roomId } });
     if (!room) return [];
 
-    let bufferMinutes = 15;
-    if (room.partySupport?.birthday || room.partySupport?.decoration) {
-      bufferMinutes = 30;
-    }
-    if (room.specs?.cleaning) {
-      bufferMinutes = room.specs.cleaning;
-    }
+    const bufferMinutes = room.bufferMinutes ?? 15;
 
     // A conflict occurs if:
     // NewBooking.Start < ExistingBooking.End + Buffer
@@ -805,13 +824,7 @@ export class BookingsService {
     }
 
     // 5. Determine Cleaning Buffer
-    let bufferMinutes = 15;
-    if (room.partySupport?.birthday || room.partySupport?.decoration) {
-      bufferMinutes = 30;
-    }
-    if (room.specs?.cleaning) {
-      bufferMinutes = room.specs.cleaning;
-    }
+    const bufferMinutes = room.bufferMinutes ?? 15;
 
     // 6. Filter slots
     const now = new Date();
@@ -847,7 +860,7 @@ export class BookingsService {
           const slotStart = new Date(`${date}T${time}`);
           const slotEnd = new Date(
             slotStart.getTime() +
-              Number(venue.minBookingHours || 1) * 60 * 60000,
+            Number(venue.minBookingHours || 1) * 60 * 60000,
           );
 
           return slotStart < effectiveEnd && slotEnd > effectiveStart;
@@ -916,6 +929,19 @@ export class BookingsService {
       throw new BadRequestException('Booking reservation has expired');
     }
 
+    // Re-validate conflicts before confirming (another booking may have taken the slot)
+    const conflicts = await this.checkTimeConflicts(
+      booking.roomId,
+      booking.startTime,
+      booking.endTime,
+      booking.id,
+    );
+    if (conflicts.length > 0) {
+      throw new BadRequestException(
+        'Room is no longer available for this time slot. Please select a different time.',
+      );
+    }
+
     booking.status = BookingStatus.CONFIRMED;
     booking.paymentCompletedAt = new Date();
     booking.expiresAt = null as any; // Clear expiration
@@ -956,7 +982,16 @@ export class BookingsService {
         `Payment confirmed for booking #${bookingId.slice(0, 8)}.`,
         bookingId,
       )
-      .catch(() => {});
+      .catch(() => { });
+
+    // Set room status to OCCUPIED
+    const room = await this.roomsRepository.findOne({
+      where: { id: booking.roomId },
+    });
+    if (room) {
+      room.status = RoomStatus.OCCUPIED;
+      await this.roomsRepository.save(room);
+    }
 
     return saved;
   }
@@ -968,6 +1003,104 @@ export class BookingsService {
     throw new BadRequestException(
       'Reservation extension is currently disabled.',
     );
+  }
+
+  /**
+   * Extend booking end time (walk-in extension by staff)
+   */
+  async extendBookingTime(
+    bookingId: string,
+    data: {
+      newEndTime: string;
+      overrideBuffer?: boolean;
+      overrideReason?: string;
+    },
+    staffId: string,
+  ): Promise<Booking> {
+    const booking = await this.bookingsRepository.findOne({
+      where: { id: bookingId },
+      relations: ['room'],
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    if (
+      ![BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN].includes(
+        booking.status,
+      )
+    ) {
+      throw new BadRequestException(
+        'Only active bookings (CONFIRMED or CHECKED_IN) can be extended.',
+      );
+    }
+
+    const newEnd = new Date(data.newEndTime);
+    if (isNaN(newEnd.getTime())) {
+      throw new BadRequestException('Invalid newEndTime format.');
+    }
+    if (newEnd <= booking.endTime) {
+      throw new BadRequestException('New end time must be after current end time.');
+    }
+
+    const room = booking.room;
+    const bufferMinutes = room.bufferMinutes ?? 15;
+    const bufferMs = bufferMinutes * 60 * 1000;
+    const newBlockedUntil = data.overrideBuffer
+      ? newEnd // No buffer added when overriding
+      : new Date(newEnd.getTime() + bufferMs);
+
+    // Check for conflicts with the extended time
+    const conflicts = await this.checkTimeConflicts(
+      booking.roomId,
+      booking.startTime,
+      newEnd,
+      booking.id,
+    );
+    if (conflicts.length > 0) {
+      throw new BadRequestException(
+        'Cannot extend: conflicts with another booking.',
+      );
+    }
+
+    // Calculate additional price
+    const additionalHours =
+      (newEnd.getTime() - booking.endTime.getTime()) / (1000 * 60 * 60);
+    const additionalPrice = additionalHours * Number(room.hourlyRate);
+
+    booking.endTime = newEnd;
+    booking.blockedUntil = newBlockedUntil;
+    booking.totalPrice = Number(booking.totalPrice) + additionalPrice;
+    booking.extensionCount = (booking.extensionCount || 0) + 1;
+    booking.updatedBy = staffId;
+
+    // Log buffer override if applicable
+    if (data.overrideBuffer && data.overrideReason) {
+      booking.overrideReason = data.overrideReason;
+      booking.overrideStaffId = staffId;
+    }
+
+    const saved = await this.bookingsRepository.save(booking);
+
+    // Audit log
+    await this.auditService.log({
+      action: data.overrideBuffer
+        ? 'BOOKING_EXTENDED_BUFFER_OVERRIDE'
+        : 'BOOKING_EXTENDED',
+      resource: 'Booking',
+      resourceId: bookingId,
+      actorId: staffId,
+      actorType: 'STAFF',
+      details: {
+        previousEndTime: booking.endTime,
+        newEndTime: newEnd,
+        additionalHours,
+        additionalPrice,
+        overrideBuffer: data.overrideBuffer || false,
+        overrideReason: data.overrideReason || null,
+      },
+      organizationId: booking.organizationId,
+    });
+
+    return saved;
   }
 
   /**

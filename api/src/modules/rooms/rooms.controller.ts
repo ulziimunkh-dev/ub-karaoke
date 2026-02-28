@@ -9,7 +9,6 @@ import {
   Query,
   UseGuards,
   Req,
-  Patch as PatchMethod,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,7 +24,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiTags('rooms')
 @Controller('rooms')
 export class RoomsController {
-  constructor(private readonly roomsService: RoomsService) {}
+  constructor(private readonly roomsService: RoomsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new room' })
@@ -97,8 +96,8 @@ export class RoomsController {
     return this.roomsService.update(id, updateRoomDto, req.user?.id);
   }
 
-  @PatchMethod(':id/status')
-  @ApiOperation({ summary: 'Toggle room status' })
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Toggle room active status' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   updateStatus(
@@ -107,6 +106,18 @@ export class RoomsController {
     @Req() req: any,
   ) {
     return this.roomsService.updateStatus(id, isActive, req.user);
+  }
+
+  @Patch(':id/room-status')
+  @ApiOperation({ summary: 'Update room operational status (AVAILABLE, OCCUPIED, CLEANING, RESERVED)' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  updateRoomStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @Req() req: any,
+  ) {
+    return this.roomsService.updateOperationalStatus(id, status as any, req.user);
   }
 
   @Delete(':id')

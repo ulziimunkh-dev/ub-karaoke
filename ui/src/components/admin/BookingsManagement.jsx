@@ -225,151 +225,274 @@ const BookingsManagement = () => {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="bookings-management pt-4 px-6 md:px-0">
             <Toast ref={toast} />
 
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold text-white m-0">{t('bookingsManagement')}</h2>
-                    <p className="text-gray-400 mt-1 text-sm">
-                        {t('manageBookingsDesc')}
-                    </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                    <div className="bg-[#1a1a24] px-4 py-2 rounded-xl border border-white/5">
-                        <span className="text-xs text-gray-500 uppercase font-bold">{t('totalBookings')}: </span>
-                        <span className="text-white font-bold">{getFilteredBookings().length}</span>
+            {/* ── Page Header ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center shadow-[0_10px_25px_rgba(176,0,255,0.4)]">
+                        <i className="pi pi-calendar text-white text-2xl"></i>
                     </div>
+                    <div>
+                        <h2 className="m-0 text-3xl font-black text-white tracking-tight leading-none">{t('bookingsManagement')}</h2>
+                        <div className="flex items-center gap-2 mt-2">
+                            <p className="m-0 text-text-muted text-xs font-bold uppercase tracking-[0.2em] opacity-60">{t('manageBookingsDesc') || 'MONAGE ROOM RESERVATIONS'}</p>
+                            <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
+                            <span className="text-[10px] text-[#eb79b2] font-black uppercase tracking-widest">{getFilteredBookings().length} {t('total')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
                     <Button
                         icon="pi pi-refresh"
                         outlined
                         onClick={() => refreshData?.()}
-                        className="h-10 w-10"
+                        className="h-11 w-11 rounded-xl border-white/10 text-white/50 hover:text-white hover:bg-white/5"
                         tooltip={t('refresh')}
-                        tooltipOptions={{ position: 'bottom' }}
                     />
                 </div>
             </div>
 
-            <div className="bg-[#1a1a24] rounded-2xl border border-white/5 overflow-hidden">
+            {/* ── Filters Row ── */}
+            <div className="flex flex-wrap gap-4 items-center mb-8 p-6 bg-white/5 rounded-2xl border border-white/5 shadow-xl backdrop-blur-md">
+                <div className="relative flex-1 min-w-[280px]">
+                    <i className="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-text-muted text-sm z-10" />
+                    <InputText
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        placeholder={t('search')}
+                        className="w-full h-11 pl-11 bg-black/20 border-white/10 text-white font-medium rounded-xl"
+                    />
+                </div>
+                <div className="flex flex-wrap gap-4 items-center">
+                    <Dropdown
+                        value={selectedVenue}
+                        options={[{ name: t('allVenues'), id: null }, ...orgVenues]}
+                        onChange={(e) => setSelectedVenue(e.value?.id ? e.value : null)}
+                        optionLabel="name"
+                        placeholder={t('filterByVenue')}
+                        className="w-48 h-11 bg-black/20 border-white/10 text-white font-bold rounded-xl"
+                    />
+                    <Dropdown
+                        value={statusFilter}
+                        options={statusOptions}
+                        onChange={(e) => setStatusFilter(e.value)}
+                        optionValue="value"
+                        placeholder={t('filterByStatus')}
+                        className="w-44 h-11 bg-black/20 border-white/10 text-white font-bold rounded-xl"
+                        showClear
+                    />
+                </div>
+            </div>
+
+            {/* ── Modern Table View ── */}
+            <div className="bg-white/5 rounded-3xl border border-white/5 shadow-2xl overflow-hidden backdrop-blur-xl">
                 <DataTable
                     value={getFilteredBookings()}
                     paginator
                     rows={10}
-                    rowsPerPageOptions={[5, 10, 25, 50]}
-                    header={header}
-                    globalFilter={globalFilter}
-                    emptyMessage={t('noBookingsFound')}
-                    className="p-datatable-dark"
-                    stripedRows
+                    className="datatable-modern"
+                    responsiveLayout="scroll"
+                    dataKey="id"
+                    emptyMessage={
+                        <div className="py-20 text-center">
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                                <i className="pi pi-calendar-times text-3xl text-gray-700"></i>
+                            </div>
+                            <p className="text-gray-500 font-black uppercase tracking-widest text-sm">{t('noBookingsFound')}</p>
+                        </div>
+                    }
                     sortField="createdAt"
                     sortOrder={-1}
                 >
-                    <Column header={t('customer')} body={customerTemplate} sortable sortField="customerName" />
-                    <Column header={t('venueRoom')} body={venueRoomTemplate} />
-                    <Column header={t('time')} body={timeTemplate} sortable sortField="startTime" />
-                    <Column header={t('status')} body={statusTemplate} sortable sortField="status" />
-                    <Column header={t('total')} body={priceTemplate} sortable sortField="totalPrice" />
-                    <Column header={t('actions')} body={actionTemplate} style={{ width: '150px' }} />
+                    <Column header={t('customer')} body={customerTemplate} sortable sortField="customerName" className="pl-6" headerClassName="pl-6"></Column>
+                    <Column header={t('venueRoom')} body={venueRoomTemplate}></Column>
+                    <Column header={t('time')} body={timeTemplate} sortable sortField="startTime"></Column>
+                    <Column header={t('status')} body={statusTemplate} sortable sortField="status"></Column>
+                    <Column header={t('total')} body={priceTemplate} sortable sortField="totalPrice"></Column>
+                    <Column header={t('actions')} body={actionTemplate} className="pr-6" headerClassName="pr-6"></Column>
                 </DataTable>
             </div>
 
-            {/* Booking Details Modal */}
+            {/* ── Booking Details Dialog ── */}
             <Dialog
-                header={t('bookingDetails')}
+                header={
+                    <div className="flex items-center gap-4 text-left">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b000ff] to-[#eb79b2] flex items-center justify-center shadow-lg">
+                            <i className="pi pi-info-circle text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 className="m-0 text-xl font-bold text-white tracking-tight">{t('bookingDetails')}</h3>
+                            <p className="m-0 text-[10px] text-gray-500 font-black uppercase tracking-[0.2em] mt-0.5">#{selectedBooking?.id?.slice(-8).toUpperCase() || 'REF'}</p>
+                        </div>
+                    </div>
+                }
                 visible={showDetailsModal}
                 onHide={() => setShowDetailsModal(false)}
-                className="w-full max-w-lg"
+                className="w-full max-w-[95vw] sm:max-w-[550px]"
                 modal
             >
                 {selectedBooking && (
-                    <div className="space-y-4">
-                        {/* Customer Contact Section */}
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                            <p className="text-xs text-gray-500 uppercase font-bold mb-3 flex items-center gap-2">
-                                <i className="pi pi-user" /> {t('customerContact')}
-                            </p>
-                            <div className="space-y-2">
-                                <p className="text-white font-bold text-lg m-0">{selectedBooking.customerName || t('unknown')}</p>
-                                {selectedBooking.customerPhone && (
-                                    <p className="text-gray-300 text-sm m-0 flex items-center gap-2">
-                                        <i className="pi pi-phone text-green-400" />
-                                        <a href={`tel:${selectedBooking.customerPhone}`} className="text-green-400 hover:underline no-underline">
-                                            {selectedBooking.customerPhone}
-                                        </a>
-                                    </p>
-                                )}
-                                {selectedBooking.customerEmail && (
-                                    <p className="text-gray-300 text-sm m-0 flex items-center gap-2">
-                                        <i className="pi pi-envelope text-blue-400" />
-                                        <a href={`mailto:${selectedBooking.customerEmail}`} className="text-blue-400 hover:underline no-underline">
-                                            {selectedBooking.customerEmail}
-                                        </a>
-                                    </p>
-                                )}
-                                {!selectedBooking.customerPhone && !selectedBooking.customerEmail && (
-                                    <p className="text-gray-500 text-sm italic m-0">{t('noContactInfo')}</p>
-                                )}
+                    <div className="flex flex-col gap-6 pt-4">
+                        {/* Customer Info Section */}
+                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-xl text-left">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-7 h-7 rounded-lg bg-[#b000ff]/15 flex items-center justify-center">
+                                    <i className="pi pi-user text-[#b000ff] text-xs"></i>
+                                </div>
+                                <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('customerContact')}</h4>
+                            </div>
+                            <div className="flex flex-col gap-4">
+                                <p className="text-xl font-black text-white m-0 tracking-tight">{selectedBooking.customerName || t('unknown')}</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-black/20 p-3 rounded-xl border border-white/5">
+                                        <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1">{t('phone')}</span>
+                                        {selectedBooking.customerPhone ? (
+                                            <a href={`tel:${selectedBooking.customerPhone}`} className="text-sm text-green-400 font-bold no-underline hover:underline">
+                                                <i className="pi pi-phone mr-2 text-[10px]"></i>
+                                                {selectedBooking.customerPhone}
+                                            </a>
+                                        ) : <span className="text-xs text-white/30 italic">{t('notProvided')}</span>}
+                                    </div>
+                                    <div className="bg-black/20 p-3 rounded-xl border border-white/5">
+                                        <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1">{t('email')}</span>
+                                        {selectedBooking.customerEmail ? (
+                                            <a href={`mailto:${selectedBooking.customerEmail}`} className="text-sm text-blue-400 font-bold no-underline hover:underline truncate block">
+                                                <i className="pi pi-envelope mr-2 text-[10px]"></i>
+                                                {selectedBooking.customerEmail}
+                                            </a>
+                                        ) : <span className="text-xs text-white/30 italic">{t('notProvided')}</span>}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Booking Details Grid */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('startTime')}</p>
-                                <p className="text-white">{formatDateTime(selectedBooking.startTime)}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('endTime')}</p>
-                                <p className="text-white">{formatDateTime(selectedBooking.endTime)}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('status')}</p>
-                                <Tag value={t(selectedBooking.status?.toLowerCase())} severity={getStatusSeverity(selectedBooking.status)} />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('totalPrice')}</p>
-                                <p className="text-green-400 font-bold text-xl">{Number(selectedBooking.totalPrice || 0).toLocaleString()}₮</p>
-                            </div>
-                            {selectedBooking.source && (
-                                <div>
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('source')}</p>
-                                    <Tag value={selectedBooking.source} severity="info" />
+                        {/* Booking Schedule & Location */}
+                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-xl text-left">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-7 h-7 rounded-lg bg-[#eb79b2]/15 flex items-center justify-center">
+                                    <i className="pi pi-map-marker text-[#eb79b2] text-xs"></i>
                                 </div>
-                            )}
+                                <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('scheduleAndRoom') || 'SCHEDULE & ROOM'}</h4>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">{t('venue')}</span>
+                                    <span className="text-sm text-white font-bold">{venues.find(v => v.id === selectedBooking.venueId)?.name || 'Unknown'}</span>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">{t('room')}</span>
+                                    <span className="text-sm text-[#eb79b2] font-black">{venues.find(v => v.id === selectedBooking.venueId)?.rooms?.find(r => r.id === selectedBooking.roomId)?.name || 'Unknown'}</span>
+                                </div>
+                                <div className="flex flex-col gap-1.5 bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1">{t('startTime')}</span>
+                                    <span className="text-xs text-white/80 font-bold block">{formatDateTime(selectedBooking.startTime)}</span>
+                                </div>
+                                <div className="flex flex-col gap-1.5 bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1">{t('endTime')}</span>
+                                    <span className="text-xs text-white/80 font-bold block">{formatDateTime(selectedBooking.endTime)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Financial & Status */}
+                        <div className="bg-white/5 p-6 rounded-2xl border border-white/5 shadow-xl text-left">
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center">
+                                    <i className="pi pi-credit-card text-green-400 text-xs"></i>
+                                </div>
+                                <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('pricingAndStatus') || 'PRICING & STATUS'}</h4>
+                            </div>
+                            <div className="flex justify-between items-end">
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">{t('currentStatus')}</span>
+                                    <Tag value={t(selectedBooking.status?.toLowerCase())} severity={getStatusSeverity(selectedBooking.status)} className="text-[9px] font-black uppercase tracking-widest px-3 py-1" />
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-1">{t('totalPrice')}</span>
+                                    <span className="text-2xl font-black text-green-400 block leading-none">{Number(selectedBooking.totalPrice || 0).toLocaleString()}₮</span>
+                                </div>
+                            </div>
                             {selectedBooking.notes && (
-                                <div className="col-span-2">
-                                    <p className="text-xs text-gray-500 uppercase font-bold mb-1">{t('notes')}</p>
-                                    <p className="text-gray-300 text-sm">{selectedBooking.notes}</p>
+                                <div className="mt-6 pt-6 border-t border-white/5">
+                                    <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest block mb-2">{t('customerNotes') || 'CUSTOMER NOTES'}</span>
+                                    <div className="bg-black/30 p-4 rounded-xl text-xs text-white/70 italic leading-relaxed">
+                                        "{selectedBooking.notes}"
+                                    </div>
                                 </div>
                             )}
                         </div>
 
+                        {/* Actions for Pending */}
                         {(selectedBooking.status?.toUpperCase() === 'PENDING' || selectedBooking.status?.toUpperCase() === 'RESERVED') && (
-                            <div className="flex gap-3 pt-4 border-t border-white/10">
-                                <Button
-                                    label={t('approve')}
-                                    icon="pi pi-check"
-                                    className="p-button-success flex-1"
-                                    onClick={() => {
-                                        handleApprove(selectedBooking);
-                                        setShowDetailsModal(false);
-                                    }}
-                                />
+                            <div className="flex gap-3 pt-4">
                                 <Button
                                     label={t('reject')}
                                     icon="pi pi-times"
-                                    className="p-button-danger flex-1"
                                     onClick={() => {
                                         handleReject(selectedBooking);
                                         setShowDetailsModal(false);
                                     }}
+                                    className="h-12 flex-1 bg-red-500/10 border-red-500/20 text-red-500 font-black uppercase tracking-widest rounded-xl hover:bg-red-500/20"
+                                />
+                                <Button
+                                    label={t('approve')}
+                                    icon="pi pi-check"
+                                    onClick={() => {
+                                        handleApprove(selectedBooking);
+                                        setShowDetailsModal(false);
+                                    }}
+                                    className="h-12 flex-1 bg-gradient-to-r from-green-600 to-green-500 border-none text-white font-black uppercase tracking-widest rounded-xl shadow-[0_8px_20px_rgba(34,197,94,0.3)]"
                                 />
                             </div>
                         )}
+
+                        <div className="flex justify-center pt-2">
+                            <Button label={t('close')} text onClick={() => setShowDetailsModal(false)} className="h-11 px-8 font-bold text-white/30 hover:text-white" />
+                        </div>
                     </div>
                 )}
             </Dialog>
+
+            <style>{`
+                .bookings-management .p-datatable.datatable-modern .p-datatable-thead > tr > th {
+                    background: transparent !important;
+                    border-bottom: 2px solid rgba(255,255,255,0.05) !important;
+                    padding: 1.25rem 1rem !important;
+                    color: #555 !important;
+                    font-size: 10px;
+                    font-weight: 900;
+                    text-transform: uppercase;
+                    letter-spacing: 0.15em;
+                }
+                .bookings-management .p-datatable.datatable-modern .p-datatable-tbody > tr {
+                    background: transparent !important;
+                    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+                }
+                .bookings-management .p-datatable.datatable-modern .p-datatable-tbody > tr:hover {
+                    background: rgba(255,255,255,0.02) !important;
+                }
+                .bookings-management .p-datatable.datatable-modern .p-datatable-tbody > tr > td {
+                    padding: 1.25rem 1rem !important;
+                }
+                .bookings-management .p-paginator {
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 1.5rem !important;
+                }
+                .bookings-management .p-dropdown-panel {
+                    background: #1a1a24 !important;
+                    border: 1px solid rgba(255,255,255,0.1) !important;
+                }
+                .bookings-management .p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+                    color: white !important;
+                    font-size: 0.85rem !important;
+                }
+                .bookings-management .p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover {
+                    background: rgba(176,0,255,0.1) !important;
+                }
+            `}</style>
         </div>
     );
 };

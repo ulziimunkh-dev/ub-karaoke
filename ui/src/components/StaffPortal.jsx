@@ -13,6 +13,7 @@ import { DataView } from 'primereact/dataview';
 import { Divider } from 'primereact/divider';
 import { Calendar } from 'primereact/calendar';
 import { InputText } from 'primereact/inputtext';
+import { InputSwitch } from 'primereact/inputswitch';
 import { api } from '../utils/api';
 
 import AuditLogViewer from './staff/AuditLogViewer';
@@ -38,7 +39,16 @@ const StaffPortal = ({ embedded = false }) => {
 
     // Manual Booking State
     const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New Profile State
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+    // Extend Time State
+    const [isExtendDialogOpen, setIsExtendDialogOpen] = useState(false);
+    const [extendData, setExtendData] = useState({
+        hours: 1,
+        overrideBuffer: false,
+        overrideReason: ''
+    });
+
     const [manualBookingData, setManualBookingData] = useState({
         customerName: '',
         phoneNumber: '',
@@ -175,7 +185,7 @@ const StaffPortal = ({ embedded = false }) => {
         if (activeBooking) {
             try {
                 await updateBookingStatus(activeBooking.id, 'CHECKED_IN');
-                await updateRoomStatus(selectedVenue.id, selectedRoom.id, 'Occupied');
+                await updateRoomStatus(selectedVenue.id, selectedRoom.id, 'OCCUPIED');
                 setIsActionModalOpen(false);
                 toast.current.show({ severity: 'success', summary: t('checkedIn'), detail: t('roomNowOccupied', { name: selectedRoom.name }) });
             } catch (error) {
@@ -188,7 +198,7 @@ const StaffPortal = ({ embedded = false }) => {
         if (activeBooking) {
             try {
                 await updateBookingStatus(activeBooking.id, 'COMPLETED');
-                await updateRoomStatus(selectedVenue.id, selectedRoom.id, 'Cleaning');
+                // Room status is automatically set to CLEANING by the backend
                 setIsActionModalOpen(false);
                 toast.current.show({ severity: 'success', summary: t('completed'), detail: t('roomNowCleaning', { name: selectedRoom.name }) });
             } catch (error) {
@@ -203,16 +213,46 @@ const StaffPortal = ({ embedded = false }) => {
     };
 
     const handleFinishCleaning = async (room) => {
-        await updateRoomStatus(selectedVenue.id, room.id, 'Available');
+        await updateRoomStatus(selectedVenue.id, room.id, 'AVAILABLE');
         toast.current.show({ severity: 'success', summary: t('done'), detail: t('roomNowAvailable', { name: room.name }) });
     };
 
+    const handleExtendTime = async () => {
+        if (!activeBooking) return;
+        try {
+            const currentEnd = new Date(activeBooking.endTime);
+            currentEnd.setHours(currentEnd.getHours() + extendData.hours);
+
+            await api.extendBookingTime(activeBooking.id, {
+                newEndTime: currentEnd.toISOString(),
+                overrideBuffer: extendData.overrideBuffer,
+                overrideReason: extendData.overrideReason || undefined
+            });
+
+            toast.current.show({ severity: 'success', summary: t('extended') || 'Extended', detail: t('bookingExtended') || 'Booking time extended' });
+            setIsExtendDialogOpen(false);
+            setExtendData({ hours: 1, overrideBuffer: false, overrideReason: '' });
+            setIsActionModalOpen(false);
+        } catch (e) {
+            console.error(e);
+            let errorMessage = t('bookingFailed') || 'Failed to extend';
+            if (e.response?.data?.message) {
+                errorMessage = Array.isArray(e.response.data.message)
+                    ? e.response.data.message.join(', ')
+                    : e.response.data.message;
+            }
+            toast.current.show({ severity: 'error', summary: t('error') || 'Error', detail: errorMessage });
+        }
+    };
+
     const getStatusSeverity = (status) => {
-        switch (status) {
-            case 'Available': return 'success';
-            case 'Occupied': return 'danger';
-            case 'Cleaning': return 'warning';
-            case 'Maintenance': return 'info';
+        const s = (status || '').toUpperCase();
+        switch (s) {
+            case 'AVAILABLE': return 'success';
+            case 'OCCUPIED': return 'danger';
+            case 'CLEANING': return 'warning';
+            case 'RESERVED':
+            case 'MAINTENANCE': return 'info';
             default: return null;
         }
     };
@@ -306,12 +346,12 @@ const StaffPortal = ({ embedded = false }) => {
                 {selectedVenue?.rooms.map(room => (
                     <Card
                         key={room.id}
-                        className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl ${room.status === 'Occupied' ? 'bg-[#2d1e2a]' : 'bg-[#1e1e2d]'}`}
-                        onClick={() => room.status === 'Cleaning' ? handleFinishCleaning(room) : handleRoomClick(room)}
+                        className={`cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] border-none shadow-xl ${(room.status || '').toUpperCase() === 'OCCUPIED' ? 'bg-[#2d1e2a]' : 'bg-[#1e1e2d]'}`}
+                        onClick={() => (room.status || '').toUpperCase() === 'CLEANING' ? handleFinishCleaning(room) : handleRoomClick(room)}
                     >
                         <div className="flex justify-between items-start mb-4">
                             <h3 className="m-0 text-lg font-black text-white">{room.name}</h3>
-                            <Tag value={t((room.status || 'Available').toLowerCase()) || room.status || 'Available'} severity={getStatusSeverity(room.status || 'Available')} />
+                            <Tag value={t((room.status || 'AVAILABLE').toLowerCase()) || room.status || 'AVAILABLE'} severity={getStatusSeverity(room.status || 'AVAILABLE')} />
                         </div>
 
                         <div className="flex items-center gap-2 mb-3">
@@ -346,7 +386,7 @@ const StaffPortal = ({ embedded = false }) => {
                             </div>
                         )}
 
-                        {room.status === 'Cleaning' && (
+                        {(room.status || '').toUpperCase() === 'CLEANING' && (
                             <div className="mt-4 pt-4 border-t border-white/5 text-center">
                                 <span className="text-[10px] text-orange-400 font-black uppercase heartbeat">{t('tapToFinishCleaning')}</span>
                             </div>
@@ -446,27 +486,9 @@ const StaffPortal = ({ embedded = false }) => {
                                             label={t('addOneHour')}
                                             icon="pi pi-clock"
                                             className="p-button-outlined p-button-info p-button-sm"
-                                            onClick={async () => {
-                                                if (!activeBooking) return;
-                                                try {
-                                                    const currentEnd = new Date(activeBooking.endTime);
-                                                    currentEnd.setHours(currentEnd.getHours() + 1);
-
-                                                    // Calculate new price
-                                                    const hourlyRate = Number(selectedRoom.hourlyRate);
-                                                    const currentPrice = Number(activeBooking.totalPrice);
-                                                    const newPrice = currentPrice + hourlyRate;
-
-                                                    await updateBooking(activeBooking.id, {
-                                                        endTime: currentEnd.toISOString(),
-                                                        totalPrice: newPrice
-                                                    });
-
-                                                    toast.current.show({ severity: 'success', summary: t('extended'), detail: t('bookingExtended') });
-                                                } catch (e) {
-                                                    console.error(e);
-                                                    toast.current.show({ severity: 'error', summary: t('error') || 'Error', detail: t('bookingFailed') });
-                                                }
+                                            onClick={() => {
+                                                setExtendData({ hours: 1, overrideBuffer: false, overrideReason: '' });
+                                                setIsExtendDialogOpen(true);
                                             }}
                                         />
                                         <Button label={t('extraMic')} icon="pi pi-microphone" className="p-button-outlined p-button-info p-button-sm" />
@@ -545,6 +567,95 @@ const StaffPortal = ({ embedded = false }) => {
                         </div>
                     </div>
                 )}
+            </Dialog>
+
+            {/* Extend Time Dialog */}
+            <Dialog
+                header={t('extendBookingTime') || 'Extend Booking Time'}
+                visible={isExtendDialogOpen}
+                onHide={() => setIsExtendDialogOpen(false)}
+                className="w-full md:w-[400px]"
+                breakpoints={{ '960px': '75vw', '641px': '95vw' }}
+                contentClassName="pb-6"
+                dismissableMask
+                draggable={false}
+                resizable={false}
+            >
+                <div className="flex flex-col gap-4 mt-2">
+                    {activeBooking && (
+                        <div className="bg-[#1e1e2d] p-3 rounded-xl border border-white/5">
+                            <p className="text-gray-400 text-xs m-0 mb-1 uppercase font-bold">{t('currentSession') || 'Current Session'}</p>
+                            <p className="text-white font-mono text-sm m-0">
+                                {formatTime(activeBooking.startTime)} → {formatTime(activeBooking.endTime)}
+                            </p>
+                            <p className="text-gray-400 text-xs m-0 mt-1">
+                                {t('totalPrice') || 'Total'}: ₮{Number(activeBooking.totalPrice).toLocaleString()}
+                            </p>
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-2">{t('extendBy') || 'Extend By'}</label>
+                        <div className="flex gap-2">
+                            {[1, 2, 3].map(h => (
+                                <button
+                                    key={h}
+                                    onClick={() => setExtendData(prev => ({ ...prev, hours: h }))}
+                                    className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all border ${extendData.hours === h ? 'bg-purple-600 border-purple-500 text-white' : 'bg-[#1e1e2d] border-white/10 text-gray-400 hover:border-white/30'}`}
+                                >
+                                    {h} {h === 1 ? (t('hour') || 'hr') : (t('hours') || 'hrs')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {selectedRoom && (
+                        <div className="bg-[#1e1e2d] p-3 rounded-xl border border-white/5">
+                            <p className="text-gray-400 text-xs m-0 mb-1 uppercase font-bold">{t('estimate') || 'Estimate'}</p>
+                            <div className="flex justify-between items-center">
+                                <span className="text-white text-sm">{t('additionalCost') || 'Additional cost'}:</span>
+                                <span className="text-green-400 font-bold">₮{(extendData.hours * Number(selectedRoom?.hourlyRate || 0)).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                                <span className="text-white text-sm">{t('bufferTime') || 'Buffer time'}:</span>
+                                <span className="text-gray-400 font-mono text-xs">{extendData.overrideBuffer ? (t('skipped') || 'Skipped') : `${selectedRoom?.bufferMinutes || 15} min`}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="border border-white/5 rounded-xl p-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-white text-sm font-bold m-0">{t('overrideBuffer') || 'Override Buffer'}</p>
+                                <p className="text-gray-500 text-xs m-0">{t('overrideBufferDesc') || 'Skip cleaning buffer between bookings'}</p>
+                            </div>
+                            <InputSwitch
+                                checked={extendData.overrideBuffer}
+                                onChange={(e) => setExtendData(prev => ({ ...prev, overrideBuffer: e.value }))}
+                            />
+                        </div>
+
+                        {extendData.overrideBuffer && (
+                            <div className="mt-3 pt-3 border-t border-white/5">
+                                <label className="block text-xs font-bold text-orange-400 uppercase mb-1">{t('overrideReason') || 'Reason (Required)'}</label>
+                                <InputText
+                                    value={extendData.overrideReason}
+                                    onChange={(e) => setExtendData(prev => ({ ...prev, overrideReason: e.target.value }))}
+                                    placeholder={t('overrideReasonPlaceholder') || 'e.g. VIP guest, special event...'}
+                                    className="w-full bg-[#0a0a14] text-white border-gray-700"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <Button
+                        label={t('confirmExtension') || 'Confirm Extension'}
+                        icon="pi pi-check"
+                        className="p-button-success w-full font-bold"
+                        disabled={extendData.overrideBuffer && !extendData.overrideReason.trim()}
+                        onClick={handleExtendTime}
+                    />
+                </div>
             </Dialog>
 
             {/* Manual Booking Modal */}

@@ -16,6 +16,7 @@ import { RoomFeature } from './room-feature.entity';
 import { ManyToMany, JoinTable } from 'typeorm';
 import { RoomPricing } from './room-pricing.entity';
 import { RoomImage } from './room-image.entity';
+import { RoomStatus } from '../../bookings/enums/booking.enums';
 
 @Entity('rooms')
 export class Room {
@@ -81,6 +82,16 @@ export class Room {
 
   @Column({ name: 'isBookingEnabled', default: true })
   isBookingEnabled: boolean;
+
+  @Column({ name: 'buffer_minutes', type: 'int', default: 15 })
+  bufferMinutes: number;
+
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    default: RoomStatus.AVAILABLE,
+  })
+  status: RoomStatus;
 
   @Column({ name: 'sort_order', default: 0 })
   sortOrder: number;

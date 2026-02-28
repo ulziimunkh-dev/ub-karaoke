@@ -11,6 +11,7 @@ import {
 import { Room } from '../modules/rooms/entities/room.entity';
 import { RoomType } from '../modules/rooms/entities/room-type.entity';
 import { RoomFeature } from '../modules/rooms/entities/room-feature.entity';
+import { RoomStatus } from '../modules/bookings/enums/booking.enums';
 import * as bcrypt from 'bcrypt';
 
 export const seed = async (dataSource: DataSource) => {
@@ -275,7 +276,7 @@ export const seed = async (dataSource: DataSource) => {
       images: ['/assets/defaults/karaoke_standard.png'],
       featuredImage: '/assets/defaults/karaoke_standard.png',
       isBookingEnabled: false,
-      gmapLocation: 'https://maps.app.goo.gl/seoul-street',
+      gmapLocation: "47.9188, 106.9176",
       rooms: [
         {
           name: 'Standard Alpha',
@@ -296,6 +297,8 @@ export const seed = async (dataSource: DataSource) => {
           },
           partySupport: { birthday: true },
           view360Url: 'https://oculus.com/experiences/quest/',
+          bufferMinutes: 15,
+          status: RoomStatus.AVAILABLE,
         },
         {
           name: 'Neon VIP Suite',
@@ -318,6 +321,8 @@ export const seed = async (dataSource: DataSource) => {
           },
           partySupport: { birthday: true, decoration: true },
           view360Url: 'https://v-tour.com/tour/neon-nights-vip',
+          bufferMinutes: 25,
+          status: RoomStatus.AVAILABLE,
         },
       ],
     },
@@ -336,7 +341,7 @@ export const seed = async (dataSource: DataSource) => {
       openingHours: { Daily: '14:00-06:00' },
       images: ['/assets/defaults/karaoke_lux.png'],
       featuredImage: '/assets/defaults/karaoke_lux.png',
-      gmapLocation: 'https://maps.app.goo.gl/zaisan-hill',
+      gmapLocation: "47.8960, 106.9100",
       rooms: [
         {
           name: 'Sky Room 1',
@@ -349,6 +354,8 @@ export const seed = async (dataSource: DataSource) => {
           specs: { microphones: 3 },
           partySupport: { birthday: true },
           isBookingEnabled: false,
+          bufferMinutes: 15,
+          status: RoomStatus.AVAILABLE,
         },
       ],
     },

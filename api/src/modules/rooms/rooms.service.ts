@@ -9,6 +9,7 @@ import { Organization } from '../organizations/entities/organization.entity';
 import { RoomPricing } from './entities/room-pricing.entity';
 import { RoomImage } from './entities/room-image.entity';
 import { RoomAvailability } from './entities/room-availability.entity';
+import { RoomStatus } from '../bookings/enums/booking.enums';
 
 @Injectable()
 export class RoomsService {
@@ -23,7 +24,7 @@ export class RoomsService {
     private availabilityRepository: Repository<RoomAvailability>,
     @InjectRepository(RoomFeature)
     private featuresRepository: Repository<RoomFeature>,
-  ) {}
+  ) { }
 
   async create(
     createRoomDto: CreateRoomDto,
@@ -137,6 +138,19 @@ export class RoomsService {
   async updateStatus(id: string, isActive: boolean, user: any): Promise<Room> {
     const room = await this.findOne(id, user);
     room.isActive = isActive;
+    if (user?.id) {
+      room.updatedBy = user.id;
+    }
+    return this.roomsRepository.save(room);
+  }
+
+  async updateOperationalStatus(
+    id: string,
+    status: RoomStatus,
+    user: any,
+  ): Promise<Room> {
+    const room = await this.findOne(id, user);
+    room.status = status;
     if (user?.id) {
       room.updatedBy = user.id;
     }
