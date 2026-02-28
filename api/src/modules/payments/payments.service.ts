@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -41,6 +43,7 @@ export class PaymentsService {
     private settingsRepository: Repository<SystemSetting>,
     private readonly auditService: AuditService,
     private readonly qpayService: QpayService,
+    @Inject(forwardRef(() => BookingsService))
     private readonly bookingsService: BookingsService,
   ) { }
 

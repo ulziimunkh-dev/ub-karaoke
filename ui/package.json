@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "axios": "^1.13.2",
+    "dayjs": "^1.11.19",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primereact": "^10.9.7",
@@ -18,7 +21,8 @@
     "react-dom": "^19.2.0",
     "react-joyride": "^2.9.3",
     "react-router-dom": "^7.10.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

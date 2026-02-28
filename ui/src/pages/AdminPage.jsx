@@ -71,7 +71,8 @@ const AdminPage = () => {
         { id: 'staffs', label: t('staffs'), icon: '👥' },
         ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: t('users'), icon: '👥' }] : []),
         { id: 'audit', label: t('auditLogs'), icon: '📋' },
-        { id: 'settings', label: t('settings'), icon: '⚙️' }
+        ...(currentUser.role === 'sysadmin' ? [{ id: 'settings', label: t('settings'), icon: '⚙️' }] : []),
+
     ];
 
 

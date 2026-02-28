@@ -37,7 +37,7 @@ const SystemSettings = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Financial Config */}
-                <Card className="bg-[#1e1e2d] border border-white/5 shadow-xl" header={
+                <Card className="hidden bg-[#1e1e2d] border border-white/5 shadow-xl" header={
                     <div className="p-4 border-b border-white/5">
                         <h3 className="m-0 text-lg font-bold text-white flex items-center gap-2">
                             <i className="pi pi-dollar text-[#b000ff]"></i> {t('financialConfig')}

@@ -440,7 +440,7 @@ export const seed = async (dataSource: DataSource) => {
 
   const defaultSettings = [
     { key: 'payout_min_limit', value: '100000', description: 'Minimum amount required to request a payout' },
-    { key: 'ADMIN_EMAILS', value: '', description: 'Comma-separated list of admin emails for notifications' },
+    { key: 'ADMIN_EMAILS', value: 'otgonoo122645@gmail.com, ulziimunkhb.1@gmail.com', description: 'Comma-separated list of admin emails for notifications' },
     { key: 'taxRate', value: '10', description: 'Default tax rate percentage' },
     { key: 'serviceCharge', value: '10', description: 'Default service charge percentage' },
     { key: 'currency', value: 'MNT', description: 'Default system currency' },

@@ -152,7 +152,7 @@ export class NotificationsService {
       let emails: string[] = [];
 
       if (adminEmailsStr) {
-        emails = adminEmailsStr.split(',').map(e => e.trim()).filter(e => !!e);
+        emails = adminEmailsStr.split(',').map((e: string) => e.trim()).filter((e: string) => !!e);
       } else {
         // Fallback to sysadmins from DB
         const sysadmins = await this.staffRepository.find({

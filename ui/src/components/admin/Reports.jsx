@@ -4,11 +4,13 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Tag } from 'primereact/tag';
+import ReportExportModal from './ReportExportModal';
 
 const Reports = () => {
-    const { bookings, users, venues } = useData();
+    const { bookings, users, venues, payouts } = useData();
     const { t } = useLanguage();
     const [reportType, setReportType] = useState('daily'); // 'daily' or 'monthly'
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
     // 1. Data Aggregation based on reportType
     const aggregatedData = bookings.reduce((acc, b) => {
@@ -74,8 +76,9 @@ const Reports = () => {
                     />
                     <Button
                         icon="pi pi-download"
-                        label={t('exportPdf')}
-                        className="p-button-sm px-6 py-2 p-button-secondary p-button-outlined border-white/10 text-gray-400 font-bold"
+                        label={t('exportReport') || 'Export'}
+                        className="p-button-sm px-6 py-2 p-button-secondary p-button-outlined border-[#00d2ff] text-[#00d2ff] font-bold"
+                        onClick={() => setIsReportModalOpen(true)}
                     />
                 </div>
             </div>
@@ -184,6 +187,13 @@ const Reports = () => {
                     </div>
                 </Card>
             </div>
+
+            <ReportExportModal
+                visible={isReportModalOpen}
+                onHide={() => setIsReportModalOpen(false)}
+                bookings={bookings}
+                earnings={payouts || []}
+            />
 
             <style>{`
                 .reports-page .p-card-body {
