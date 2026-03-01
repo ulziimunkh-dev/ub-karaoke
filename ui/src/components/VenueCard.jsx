@@ -150,6 +150,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
                     <h3 className="text-base md:text-xl font-bold text-white tracking-tight line-clamp-1">
                         {venue.name}
                     </h3>
+                    {/* Rating hidden for now
                     <div className="flex flex-col items-end">
                         <div className="flex items-center gap-1 bg-[#b000ff]/10 px-2 py-0.5 rounded border border-[#b000ff]/20">
                             <span className="text-[#eb79b2] text-xs">★</span>
@@ -161,6 +162,7 @@ const VenueCard = ({ venue, onBook, distance }) => {
                             </span>
                         )}
                     </div>
+                    */}
                 </div>
 
                 {/* Subtext info */}

@@ -45,6 +45,7 @@ const FilterBar = ({ onFilterChange, filters }) => {
                         </select>
                     </div>
 
+                    {/* Rating hidden for now
                     <div className="flex-shrink-0">
                         <select
                             name="rating"
@@ -58,6 +59,7 @@ const FilterBar = ({ onFilterChange, filters }) => {
                             <option value="4.5">{t('stars45')}</option>
                         </select>
                     </div>
+                    */}
 
                     <button
                         className={`h-10 px-5 rounded-full font-black text-[10px] uppercase tracking-wider flex-shrink-0 transition-all duration-300 flex items-center justify-center border ${filters.nearMe
