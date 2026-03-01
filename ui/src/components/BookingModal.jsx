@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '../contexts/DataContext';
 import LoginModal from './LoginModal';
 import ReviewSection from './ReviewSection';
@@ -15,6 +16,7 @@ import { Galleria } from 'primereact/galleria';
 import { Divider } from 'primereact/divider';
 import { api } from '../utils/api';
 import BookingCountdown from './BookingCountdown';
+import RescheduleModal from './RescheduleModal';
 import { isMobileDevice, isTabletDevice } from '../utils/device';
 
 const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
@@ -39,6 +41,7 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
 
+    const navigate = useNavigate();
     // Default Date: Today
     const [bookingDate, setBookingDate] = useState(new Date());
 
@@ -224,6 +227,19 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
     const [qpayPayment, setQpayPayment] = useState(null);
     const [qpayLoading, setQpayLoading] = useState(false);
     const [qpayPolling, setQpayPolling] = useState(false);
+    const [manualCheckLoading, setManualCheckLoading] = useState(false);
+
+    // Cancellation state
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [cancelLoading, setCancelLoading] = useState(false);
+    const [refundPreview, setRefundPreview] = useState(null);
+    const [refundPreviewLoading, setRefundPreviewLoading] = useState(false);
+    const [cancelSuccess, setCancelSuccess] = useState(false);
+    const [cancelError, setCancelError] = useState(null);
+
+    // Reschedule state
+    const [showReschedule, setShowReschedule] = useState(false);
+    const [rescheduledBooking, setRescheduledBooking] = useState(null);
 
     // Promo Code State
     const [promoCode, setPromoCode] = useState('');
@@ -290,7 +306,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                 if (updated.status === 'COMPLETED') {
                     setQpayPolling(false);
                     setQpayPayment(updated);
-                    setStep(4);
+                    // Redirect to home as requested
+                    navigate('/');
                 }
             } catch (error) {
                 console.error('QPay payment check failed:', error);
@@ -299,6 +316,32 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
         return () => clearInterval(interval);
     }, [qpayPolling, qpayPayment?.id]);
+
+    const handleManualCheckStatus = async () => {
+        if (!qpayPayment?.id || manualCheckLoading) return;
+
+        setManualCheckLoading(true);
+        setBookingError(null);
+        try {
+            const updated = await api.checkQpayPayment(qpayPayment.id);
+            if (updated.status === 'COMPLETED') {
+                setQpayPolling(false);
+                setQpayPayment(updated);
+                // Redirect to home as requested
+                navigate('/');
+            } else {
+                // Not paid yet - could show a temporary message or just do nothing (user still sees polling)
+                setBookingError(t('paymentNotConfirmedYet'));
+                // Clear error after 5 seconds
+                setTimeout(() => setBookingError(null), 5000);
+            }
+        } catch (error) {
+            console.error('Manual QPay check failed:', error);
+            setBookingError(error.response?.data?.message || 'Failed to check payment status');
+        } finally {
+            setManualCheckLoading(false);
+        }
+    };
 
     // Auto-create QPay invoice when entering Step 3
     useEffect(() => {
@@ -1040,9 +1083,20 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
 
                                         {/* Polling Indicator */}
                                         {qpayPolling && (
-                                            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
-                                                <i className="pi pi-spin pi-spinner text-[#b000ff]"></i>
-                                                <span>{t('waitingForPayment')}</span>
+                                            <div className="mt-6 flex flex-col items-center gap-4">
+                                                <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+                                                    <i className="pi pi-spin pi-spinner text-[#b000ff]"></i>
+                                                    <span>{t('waitingForPayment')}</span>
+                                                </div>
+
+                                                <button
+                                                    onClick={handleManualCheckStatus}
+                                                    disabled={manualCheckLoading}
+                                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-gray-300 hover:text-white transition-all flex items-center gap-2"
+                                                >
+                                                    {manualCheckLoading ? <i className="pi pi-spin pi-spinner text-xs"></i> : <i className="pi pi-check-circle text-xs"></i>}
+                                                    {t('imAlreadyPaid')}
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -1081,23 +1135,205 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                             </div>
                         )}
 
-                        {/* Step 4: Success */}
+                        {/* Step 4: Success / Cancel */}
                         {step === 4 && (
-                            <div className="text-center py-12">
-                                <i className="pi pi-check-circle text-6xl text-green-400 mb-6 block animate-bounce"></i>
-                                <h2 data-testid="booking-success-message" className="text-2xl font-bold mb-2">{t('bookingConfirmed')}</h2>
-                                <p className="text-text-muted mb-8">{t('reservedMessage', { venue: venue.name })}</p>
-                                <button
-                                    onClick={onClose}
-                                    className="w-48 h-12 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                                >
-                                    {t('done')}
-                                </button>
+                            <div className="text-center py-8">
+                                {cancelSuccess ? (
+                                    // Post-cancellation state
+                                    <>
+                                        <i className="pi pi-times-circle text-6xl text-red-400 mb-6 block"></i>
+                                        <h2 className="text-2xl font-bold mb-2 text-red-400">{t('bookingCancelled') || 'Booking Cancelled'}</h2>
+                                        <p className="text-text-muted mb-2">{t('cancellationConfirmed') || 'Your booking has been cancelled.'}</p>
+                                        {refundPreview?.refundAmount > 0 && (
+                                            <p className="text-green-400 font-bold mb-8">
+                                                {t('refundInitiated') || 'Refund of'} {Number(refundPreview.refundAmount).toLocaleString()}₮ {t('refundProcessing') || 'will be processed within 5-7 business days.'}
+                                            </p>
+                                        )}
+                                        <button
+                                            onClick={onClose}
+                                            className="w-48 h-12 bg-red-500/20 border border-red-500/50 text-red-400 font-bold rounded-lg transition-all hover:bg-red-500/30"
+                                        >
+                                            {t('close') || 'Close'}
+                                        </button>
+                                    </>
+                                ) : (
+                                    // Normal success state with Cancel option
+                                    <>
+                                        <i className="pi pi-check-circle text-6xl text-green-400 mb-6 block animate-bounce"></i>
+                                        <h2 data-testid="booking-success-message" className="text-2xl font-bold mb-2">{t('bookingConfirmed')}</h2>
+                                        <p className="text-text-muted mb-8">{t('reservedMessage', { venue: venue.name })}</p>
+
+                                        {/* Booking summary card */}
+                                        {activeBooking && (
+                                            <div className="bg-white/5 border border-white/10 rounded-xl p-5 mb-8 text-left">
+                                                <p className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-3">Booking Reference</p>
+                                                <p className="font-mono text-white font-bold mb-1">#{activeBooking.id?.slice(-8).toUpperCase()}</p>
+                                                <p className="text-xs text-gray-400">{new Date(activeBooking.startTime).toLocaleString()} → {new Date(activeBooking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
+                                                <p className="text-green-400 font-bold mt-1">{Number(activeBooking.totalPrice).toLocaleString()}₮</p>
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                            <button
+                                                onClick={onClose}
+                                                className="h-12 px-8 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+                                            >
+                                                {t('done')}
+                                            </button>
+                                            {activeBooking && (
+                                                <button
+                                                    onClick={() => setShowReschedule(true)}
+                                                    className="h-12 px-6 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg border border-white/10 transition-all flex items-center gap-2"
+                                                >
+                                                    <i className="pi pi-calendar-plus"></i>
+                                                    {t('changeTime')}
+                                                </button>
+                                            )}
+                                            {activeBooking && (
+                                                <button
+                                                    onClick={async () => {
+                                                        setShowCancelDialog(true);
+                                                        setRefundPreviewLoading(true);
+                                                        setCancelError(null);
+                                                        try {
+                                                            const preview = await api.getRefundPreview(activeBooking.id);
+                                                            setRefundPreview(preview);
+                                                        } catch (e) {
+                                                            setCancelError(e.response?.data?.message || 'Could not load refund info');
+                                                        } finally {
+                                                            setRefundPreviewLoading(false);
+                                                        }
+                                                    }}
+                                                    className="h-12 px-6 border border-red-500/50 text-red-400 bg-transparent rounded-lg hover:bg-red-500/10 transition-all font-bold flex items-center gap-2"
+                                                >
+                                                    <i className="pi pi-times-circle"></i>
+                                                    {t('cancelBooking') || 'Cancel Booking'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
+
+                        {/* Cancel Booking Dialog */}
+                        <Dialog
+                            header={
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                                        <i className="pi pi-exclamation-triangle text-red-400"></i>
+                                    </div>
+                                    <span className="text-white font-bold">{t('cancelBookingTitle') || 'Cancel Booking'}</span>
+                                </div>
+                            }
+                            visible={showCancelDialog}
+                            onHide={() => { setShowCancelDialog(false); setCancelError(null); }}
+                            className="w-full max-w-md"
+                            modal
+                        >
+                            <div className="flex flex-col gap-5 pt-2">
+                                {refundPreviewLoading ? (
+                                    <div className="text-center py-8">
+                                        <i className="pi pi-spin pi-spinner text-3xl text-[#b000ff] mb-3 block"></i>
+                                        <p className="text-gray-400">Calculating refund...</p>
+                                    </div>
+                                ) : refundPreview ? (
+                                    <>
+                                        {/* Refund tier summary */}
+                                        <div className={`p-4 rounded-xl border ${refundPreview.tier === 'early' ? 'bg-green-500/10 border-green-500/30' :
+                                            refundPreview.tier === 'mid' ? 'bg-amber-500/10 border-amber-500/30' :
+                                                'bg-red-500/10 border-red-500/30'
+                                            }`}>
+                                            <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Refund Policy</p>
+                                            <p className={`text-sm font-bold mb-1 ${refundPreview.tier === 'early' ? 'text-green-400' :
+                                                refundPreview.tier === 'mid' ? 'text-amber-400' : 'text-red-400'
+                                                }`}>{refundPreview.reason}</p>
+                                            <p className="text-xs text-gray-400">{Math.max(0, refundPreview.hoursRemaining).toFixed(1)} hours until booking start</p>
+                                        </div>
+
+                                        {/* Financial breakdown */}
+                                        <div className="bg-white/5 rounded-xl border border-white/10 p-4 flex flex-col gap-2">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-400">Paid amount</span>
+                                                <span className="text-white font-bold">{Number(refundPreview.originalAmount).toLocaleString()}₮</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-400">Cancellation fee ({refundPreview.feePercent}%)</span>
+                                                <span className="text-red-400 font-bold">-{Number(refundPreview.feeAmount).toLocaleString()}₮</span>
+                                            </div>
+                                            <div className="border-t border-white/10 my-1"></div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-300 font-bold">Refund amount</span>
+                                                <span className="text-green-400 font-black text-lg">{Number(refundPreview.refundAmount).toLocaleString()}₮</span>
+                                            </div>
+                                        </div>
+
+                                        {!refundPreview.hasPayment && (
+                                            <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 text-xs">
+                                                <i className="pi pi-info-circle mr-2"></i>
+                                                No payment record found. Booking will be cancelled without a refund.
+                                            </div>
+                                        )}
+
+                                        <p className="text-xs text-gray-500 text-center">
+                                            Refunds are processed within 5–7 business days to your original payment method.
+                                        </p>
+
+                                        {cancelError && (
+                                            <p className="text-sm text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20">{cancelError}</p>
+                                        )}
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => { setShowCancelDialog(false); setCancelError(null); }}
+                                                disabled={cancelLoading}
+                                                className="h-11 flex-1 border border-white/20 text-white/70 bg-transparent rounded-xl hover:bg-white/5 transition-all font-bold"
+                                            >
+                                                Keep Booking
+                                            </button>
+                                            <button
+                                                onClick={async () => {
+                                                    setCancelLoading(true);
+                                                    setCancelError(null);
+                                                    try {
+                                                        await api.cancelBooking(activeBooking.id);
+                                                        setShowCancelDialog(false);
+                                                        setCancelSuccess(true);
+                                                    } catch (e) {
+                                                        setCancelError(e.response?.data?.message || 'Cancellation failed');
+                                                    } finally {
+                                                        setCancelLoading(false);
+                                                    }
+                                                }}
+                                                disabled={cancelLoading}
+                                                className="h-11 flex-1 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500/30 transition-all font-bold flex items-center justify-center gap-2"
+                                            >
+                                                {cancelLoading && <i className="pi pi-spin pi-spinner"></i>}
+                                                {cancelLoading ? 'Cancelling...' : 'Confirm Cancel'}
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <p className="text-red-400 text-sm">{cancelError || 'Unable to load refund information.'}</p>
+                                )}
+                            </div>
+                        </Dialog>
                     </div>
                 </div>
                 {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+
+                {/* Reschedule modal */}
+                <RescheduleModal
+                    visible={showReschedule}
+                    onHide={() => setShowReschedule(false)}
+                    booking={rescheduledBooking || activeBooking}
+                    isStaff={false}
+                    onSuccess={(updated) => {
+                        setRescheduledBooking(updated);
+                        setShowReschedule(false);
+                    }}
+                />
+
 
                 {/* Room Preview Dialog */}
                 <Dialog

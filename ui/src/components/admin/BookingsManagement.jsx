@@ -9,6 +9,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Dialog } from 'primereact/dialog';
 import { Toast } from 'primereact/toast';
 import { InputText } from 'primereact/inputtext';
+import RescheduleModal from '../RescheduleModal';
 
 const BookingsManagement = () => {
     const { bookings, venues, currentUser, approveBooking, rejectBooking, refreshData } = useData();
@@ -20,6 +21,7 @@ const BookingsManagement = () => {
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [globalFilter, setGlobalFilter] = useState('');
+    const [showReschedule, setShowReschedule] = useState(false);
 
     // Filter venues by organization
     const orgVenues = currentUser.role === 'sysadmin'
@@ -448,12 +450,38 @@ const BookingsManagement = () => {
                             </div>
                         )}
 
+                        {/* Reschedule for CONFIRMED bookings (staff/manager) */}
+                        {selectedBooking.status?.toUpperCase() === 'CONFIRMED' && (
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    label={t('reschedule')}
+                                    icon="pi pi-calendar-plus"
+                                    onClick={() => setShowReschedule(true)}
+                                    className="h-12 flex-1 border border-[#b000ff]/40 text-[#b000ff] bg-transparent rounded-xl hover:bg-[#b000ff]/10 font-black uppercase tracking-widest"
+                                />
+                            </div>
+                        )}
+
                         <div className="flex justify-center pt-2">
                             <Button label={t('close')} text onClick={() => setShowDetailsModal(false)} className="h-11 px-8 font-bold text-white/30 hover:text-white" />
                         </div>
                     </div>
                 )}
             </Dialog>
+
+            {/* Reschedule Modal (staff mode — no restrictions) */}
+            <RescheduleModal
+                visible={showReschedule}
+                onHide={() => setShowReschedule(false)}
+                booking={selectedBooking}
+                isStaff={true}
+                onSuccess={(updated) => {
+                    setShowReschedule(false);
+                    setShowDetailsModal(false);
+                    toast.current?.show({ severity: 'success', summary: 'Rescheduled', detail: `Booking moved to ${new Date(updated.startTime).toLocaleString()}` });
+                    refreshData?.();
+                }}
+            />
 
             <style>{`
                 .bookings-management .p-datatable.datatable-modern .p-datatable-thead > tr > th {

@@ -4,6 +4,8 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
@@ -29,7 +31,7 @@ export class AuthService {
     private jwtService: JwtService,
     private notificationsService: NotificationsService,
     private auditService: AuditService,
-  ) {}
+  ) { }
 
   async signup(signupDto: SignupDto) {
     // Check if user already exists
@@ -143,6 +145,26 @@ export class AuthService {
     return { message: 'Account verified successfully. You can now log in.' };
   }
 
+  private checkOtpCooldown(user: { lastOtpSentAt?: Date | null }): void {
+    const COOLDOWN_SECONDS = 60;
+    if (user.lastOtpSentAt) {
+      const secondsElapsed = Math.floor(
+        (Date.now() - new Date(user.lastOtpSentAt).getTime()) / 1000,
+      );
+      const remaining = COOLDOWN_SECONDS - secondsElapsed;
+      if (remaining > 0) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: `Please wait ${remaining} seconds before requesting a new code.`,
+            remainingSeconds: remaining,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    }
+  }
+
   async resendVerificationCode(identifier: string) {
     const user = await this.usersRepository.findOne({
       where: [{ email: identifier }, { phone: identifier }],
@@ -156,6 +178,8 @@ export class AuthService {
       return { message: 'Account is already verified.' };
     }
 
+    this.checkOtpCooldown(user);
+
     // Generate new code
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000,
@@ -165,6 +189,7 @@ export class AuthService {
 
     user.verificationCode = verificationCode;
     user.verificationCodeExpiry = codeExpiry;
+    user.lastOtpSentAt = new Date();
     await this.usersRepository.save(user);
 
     const contact = user.email || user.phone;
@@ -178,18 +203,144 @@ export class AuthService {
     return { message: 'A new verification code has been sent.' };
   }
 
-  // OTP login, forgot password, reset password — still disabled
+  // OTP login, forgot password, reset password
   async requestLoginOtp(identifier: string) {
-    return { message: 'Disabled' };
+    const user = await this.usersRepository.findOne({
+      where: [{ email: identifier }, { phone: identifier }],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+
+    this.checkOtpCooldown(user);
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 5);
+
+    user.otp = otp;
+    user.otpExpiry = expiry;
+    user.lastOtpSentAt = new Date();
+    await this.usersRepository.save(user);
+
+    const contact = user.email || user.phone;
+    if (contact) {
+      await this.notificationsService.sendLoginOtp(contact, otp);
+    }
+
+    return { message: 'OTP sent successfully' };
   }
+
   async loginWithOtp(identifier: string, code: string) {
-    return { message: 'Disabled' };
+    const user = await this.usersRepository.findOne({
+      where: [{ email: identifier }, { phone: identifier }],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
+
+    if (user.otp !== code) {
+      throw new UnauthorizedException('Invalid OTP');
+    }
+
+    if (user.otpExpiry && new Date() > user.otpExpiry) {
+      throw new UnauthorizedException('OTP has expired');
+    }
+
+    // Clear OTP
+    user.otp = null;
+    user.otpExpiry = null;
+    await this.usersRepository.save(user);
+
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: 'customer',
+      organizationId: null,
+      userType: 'customer',
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    await this.auditService.log({
+      action: 'LOGIN_SUCCESS',
+      resource: 'Auth',
+      actorId: user.id,
+      actorType: 'USER',
+      details: { method: 'otp', identifier, userType: 'customer' },
+    });
+
+    const { password: _, otp: __, otpExpiry: ___, ...result } = user;
+    return {
+      user: { ...result, userType: 'customer' },
+      access_token: token,
+    };
   }
+
   async forgotPassword(email: string) {
-    return { message: 'Disabled' };
+    const user = await this.usersRepository.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    this.checkOtpCooldown(user);
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date();
+    expiry.setHours(expiry.getHours() + 1); // 1 hour expiry
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = expiry;
+    user.lastOtpSentAt = new Date();
+    await this.usersRepository.save(user);
+
+    await this.notificationsService.sendPasswordResetToken(email, resetToken);
+
+    return { message: 'Password reset token sent successfully' };
   }
+
   async resetPassword(token: string, newPassword: string) {
-    return { message: 'Disabled' };
+    const user = await this.usersRepository.findOne({
+      where: { resetToken: token },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    if (user.resetTokenExpiry && new Date() > user.resetTokenExpiry) {
+      throw new BadRequestException('Reset token has expired');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await this.usersRepository.save(user);
+
+    await this.auditService.log({
+      action: 'PASSWORD_RESET',
+      resource: 'User',
+      resourceId: user.id,
+      actorId: user.id,
+      actorType: 'USER',
+      details: { email: user.email },
+    });
+
+    return { message: 'Password reset successfully' };
   }
 
   async login(loginDto: LoginDto) {

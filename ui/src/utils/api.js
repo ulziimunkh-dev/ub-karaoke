@@ -218,6 +218,22 @@ export const api = {
         const response = await apiInstance.get(`/bookings/${id}/status`);
         return response.data;
     },
+    cancelBooking: async (id) => {
+        const response = await apiInstance.post(`/bookings/${id}/cancel`);
+        return response.data;
+    },
+    getRefundPreview: async (id) => {
+        const response = await apiInstance.get(`/bookings/${id}/refund-preview`);
+        return response.data;
+    },
+    rescheduleBooking: async (id, newStartTime) => {
+        const response = await apiInstance.post(`/bookings/${id}/reschedule`, { newStartTime });
+        return response.data;
+    },
+    getRescheduleSlots: async (id, date) => {
+        const response = await apiInstance.get(`/bookings/${id}/reschedule-slots`, { params: { date } });
+        return response.data;
+    },
 
     // Audit
     getAuditLogs: async (filters = {}) => {
@@ -241,6 +257,14 @@ export const api = {
     },
     createPayment: async (data) => {
         const response = await apiInstance.post('/payments', data);
+        return response.data;
+    },
+    getOrgRefunds: async () => {
+        const response = await apiInstance.get('/payments/refunds');
+        return response.data;
+    },
+    processRefund: async (id) => {
+        const response = await apiInstance.patch(`/payments/refunds/${id}/process`);
         return response.data;
     },
 

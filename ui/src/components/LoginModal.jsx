@@ -1,8 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useData } from '../contexts/DataContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import PolicyDialog from './public/PolicyDialog';
+import { InputOtp } from 'primereact/inputotp';
+
+// Wraps PrimeReact InputOtp + adds WebOTP API autofill for Android Chrome
+const OtpField = ({ value, onChange }) => {
+    useEffect(() => {
+        if (!('OTPCredential' in window)) return;
+        const ac = new AbortController();
+        navigator.credentials
+            .get({ otp: { transport: ['sms'] }, signal: ac.signal })
+            .then(otp => { if (otp?.code) onChange(otp.code); })
+            .catch(() => { });
+        return () => ac.abort();
+    }, []);
+    return (
+        <InputOtp
+            value={value}
+            onChange={e => onChange(e.value)}
+            length={6}
+            integerOnly
+            pt={{
+                root: { className: 'flex gap-2 justify-center w-full' },
+                input: {
+                    className: [
+                        'w-11 text-center text-xl font-bold font-mono',
+                        'bg-[#0a0a12] border border-white/10 rounded-xl text-white',
+                        'focus:border-[#b000ff] focus:ring-2 focus:ring-[#b000ff]/40',
+                        'transition-all outline-none',
+                    ].join(' '),
+                    style: { height: '3.25rem' },
+                    autoComplete: 'one-time-code',
+                },
+            }}
+        />
+    );
+};
+
+// --- Resend timer ring (outside component to avoid remount on re-render) ---
+const ResendTimer = ({ seconds, total = 60 }) => {
+    const r = 14;
+    const circ = 2 * Math.PI * r;
+    const progress = circ - (seconds / total) * circ;
+    return (
+        <div className="relative w-8 h-8 shrink-0">
+            <svg className="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r={r} fill="none" stroke="#ffffff15" strokeWidth="3" />
+                <circle
+                    cx="18" cy="18" r={r} fill="none"
+                    stroke="url(#timerGrad)" strokeWidth="3"
+                    strokeDasharray={circ}
+                    strokeDashoffset={progress}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+                />
+                <defs>
+                    <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#b000ff" />
+                        <stop offset="100%" stopColor="#eb79b2" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
+                {seconds}
+            </span>
+        </div>
+    );
+};
+
+// Resend row: always rendered, shows ring + text during cooldown
+const ResendRow = ({ cooldown, label, onResend }) => (
+    <div className="flex items-center justify-center gap-2 pt-1">
+        {cooldown > 0 && <ResendTimer seconds={cooldown} />}
+        <button
+            type="button"
+            disabled={cooldown > 0}
+            onClick={onResend}
+            className={`text-sm transition-colors bg-transparent border-none ${cooldown > 0
+                ? 'text-gray-600 cursor-not-allowed'
+                : 'text-[#eb79b2] hover:text-white hover:underline cursor-pointer'
+                }`}
+        >
+            {cooldown > 0 ? `Resend in ${cooldown}s` : label}
+        </button>
+    </div>
+);
 
 const LoginModal = ({ onClose }) => {
     const { login, registerCustomer, loginWithOtp, requestLoginOtp, verifyAccount, forgotPassword, resetPassword, resendVerification } = useData();
@@ -28,6 +112,26 @@ const LoginModal = ({ onClose }) => {
     const [showPolicy, setShowPolicy] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [step, setStep] = useState(1); // For flows with multiple steps
+    const [resendCooldown, setResendCooldown] = useState(0); // Seconds remaining
+    const cooldownRef = useRef(null);
+
+    const startCooldown = () => {
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        const endTime = Date.now() + 60 * 1000;
+        setResendCooldown(60);
+        cooldownRef.current = setInterval(() => {
+            const remaining = Math.ceil((endTime - Date.now()) / 1000);
+            if (remaining <= 0) {
+                clearInterval(cooldownRef.current);
+                cooldownRef.current = null;
+                setResendCooldown(0);
+            } else {
+                setResendCooldown(remaining);
+            }
+        }, 500); // tick every 500ms so it never skips a second
+    };
+
+    useEffect(() => () => { if (cooldownRef.current) clearInterval(cooldownRef.current); }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,11 +149,13 @@ const LoginModal = ({ onClose }) => {
                         setError(t('invalidCredentials'));
                     }
                 } else {
-                    // Custoemr OTP Login
+                    // Customer OTP Login
                     if (step === 1) {
                         await requestLoginOtp(formData.identifier);
                         setStep(2);
+                        startCooldown();
                         setMessage(`OTP sent to ${formData.identifier}. Please check your ${formData.identifier.includes('@') ? 'email inbox' : 'phone'}.`);
+
                     } else {
                         const user = await loginWithOtp(formData.identifier, formData.code);
                         if (user) handleUserRouting(user);
@@ -198,13 +304,26 @@ const LoginModal = ({ onClose }) => {
                                     )}
 
                                     {loginMethod === 'otp' && step === 2 && (
-                                        <input
-                                            placeholder="Enter 6-digit Code"
-                                            value={formData.code}
-                                            onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest text-lg font-mono"
-                                            required
-                                        />
+                                        <>
+                                            <OtpField
+                                                value={formData.code}
+                                                onChange={val => setFormData({ ...formData, code: val })}
+                                            />
+                                            <ResendRow
+                                                cooldown={resendCooldown}
+                                                label="Didn't receive the OTP? Resend"
+                                                onResend={async () => {
+                                                    try {
+                                                        setError('');
+                                                        await requestLoginOtp(formData.identifier);
+                                                        startCooldown();
+                                                        setMessage('A new OTP has been sent.');
+                                                    } catch (err) {
+                                                        setError(err.response?.data?.message || 'Failed to resend OTP');
+                                                    }
+                                                }}
+                                            />
+                                        </>
                                     )}
                                 </div>
                             </>
@@ -271,29 +390,24 @@ const LoginModal = ({ onClose }) => {
                                     </>
                                 ) : (
                                     <>
-                                        <input
-                                            placeholder="Enter 6-digit Verification Code"
+                                        <OtpField
                                             value={formData.code}
-                                            onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                            className="w-full h-12 px-4 bg-[#0a0a12] border border-white/10 rounded-xl text-white placeholder:text-gray-600 focus:border-[#b000ff] focus:ring-1 focus:ring-[#b000ff] transition-all outline-none text-center tracking-widest font-mono text-lg"
-                                            maxLength={6}
-                                            required
+                                            onChange={val => setFormData({ ...formData, code: val })}
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
+                                        <ResendRow
+                                            cooldown={resendCooldown}
+                                            label="Didn't receive a code? Resend"
+                                            onResend={async () => {
                                                 try {
                                                     setError('');
                                                     await resendVerification(formData.identifier);
+                                                    startCooldown();
                                                     setMessage(`A new verification code has been sent to ${formData.identifier}.`);
                                                 } catch (err) {
                                                     setError(err.response?.data?.message || 'Failed to resend code');
                                                 }
                                             }}
-                                            className="w-full text-sm text-[#eb79b2] hover:text-white hover:underline transition-colors bg-transparent border-none cursor-pointer py-1"
-                                        >
-                                            Didn't receive a code? Resend
-                                        </button>
+                                        />
                                     </>
                                 )}
                             </div>
@@ -337,6 +451,20 @@ const LoginModal = ({ onClose }) => {
                                                 <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'} text-sm`}></i>
                                             </button>
                                         </div>
+                                        <ResendRow
+                                            cooldown={resendCooldown}
+                                            label="Didn't receive it? Resend reset email"
+                                            onResend={async () => {
+                                                try {
+                                                    setError('');
+                                                    await forgotPassword(formData.identifier);
+                                                    startCooldown();
+                                                    setMessage('A new reset token has been sent to your email.');
+                                                } catch (err) {
+                                                    setError(err.response?.data?.message || 'Failed to resend reset email');
+                                                }
+                                            }}
+                                        />
                                     </>
                                 )}
                             </div>

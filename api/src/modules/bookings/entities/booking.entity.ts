@@ -110,6 +110,12 @@ export class Booking {
   @Column({ name: 'override_staff_id', nullable: true })
   overrideStaffId: string;
 
+  @Column({ name: 'reschedule_count', type: 'int', default: 0 })
+  rescheduleCount: number;
+
+  @Column({ name: 'rescheduled_from_time', type: 'timestamp', nullable: true })
+  rescheduledFromTime: Date;
+
   @ManyToOne(() => Room, (room) => room.bookings)
   @JoinColumn({ name: 'roomId' })
   room: Room;

@@ -663,6 +663,237 @@ export class BookingsService {
     await this.bookingsRepository.remove(booking);
   }
 
+  /**
+   * Cancel a CONFIRMED booking on behalf of a customer.
+   * Validates ownership before cancelling.
+   */
+  async cancelByCustomer(id: string, userId: string): Promise<Booking> {
+    const booking = await this.findOne(id);
+
+    if (booking.userId !== userId) {
+      throw new ForbiddenException('You are not authorized to cancel this booking');
+    }
+
+    const cancellableStatuses = [BookingStatus.CONFIRMED, BookingStatus.PENDING, BookingStatus.RESERVED];
+    if (!cancellableStatuses.includes(booking.status)) {
+      throw new BadRequestException(`Booking cannot be cancelled from status: ${booking.status}`);
+    }
+
+    const oldStatus = booking.status;
+    booking.status = BookingStatus.CANCELLED;
+    booking.updatedBy = userId;
+    const saved = await this.bookingsRepository.save(booking);
+
+    await this.logStatusChange(id, oldStatus, BookingStatus.CANCELLED, userId, booking.organizationId, false);
+
+    await this.auditService.log({
+      action: 'BOOKING_CANCELLED_BY_CUSTOMER',
+      resource: 'Booking',
+      resourceId: id,
+      actorId: userId,
+      actorType: 'USER',
+      organizationId: booking.organizationId,
+    });
+
+    // Trigger refund calculation (fire-and-forget)
+    this.paymentsService.processRefundForBooking(id)
+      .catch(err => this.logger.error(`Refund failed for cancelled booking ${id}: ${err.message}`));
+
+    // Notify organization
+    this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:cancelled', saved);
+    this.notificationsService
+      .sendOrgNotification(
+        booking.organizationId,
+        'Booking Cancelled',
+        `A customer has cancelled Booking #${id.slice(0, 8)}. Refund may be required.`,
+        id,
+      )
+      .catch(() => { });
+
+    return saved;
+  }
+
+  /**
+   * Preview the refund amount for a booking without committing.
+   * Returns tier info so the UI can show it before the customer confirms cancellation.
+   */
+  async getRefundPreview(bookingId: string): Promise<{
+    refundAmount: number;
+    feeAmount: number;
+    feePercent: number;
+    originalAmount: number;
+    reason: string;
+    hoursRemaining: number;
+    tier: string;
+    hasPayment: boolean;
+  }> {
+    return this.paymentsService.calculateRefundPreview(bookingId);
+  }
+
+  /**
+   * Reschedule a confirmed booking to a new start time.
+   * Customers: must own booking, can't reschedule within 1h of current start, max 3 reschedules.
+   * Staff/Managers: can reschedule any org booking, no time/count restrictions.
+   */
+  async rescheduleBooking(
+    id: string,
+    newStartTimeIso: string,
+    actorId: string,
+    isStaff: boolean = false,
+  ): Promise<Booking> {
+    const booking = await this.findOne(id);
+    const now = new Date();
+
+    // 1. Authorization
+    if (!isStaff && booking.userId !== actorId) {
+      throw new ForbiddenException('You are not authorized to reschedule this booking');
+    }
+
+    // 2. Status check
+    const reschedulableStatuses = [BookingStatus.CONFIRMED];
+    if (!reschedulableStatuses.includes(booking.status)) {
+      throw new BadRequestException(`Cannot reschedule a booking with status: ${booking.status}`);
+    }
+
+    // 3. Customer: cannot reschedule if current booking starts within 1 hour
+    if (!isStaff) {
+      const hoursUntilCurrentStart = (booking.startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+      if (hoursUntilCurrentStart < 1) {
+        throw new BadRequestException('Cannot reschedule — booking starts in less than 1 hour');
+      }
+    }
+
+    // 4. Customer: max 3 reschedules
+    if (!isStaff && booking.rescheduleCount >= 3) {
+      throw new BadRequestException('Maximum of 3 reschedules reached for this booking');
+    }
+
+    // 5. Validate new start time
+    const newStart = new Date(newStartTimeIso);
+    if (isNaN(newStart.getTime())) {
+      throw new BadRequestException('Invalid newStartTime format');
+    }
+
+    // 6. New time must be at least 2 hours from now
+    const hoursUntilNewStart = (newStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntilNewStart < 2) {
+      throw new BadRequestException('New booking time must be at least 2 hours from now');
+    }
+
+    // 7. Max advance is controlled by the venue advanceBookingDays setting
+    const venue = await this.venuesRepository.findOne({ where: { id: booking.venueId } });
+    const advanceDays = venue?.advanceBookingDays ?? 30;
+    const maxFuture = new Date(now.getTime() + advanceDays * 24 * 60 * 60 * 1000);
+    if (newStart > maxFuture) {
+      throw new BadRequestException(
+        `Cannot reschedule more than ${advanceDays} days in advance (venue policy)`,
+      );
+    }
+
+    // 8. Cannot be same time as current
+    if (newStart.getTime() === booking.startTime.getTime()) {
+      throw new BadRequestException('New start time is the same as the current start time');
+    }
+
+    // 9. Keep same duration, compute new end time
+    const durationMs = booking.endTime.getTime() - booking.startTime.getTime();
+    const newEnd = new Date(newStart.getTime() + durationMs);
+
+    // 10. Check for conflicts (exclude current booking from conflict check)
+    const conflicts = await this.checkTimeConflicts(booking.roomId, newStart, newEnd, id);
+    if (conflicts.length > 0) {
+      throw new BadRequestException('The requested time slot is not available — it conflicts with another booking');
+    }
+
+    // 11. Apply changes
+    const oldStart = booking.startTime;
+    booking.rescheduledFromTime = oldStart;
+    booking.startTime = newStart;
+    booking.endTime = newEnd;
+    booking.rescheduleCount = (booking.rescheduleCount ?? 0) + 1;
+    booking.updatedBy = actorId;
+
+    const saved = await this.bookingsRepository.save(booking);
+
+    // 12. Audit log
+    await this.auditService.log({
+      action: 'BOOKING_RESCHEDULED',
+      resource: 'Booking',
+      resourceId: id,
+      details: {
+        oldStartTime: oldStart.toISOString(),
+        newStartTime: newStart.toISOString(),
+        newEndTime: newEnd.toISOString(),
+        rescheduleCount: saved.rescheduleCount,
+        actorType: isStaff ? 'STAFF' : 'CUSTOMER',
+      },
+      actorId,
+      actorType: isStaff ? 'STAFF' : 'USER',
+      organizationId: booking.organizationId,
+    });
+
+    // 13. Notify org
+    this.notificationsGateway.emitToOrganization(booking.organizationId, 'booking:rescheduled', saved);
+    this.notificationsService
+      .sendOrgNotification(
+        booking.organizationId,
+        'Booking Rescheduled',
+        `Booking #${id.slice(0, 8)} rescheduled to ${newStart.toLocaleDateString()} ${newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })} by ${isStaff ? 'staff' : 'customer'}.`,
+        id,
+      )
+      .catch(() => { });
+
+    return saved;
+  }
+
+  /**
+   * Get available 30-minute time slots for a booking's room on a given date.
+   * Used by the reschedule UI to show what slots are free.
+   */
+  async getRescheduleSlots(bookingId: string, date: string): Promise<{
+    time: string;        // "HH:MM"
+    startTime: string;   // ISO
+    endTime: string;     // ISO
+    available: boolean;
+  }[]> {
+    const booking = await this.findOne(bookingId);
+    const duration = booking.endTime.getTime() - booking.startTime.getTime();
+
+    // Generate candidate slots every 30 min from 08:00 to 22:00
+    const targetDate = date ? new Date(date) : new Date();
+    const slots: { time: string; startTime: string; endTime: string; available: boolean }[] = [];
+
+    for (let h = 8; h < 23; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const slotStart = new Date(targetDate);
+        slotStart.setHours(h, m, 0, 0);
+        const slotEnd = new Date(slotStart.getTime() + duration);
+
+        // Skip slots in the past or within 2h
+        const hoursAhead = (slotStart.getTime() - Date.now()) / (1000 * 60 * 60);
+        if (hoursAhead < 2) continue;
+
+        // Skip if slot would end after midnight
+        const nextDay = new Date(targetDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        nextDay.setHours(0, 0, 0, 0);
+        if (slotEnd > nextDay) continue;
+
+        const conflicts = await this.checkTimeConflicts(booking.roomId, slotStart, slotEnd, bookingId);
+
+        slots.push({
+          time: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+          startTime: slotStart.toISOString(),
+          endTime: slotEnd.toISOString(),
+          available: conflicts.length === 0,
+        });
+      }
+    }
+
+    return slots;
+  }
+
+
   private async checkTimeConflicts(
     roomId: string,
     startMoment: Date,

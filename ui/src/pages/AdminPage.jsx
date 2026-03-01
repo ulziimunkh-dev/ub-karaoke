@@ -15,6 +15,7 @@ import StaffPortal from '../components/StaffPortal';
 import StaffLoginPage from './StaffLoginPage';
 import AdminLoginPage from './AdminLoginPage';
 import BookingsManagement from '../components/admin/BookingsManagement';
+import RefundManagement from '../components/admin/RefundManagement';
 
 import AuditLogViewer from '../components/staff/AuditLogViewer';
 import OrganizationManagement from '../components/admin/OrganizationManagement';
@@ -67,6 +68,7 @@ const AdminPage = () => {
 
         { id: 'promotions', label: t('promotions') || 'Promotions', icon: '🎟️' },
         { id: 'finance', label: t('finance'), icon: '💰' },
+        ...(currentUser.role !== 'sysadmin' ? [{ id: 'refunds', label: t('refundManagement') || 'Refunds', icon: '↩️' }] : []),
         { id: 'reports', label: t('reports'), icon: '📈' },
         { id: 'staffs', label: t('staffs'), icon: '👥' },
         ...(currentUser.role === 'sysadmin' ? [{ id: 'users', label: t('users'), icon: '👥' }] : []),
@@ -248,6 +250,7 @@ const AdminPage = () => {
                 {activeTab === 'subscription' && <SubscriptionManagement />}
                 {activeTab === 'audit' && (['sysadmin', 'manager'].includes(currentUser.role)) && <AuditLogViewer />}
                 {activeTab === 'reports' && <Reports />}
+                {activeTab === 'refunds' && ['manager', 'admin'].includes(currentUser.role) && <RefundManagement />}
                 {activeTab === 'finance' && <Finance />}
                 {activeTab === 'users' && (currentUser.role === 'sysadmin') && <UserManagement />}
                 {activeTab === 'staffs' && <StaffManagement />}

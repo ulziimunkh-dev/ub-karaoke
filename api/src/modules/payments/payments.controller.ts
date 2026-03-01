@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   UseGuards,
@@ -14,7 +15,19 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) { }
+
+  @Get('refunds')
+  @UseGuards(JwtAuthGuard)
+  getRefundsByOrg(@Request() req: any) {
+    return this.paymentsService.getRefundsByOrg(req.user.organizationId);
+  }
+
+  @Patch('refunds/:id/process')
+  @UseGuards(JwtAuthGuard)
+  markRefundProcessed(@Param('id') id: string, @Request() req: any) {
+    return this.paymentsService.markRefundProcessed(id, req.user.id);
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard)

@@ -1000,6 +1000,8 @@ export const DataProvider = ({ children }) => {
                 confirmBookingPayment,
                 extendBookingReservation,
                 createManualBooking,
+                cancelBooking: api.cancelBooking,
+                getRefundPreview: api.getRefundPreview,
                 processRefund,
                 calculateTotal,
                 addOrder,

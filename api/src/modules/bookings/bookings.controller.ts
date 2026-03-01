@@ -87,6 +87,47 @@ export class BookingsController {
     return this.bookingsService.extendReservation(id, req.user.id);
   }
 
+  @Post(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel a confirmed booking as the booking owner' })
+  cancelByCustomer(@Param('id') id: string, @Request() req: any) {
+    return this.bookingsService.cancelByCustomer(id, req.user.id);
+  }
+
+  @Get(':id/refund-preview')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Preview refund amount before confirming cancellation' })
+  getRefundPreview(@Param('id') id: string) {
+    return this.bookingsService.getRefundPreview(id);
+  }
+
+  @Post(':id/reschedule')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reschedule a confirmed booking to a new start time' })
+  reschedule(
+    @Param('id') id: string,
+    @Body() body: { newStartTime: string },
+    @Request() req: any,
+  ) {
+    const staffRoles = ['staff', 'manager', 'admin', 'sysadmin'];
+    const isStaff = staffRoles.includes(req.user.role);
+    return this.bookingsService.rescheduleBooking(id, body.newStartTime, req.user.id, isStaff);
+  }
+
+  @Get(':id/reschedule-slots')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get available time slots for rescheduling' })
+  getRescheduleSlots(
+    @Param('id') id: string,
+    @Query('date') date: string,
+  ) {
+    return this.bookingsService.getRescheduleSlots(id, date);
+  }
+
   @Patch(':id/extend-time')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

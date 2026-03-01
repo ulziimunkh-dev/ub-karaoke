@@ -124,6 +124,98 @@ export class PaymentsService {
     return this.refundsRepository.save(refund);
   }
 
+  /** Shared helper: calculate tier fee info based on booking start time */
+  private async calcTierInfo(bookingId: string, amount: number): Promise<{
+    feePercent: number;
+    feeAmount: number;
+    refundAmount: number;
+    reason: string;
+    hoursRemaining: number;
+    tier: string;
+  } | null> {
+    const booking = await this.bookingsRepository.findOne({ where: { id: bookingId } });
+    if (!booking || !booking.startTime) return null;
+
+    const settings = await this.settingsRepository.find();
+    const getSetting = (key: string, def: number) => {
+      const s = settings.find(st => st.key === key);
+      return s ? Number(s.value) : def;
+    };
+
+    const tier1Hours = getSetting('refund_tier1_hours', 24);
+    const tier1FeePercent = getSetting('refund_tier1_fee_percent', 0);
+    const tier2Hours = getSetting('refund_tier2_hours', 4);
+    const tier2FeePercent = getSetting('refund_tier2_fee_percent', 50);
+    const tier3FeePercent = getSetting('refund_tier3_fee_percent', 100);
+
+    const now = new Date();
+    const hoursRemaining = (booking.startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    let feePercent = tier3FeePercent;
+    let reason = `Cancellation within ${tier2Hours}h (${feePercent}% fee)`;
+    let tier = 'late';
+
+    if (hoursRemaining >= tier1Hours) {
+      feePercent = tier1FeePercent;
+      reason = `Cancellation ${tier1Hours}h+ in advance (${feePercent}% fee)`;
+      tier = 'early';
+    } else if (hoursRemaining >= tier2Hours) {
+      feePercent = tier2FeePercent;
+      reason = `Cancellation ${tier2Hours}-${tier1Hours}h in advance (${feePercent}% fee)`;
+      tier = 'mid';
+    }
+
+    feePercent = Math.max(0, Math.min(100, feePercent));
+    const feeAmount = (amount * feePercent) / 100;
+    const refundAmount = Math.max(0, amount - feeAmount);
+
+    return { feePercent, feeAmount, refundAmount, reason, hoursRemaining, tier };
+  }
+
+  /**
+   * Preview refund for a booking without committing anything.
+   */
+  async calculateRefundPreview(bookingId: string): Promise<{
+    refundAmount: number;
+    feeAmount: number;
+    feePercent: number;
+    originalAmount: number;
+    reason: string;
+    hoursRemaining: number;
+    tier: string;
+    hasPayment: boolean;
+  }> {
+    const payments = await this.paymentsRepository.find({
+      where: { bookingId, status: PaymentStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (payments.length === 0) {
+      return {
+        refundAmount: 0, feeAmount: 0, feePercent: 0,
+        originalAmount: 0, reason: 'No completed payment found',
+        hoursRemaining: 0, tier: 'none', hasPayment: false,
+      };
+    }
+
+    const payment = payments[0];
+    const tier = await this.calcTierInfo(bookingId, Number(payment.amount));
+
+    if (!tier) {
+      return {
+        refundAmount: 0, feeAmount: 0, feePercent: 0,
+        originalAmount: Number(payment.amount), reason: 'Booking data unavailable',
+        hoursRemaining: 0, tier: 'unknown', hasPayment: true,
+      };
+    }
+
+    return {
+      ...tier,
+      originalAmount: Number(payment.amount),
+      hasPayment: true,
+    };
+  }
+
   /**
    * Automatically process a refund for a cancelled booking based on time-tiered policy
    */
@@ -151,55 +243,20 @@ export class PaymentsService {
       return existingRefund;
     }
 
-    // 2. Find the booking to get startTime
-    const booking = await this.bookingsRepository.findOne({ where: { id: bookingId } });
-    if (!booking || !booking.startTime) {
+    const tierInfo = await this.calcTierInfo(bookingId, Number(payment.amount));
+    if (!tierInfo) {
       this.logger.error(`Cannot process refund: Booking ${bookingId} missing or has no startTime.`);
       return null;
     }
 
-    // 3. Fetch system settings for refund tiers
-    const settings = await this.settingsRepository.find();
-    const getSetting = (key: string, defaultVal: number): number => {
-      const s = settings.find(st => st.key === key);
-      return s ? Number(s.value) : defaultVal;
-    };
-
-    const tier1Hours = getSetting('refund_tier1_hours', 24);
-    const tier1FeePercent = getSetting('refund_tier1_fee_percent', 0);
-    const tier2Hours = getSetting('refund_tier2_hours', 4);
-    const tier2FeePercent = getSetting('refund_tier2_fee_percent', 50);
-    const tier3FeePercent = getSetting('refund_tier3_fee_percent', 100);
-
-    // 4. Calculate time difference in hours between NOW and booking start time
-    const now = new Date();
-    const timeDiffMs = booking.startTime.getTime() - now.getTime();
-    const hoursRemaining = timeDiffMs / (1000 * 60 * 60);
-
-    let feePercent = tier3FeePercent; // Default to highest fee
-    let reason = `Cancellation within ${tier2Hours}h (${feePercent}% fee)`;
-
-    if (hoursRemaining >= tier1Hours) {
-      feePercent = tier1FeePercent;
-      reason = `Cancellation ${tier1Hours}h+ in advance (${feePercent}% fee)`;
-    } else if (hoursRemaining >= tier2Hours) {
-      feePercent = tier2FeePercent;
-      reason = `Cancellation ${tier2Hours}-${tier1Hours}h in advance (${feePercent}% fee)`;
-    }
-
-    // Ensure percent is between 0 and 100
-    feePercent = Math.max(0, Math.min(100, feePercent));
-
-    // 5. Calculate final refund amount
-    const feeAmount = (payment.amount * feePercent) / 100;
-    const finalRefundAmount = Math.max(0, payment.amount - feeAmount);
+    const { feePercent, feeAmount, refundAmount: finalRefundAmount, reason } = tierInfo;
 
     if (finalRefundAmount === 0) {
       this.logger.log(`Refund fee is 100% for payment ${payment.id}. No refund created.`);
       return null;
     }
 
-    // 6. Create Refund record
+    // Create Refund record
     const refund = this.refundsRepository.create({
       paymentId: payment.id,
       amount: finalRefundAmount,
@@ -210,28 +267,54 @@ export class PaymentsService {
 
     const savedRefund = await this.refundsRepository.save(refund);
 
-    // Audit Log
     await this.auditService.log({
       action: 'REFUND_REQUESTED_AUTO',
       resource: 'Refund',
       resourceId: savedRefund.id,
       details: {
         paymentId: payment.id,
-        bookingId: booking.id,
+        bookingId,
         originalAmount: payment.amount,
-        feePercent: feePercent,
-        feeAmount: feeAmount,
+        feePercent,
+        feeAmount,
         refundAmount: finalRefundAmount,
-        hoursRemaining: hoursRemaining,
       },
-      actorId: booking.userId || 'SYSTEM',
-      actorType: booking.userId ? 'USER' : 'SYSTEM',
+      actorId: payment.createdBy,
+      actorType: 'USER',
       organizationId: payment.organizationId,
     });
 
     this.logger.log(`Created auto-refund ${savedRefund.id} for payment ${payment.id}. Amount: ${finalRefundAmount}`);
-
     return savedRefund;
+  }
+
+  /** Get all refunds for a specific organization */
+  async getRefundsByOrg(organizationId: string): Promise<Refund[]> {
+    return this.refundsRepository.find({
+      where: { organizationId },
+      relations: ['payment'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /** Mark a refund as processed (completed) */
+  async markRefundProcessed(refundId: string, staffId: string): Promise<Refund> {
+    const refund = await this.refundsRepository.findOne({ where: { id: refundId } });
+    if (!refund) throw new NotFoundException(`Refund #${refundId} not found`);
+
+    refund.status = RefundStatus.COMPLETED;
+    const saved = await this.refundsRepository.save(refund);
+
+    await this.auditService.log({
+      action: 'REFUND_PROCESSED',
+      resource: 'Refund',
+      resourceId: refundId,
+      actorId: staffId,
+      actorType: 'STAFF',
+      organizationId: refund.organizationId,
+    });
+
+    return saved;
   }
 
   // ==================== QPay Methods ====================

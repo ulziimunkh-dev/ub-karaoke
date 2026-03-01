@@ -52,12 +52,23 @@ export class User {
   @Column({ name: 'verification_code', type: 'varchar', nullable: true })
   verificationCode: string | null;
 
-  @Column({
-    name: 'verification_code_expiry',
-    type: 'timestamp',
-    nullable: true,
-  })
+  @Column({ name: 'verification_code_expiry', type: 'timestamp', nullable: true })
   verificationCodeExpiry: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  otp: string | null;
+
+  @Column({ name: 'otp_expiry', type: 'timestamp', nullable: true })
+  otpExpiry: Date | null;
+
+  @Column({ name: 'reset_token', type: 'varchar', nullable: true })
+  resetToken: string | null;
+
+  @Column({ name: 'reset_token_expiry', type: 'timestamp', nullable: true })
+  resetTokenExpiry: Date | null;
+
+  @Column({ name: 'last_otp_sent_at', type: 'timestamp', nullable: true })
+  lastOtpSentAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
