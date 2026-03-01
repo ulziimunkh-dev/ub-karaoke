@@ -3,8 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Review } from './entities/review.entity';
 import { Venue } from '../venues/entities/venue.entity';
+
+import { Booking } from '../bookings/entities/booking.entity';
+import { BookingStatus } from '../bookings/enums/booking.enums';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+
+// Bayesian Rating Parameters
+const BAYESIAN_MIN_REVIEWS = 5; // (m)
+const BAYESIAN_GLOBAL_AVERAGE = 4.0; // (C)
 
 @Injectable()
 export class ReviewsService {
@@ -13,12 +20,29 @@ export class ReviewsService {
     private reviewsRepository: Repository<Review>,
     @InjectRepository(Venue)
     private venuesRepository: Repository<Venue>,
-  ) {}
+    @InjectRepository(Booking)
+    private bookingsRepository: Repository<Booking>,
+  ) { }
 
   async create(
     createReviewDto: CreateReviewDto,
     creatorId?: string,
   ): Promise<Review> {
+    if (creatorId) {
+      // Ensure user has a completed booking at this venue
+      const hasCompletedBooking = await this.bookingsRepository.exist({
+        where: {
+          userId: creatorId,
+          venueId: createReviewDto.venueId,
+          status: BookingStatus.COMPLETED,
+        },
+      });
+
+      if (!hasCompletedBooking) {
+        throw new NotFoundException('You must complete a booking at this venue before leaving a review.');
+      }
+    }
+
     const review = this.reviewsRepository.create({
       ...createReviewDto,
       createdBy: creatorId,
@@ -85,13 +109,25 @@ export class ReviewsService {
     const reviews = await this.reviewsRepository.find({ where: { venueId } });
 
     const totalReviews = reviews.length;
-    const avgRating =
-      totalReviews > 0
-        ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-        : 0;
+    let finalRating = 0;
+
+    if (totalReviews > 0) {
+      const simpleAverage = reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+
+      // Bayesian Average Calculation
+      // Formula: (v / (v + m)) * R + (m / (v + m)) * C
+      // v = total reviews, m = min reviews, R = simple average, C = global average
+      const v = totalReviews;
+      const m = BAYESIAN_MIN_REVIEWS;
+      const C = BAYESIAN_GLOBAL_AVERAGE;
+      const R = simpleAverage;
+
+      const bayesianAverage = (v / (v + m)) * R + (m / (v + m)) * C;
+      finalRating = Math.round(bayesianAverage * 100) / 100;
+    }
 
     await this.venuesRepository.update(venueId, {
-      rating: Math.round(avgRating * 100) / 100,
+      rating: finalRating,
       totalReviews,
     });
   }
