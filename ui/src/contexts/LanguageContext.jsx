@@ -898,7 +898,6 @@ const dictionaries = {
         refundDetails: "Refund Details",
         customerCancellationRefunds: "CUSTOMER CANCELLATION REFUNDS",
         bookingRef: "Booking Ref",
-        viewDetails: "View Details",
         markProcessed: "Mark Processed",
 
         // Notification Content (Backend mapped)
@@ -1810,7 +1809,6 @@ const dictionaries = {
         refundDetails: "Буцаалтын дэлгэрэнгүй",
         customerCancellationRefunds: "ХЭРЭГЛЭГЧИЙН ЦУЦЛАЛТЫН БУЦААЛТ",
         bookingRef: "Захиалгын лавлах",
-        viewDetails: "Дэлгэрэнгүй",
         markProcessed: "Шилжүүлсэн",
 
         // Notification Content (Backend mapped)

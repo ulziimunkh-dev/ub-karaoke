@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Calendar } from 'primereact/calendar';
-import { api } from '../../utils/api';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { api } from '../utils/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
 /**
  * RescheduleModal — lets customers or staff pick a new time for a confirmed booking.
