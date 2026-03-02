@@ -44,18 +44,27 @@ async function bootstrap() {
         ? frontendUrl.replace(/\/$/, '').toLowerCase()
         : null;
 
-      // Log for debugging (This is critical while we still have connection issues)
-      console.log(`[CORS DEBUG] Request from Origin: "${origin}"`);
-      console.log(`[CORS DEBUG] Configured FRONTEND_URL: "${frontendUrl}"`);
+      // 2. Check if it matches the explicit FRONTEND_URL or production domains
+      const productionDomains = [
+        'https://www.ubkaraoke.mn',
+        'https://ubkaraoke.mn',
+        'https://api.ubkaraoke.mn',
+      ];
 
-      // 2. Check if it matches the explicit FRONTEND_URL
-      if (cleanFrontendUrl && cleanOrigin === cleanFrontendUrl) {
+      if (
+        (cleanFrontendUrl && cleanOrigin === cleanFrontendUrl) ||
+        productionDomains.includes(cleanOrigin)
+      ) {
         callback(null, true);
         return;
       }
 
       // 3. Allow localhost for development
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      if (
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin.includes('::1')
+      ) {
         callback(null, true);
         return;
       }
