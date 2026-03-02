@@ -89,7 +89,11 @@ const VenueManagement = () => {
         minBookingHours: 1,
         maxBookingHours: 6,
         gmapLocation: '',
-        organizationId: currentUser.role === 'manager' ? currentUser.organizationId : ''
+        organizationId: currentUser.role === 'manager' ? currentUser.organizationId : '',
+        partySupport: {
+            birthdayPrice: 0,
+            decorationPrice: 0
+        }
     });
 
     // Room Modal State
@@ -236,7 +240,11 @@ const VenueManagement = () => {
             advanceBookingDays: 3,
             minBookingHours: 1,
             maxBookingHours: 6,
-            gmapLocation: ''
+            gmapLocation: '',
+            partySupport: {
+                birthdayPrice: 0,
+                decorationPrice: 0
+            }
         });
         setIsVenueModalOpen(true);
     };
@@ -275,7 +283,11 @@ const VenueManagement = () => {
             minBookingHours: venue.minBookingHours || 1.0,
             maxBookingHours: venue.maxBookingHours || 6.0,
             gmapLocation: venue.gmapLocation || '',
-            organizationId: venue.organizationId || ''
+            organizationId: venue.organizationId || '',
+            partySupport: venue.partySupport || {
+                birthdayPrice: 0,
+                decorationPrice: 0
+            }
         });
         setIsVenueModalOpen(true);
     };
@@ -317,7 +329,8 @@ const VenueManagement = () => {
             advanceBookingDays: venueForm.advanceBookingDays || 3,
             minBookingHours: Number(venueForm.minBookingHours) || 1.0,
             maxBookingHours: Number(venueForm.maxBookingHours) || 6.0,
-            gmapLocation: venueForm.gmapLocation || undefined
+            gmapLocation: venueForm.gmapLocation || undefined,
+            partySupport: venueForm.partySupport
         };
 
         if (editingVenue) {
@@ -846,6 +859,37 @@ const VenueManagement = () => {
                                                 incrementButtonClassName="h-12 w-10 bg-black/40 border-white/5 text-white/50 rounded-r-xl"
                                                 inputClassName="w-full h-12 bg-black/20 border-white/5 text-white text-center font-bold"
                                                 className="h-12 w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="sm:col-span-2 space-y-6 pt-6 border-t border-white/5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-xl bg-[#b000ff]/10 flex items-center justify-center border border-[#b000ff]/20 text-[#b000ff]">
+                                            <i className="pi pi-sparkles text-xs"></i>
+                                        </div>
+                                        <h4 className="m-0 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{t('partyAddonPricing') || 'Party Add-on Pricing'}</h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="flex flex-col gap-2">
+                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('birthdaySetupPrice') || 'Birthday Setup Price'}</label>
+                                            <InputNumber
+                                                value={venueForm.partySupport?.birthdayPrice}
+                                                onValueChange={e => setVenueForm({ ...venueForm, partySupport: { ...venueForm.partySupport, birthdayPrice: e.value } })}
+                                                mode="currency" currency="MNT" locale="mn-MN"
+                                                className="h-14 w-full"
+                                                inputClassName="w-full h-14 bg-black/20 border-white/5 text-white font-black text-lg px-4 rounded-2xl"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">{t('decorationPrice') || 'Decoration Price'}</label>
+                                            <InputNumber
+                                                value={venueForm.partySupport?.decorationPrice}
+                                                onValueChange={e => setVenueForm({ ...venueForm, partySupport: { ...venueForm.partySupport, decorationPrice: e.value } })}
+                                                mode="currency" currency="MNT" locale="mn-MN"
+                                                className="h-14 w-full"
+                                                inputClassName="w-full h-14 bg-black/20 border-white/5 text-white font-black text-lg px-4 rounded-2xl"
                                             />
                                         </div>
                                     </div>

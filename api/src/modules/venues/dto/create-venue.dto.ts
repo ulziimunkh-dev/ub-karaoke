@@ -83,6 +83,10 @@ export class CreateVenueDto {
   @IsOptional()
   maxBookingHours?: number;
 
+  @IsObject()
+  @IsOptional()
+  partySupport?: { birthdayPrice?: number; decorationPrice?: number };
+
   @IsString()
   @IsOptional()
   organizationId?: string;

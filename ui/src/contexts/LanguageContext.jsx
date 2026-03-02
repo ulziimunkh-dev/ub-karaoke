@@ -863,7 +863,7 @@ const dictionaries = {
 
         changeTime: "Change Time",
         paymentNotConfirmedYet: "Payment not confirmed yet. Please scan the QR and pay first.",
-        imAlreadyPaid: "I've already paid",
+        imAlreadyPaid: "Check payment",
         reschedule: "Reschedule",
         bookingRescheduled: "Booking Rescheduled!",
         newTime: "New Time",
@@ -1774,7 +1774,7 @@ const dictionaries = {
 
         changeTime: "Цаг өөрчлөх",
         paymentNotConfirmedYet: "Төлбөр хараахан баталгаажаагүй байна. QR-ыг уншуулан төлбөрөө төлнө үү.",
-        imAlreadyPaid: "Би аль хэдийн төлчихсөн",
+        imAlreadyPaid: "Төлбөр шалгах",
         reschedule: "Дахин товлох",
         bookingRescheduled: "Захиалгын цагийг амжилттай өөрчиллөө!",
         newTime: "Шинэ цаг",

@@ -99,6 +99,9 @@ export class Venue {
     }
   }
 
+  @Column('jsonb', { name: 'partySupport', nullable: true })
+  partySupport: { birthdayPrice?: number; decorationPrice?: number };
+
   @Column({ name: 'isBookingEnabled', default: true })
   isBookingEnabled: boolean;
 

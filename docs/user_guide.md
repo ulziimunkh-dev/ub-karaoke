@@ -1,16 +1,68 @@
-# UB Karaoke - User Guide
+# UB Karaoke - Хэрэглэгчийн гарын авлага (User Guide)
 
-Welcome to the UB Karaoke User Guide. This document provides information on how various features within the application function.
+Энэхүү гарын авлага нь UB Karaoke системийн Менежер (Manager) болон Ажилтан (Staff)-дад зориулагдсан бөгөөд системийн үндсэн модулиуд болон тэдгээрийн үйл ажиллагааны ерөнхий танилцуулгыг агуулна.
 
-## Ratings and Reviews
+---
 
-To maintain a trustworthy and fair platform for everyone, UB Karaoke uses specific guidelines for reviews and ratings.
+## 1. Менежерийн удирдлагын хэсэг (Admin & Manager Portal)
+Менежер болон Админ нь караокений бүхий л үйл ажиллагааг удирдах эрхтэй бөгөөд дараах үндсэн модулиудыг ашиглана:
 
-### Who Can Leave a Review?
-- **Verified Bookings Only**: To leave a review, you must have successfully completed a booking at the venue. This ensures all feedback comes from actual customers.
-- **Completed Status**: Your booking must have a status of `COMPLETED`. Cancelled, pending, or no-show bookings do not grant the ability to leave a review.
+### 1.1. Хяналтын самбар (Dashboard)
+- Өдрийн орлого, нийт захиалгын тоо зэрэг ерөнхий статистик мэдээллийг нэгтгэн харах боломжтой.
 
-### How is the Overall Venue Rating Calculated?
-We use a **Bayesian Average** rather than a simple mathematical average.
-- **Why?** A simple average can be misleading. For instance, a venue with a single 5-star review would have a perfect 5.0 rating, outranking a highly reputable venue with one hundred 4.9-star reviews.
-- **How it works**: The Bayesian method adds a baseline "confidence weight" to the calculation, pulling the score slightly toward the platform's average rating until the venue has accumulated enough reviews to stand on its own data (e.g., at least 5 reviews). This ensures that highly-rated venues have legitimately earned their score through consistent positive feedback.
+### 1.2. Захиалгын удирдлага (Bookings Management)
+- **Гол зорилго:** Бүх захиалгуудын жагсаалт, тэдгээрийн төлөв байдлыг хянах, шинэчлэх.
+- **Алхам:**
+  1. `Bookings Management` цэс рүү орох.
+  2. Захиалгуудын жагсаалтаас харахыг хүссэн захиалгаа сонгох.
+  3. `Төлөв өөрчлөх` (Баталгаажсан, Цуцлагдсан) товчийг дарж захиалгыг удирдах, эсвэл шинээр захиалга үүсгэх `Шинэ захиалга` товчийг ашиглах.
+
+### 1.3. Өрөө ба үнийн тохиргоо (Room Configuration & Pricing)
+- **Өрөөний удирдлага (Room Configuration):** 
+  - **Алхам:** `Room Configuration` цэс рүү орж `Өрөө нэмэх` товчийг дарна. Өрөөний дугаар, багтаамж, төрлийг (VIP, Энгийн) оруулаад `Хадгалах` дарна.
+- **Үнийн тохиргоо (Room Pricing):**
+  - **Алхам:** `Room Pricing` хэсэгт орж, тухайн өрөөний цагийн болон өдрийн үнийг тохируулж, оргил цагийн нэмэгдэл үүсгэх бол `Advanced Pricing` сонголтыг ашиглана.
+
+### 1.4. Үйлчилгээний газар болон Байгууллагын удирдлага (Venue & Organization Management)
+- **Алхам:** `Venue Management` руу орж байгууллагын зураг, цагийн хуваарь, байршил зэрэг харилцах мэдээллийг засах эсвэл шинэчлээд `Хадгалах` (Save Changes) товч дарна.
+
+### 1.5. Ажилчдын удирдлага (Staff & User Management)
+- **Шинэ ажилтан нэмэх алхам:**
+  1. `Staff Management` цэс рүү орно.
+  2. `Ажилтан нэмэх` товчийг дарж мэдээллийг бөглөнө.
+  3. Үүрэг рол (Manager, Staff) сонгоод нууц үг үүсгээд хадгална. Үүний дараа тус ажилтан системд нэвтрэх эрхтэй болно.
+
+### 1.6. Санхүү ба Тайлан (Finance & Reports)
+- **Буцаалт шийдвэрлэх алхам:** `Refund Management` цэс рүү орж, хүлээгдэж буй буцаалтын хүсэлтийг шалгаад `Зөвшөөрөх` эсвэл `Татгалзах` дарна.
+- **Тайлан татах алхам:** `Reports` хэсэгт орж огнооны хязгаарыг сонгоод `Export Excel` буюу `Export PDF` товчоор тайлангаа татаж авна.
+
+### 1.7. Системийн тохиргоо ба Урамшуулал (System Settings & Promotions)
+- **Промо код үүсгэх алхам:** `Promotions Management` руу орж `Create Promo Code` товчийг дарна. Хөнгөлөлтийн хувь, хүчинтэй хугацааг тохируулаад хэрэглэгчдэд түгээнэ.
+
+---
+
+## 2. Ажилтны хэсэг (Staff Portal / POS)
+Ажилтан буюу ресепшн нь өдөр тутмын үйл ажиллагааг зохицуулах зорилгоор доорх модулиудыг ашиглана:
+
+### 2.1. POS буюу Захиалгын удирдлага (Booking Manager / Timeline)
+- **Шууд захиалга үүсгэх алхам (Walk-in):**
+  1. Хуваарийн хүснэгтээс (Timeline) сул байгаа өрөөг олно.
+  2. Сул цагийн нүдэн дээр дарж эсвэл `Шинэ захиалга` товчийг дарж үйлчлүүлэгчийн мэдээлэл, хугацааг оруулна.
+  3. Төлбөрийг хүлээн авч `Баталгаажуулах` товчийг дарна.
+- **Захиалга сунгах алхам:** Идэвхтэй байгаа захиалга дээр дарж `Хугацаа сунгах` сонголтоор нэмэлт цаг болон төлбөрийг оруулна.
+
+### 2.2. Төлбөрийн түүх ба Ээлж хаах (Payment History & Report Export)
+- **Ээлж хаах алхам:**
+  1. `Report Export` цэс рүү орно.
+  2. Өнөөдрийн нийт орлого, зарлагын жагсаалтаа шалгана.
+  3. `Ээлж хаах` (Close Shift) товчийг дарж баримтаа хэвлэнэ эсвэл тайланг хадгална.
+
+### 2.3. Алдаа ба үйл ажиллагааны түүх хянах (Audit Log Viewer)
+- **Алхам:** `Audit Log Viewer` таб руу шилжиж, өөрийн эсвэл системийн үйлдлийн түүхийг огноо, үйлдлээр шүүж харна (жишээлбэл, цуцлагдсан захиалгыг шалгах).
+
+---
+
+## 3. Системд хэрхэн нэвтрэх вэ?
+1. Админ/Менежер болон Ажилтны зориулалтын систем нэвтрэх хуудас руу хандана.
+2. Өөрийн бүртгэлтэй имэйл (эсвэл нэвтрэх нэр) болон нууц үгээ оруулан нэвтэрнэ.
+3. Нэвтрэлт амжилттай болсны дараа таны эрхэд тохирсон модулиуд бүхий цэсүүд харагдах болно.

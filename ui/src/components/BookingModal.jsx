@@ -420,8 +420,11 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
         });
 
         // Add-ons
-        if (bookingData.addOns.birthday) total += 50000;
-        if (bookingData.addOns.decoration) total += 30000;
+        const birthdayPrice = venue?.partySupport?.birthdayPrice ?? 0;
+        const decorationPrice = venue?.partySupport?.decorationPrice ?? 0;
+
+        if (bookingData.addOns.birthday) total += birthdayPrice;
+        if (bookingData.addOns.decoration) total += decorationPrice;
 
         return total;
     };
@@ -852,13 +855,17 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                 {selectedRooms.some(r => r.partySupport?.birthday) && (
                                                     <div className="flex items-center">
                                                         <Checkbox inputId="birthday" checked={bookingData.addOns.birthday} onChange={e => setBookingData({ ...bookingData, addOns: { ...bookingData.addOns, birthday: e.checked } })} />
-                                                        <label htmlFor="birthday" className="ml-3 cursor-pointer text-sm">{t('birthdaySetup')} (+50,000₮)</label>
+                                                        <label htmlFor="birthday" className="ml-3 cursor-pointer text-sm">
+                                                            {t('birthdaySetup')} (+{(venue?.partySupport?.birthdayPrice ?? 50000).toLocaleString()}₮)
+                                                        </label>
                                                     </div>
                                                 )}
                                                 {selectedRooms.some(r => r.partySupport?.decoration) && (
                                                     <div className="flex items-center">
                                                         <Checkbox inputId="decoration" checked={bookingData.addOns.decoration} onChange={e => setBookingData({ ...bookingData, addOns: { ...bookingData.addOns, decoration: e.checked } })} />
-                                                        <label htmlFor="decoration" className="ml-3 cursor-pointer text-sm">{t('partyDecoration')} (+30,000₮)</label>
+                                                        <label htmlFor="decoration" className="ml-3 cursor-pointer text-sm">
+                                                            {t('partyDecoration')} (+{(venue?.partySupport?.decorationPrice ?? 30000).toLocaleString()}₮)
+                                                        </label>
                                                     </div>
                                                 )}
                                             </div>
@@ -1092,7 +1099,8 @@ const BookingModal = ({ venue, onClose, onConfirmBooking, onAddReview }) => {
                                                 <button
                                                     onClick={handleManualCheckStatus}
                                                     disabled={manualCheckLoading}
-                                                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold text-gray-300 hover:text-white transition-all flex items-center gap-2"
+                                                    className="px-4 py-2  bg-gradient-to-r from-[#b000ff] to-[#eb79b2] text-white font-bold rounded-lg hover:shadow-[0_0_25px_rgba(176,0,255,0.7)] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 w-full sm:w-auto"
+
                                                 >
                                                     {manualCheckLoading ? <i className="pi pi-spin pi-spinner text-xs"></i> : <i className="pi pi-check-circle text-xs"></i>}
                                                     {t('imAlreadyPaid')}

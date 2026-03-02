@@ -464,10 +464,15 @@ export const DataProvider = ({ children }) => {
     };
 
     // --- CALCULATIONS ---
-    const calculateTotal = (hourlyRate, hours, addOns = {}) => {
+    const calculateTotal = (hourlyRate, hours, addOns = {}, venue = null) => {
         let subtotal = hourlyRate * hours;
-        if (addOns.birthday) subtotal += 50000;
-        if (addOns.decoration) subtotal += 30000;
+
+        // Add-ons
+        const birthdayPrice = venue?.partySupport?.birthdayPrice ?? 0;
+        const decorationPrice = venue?.partySupport?.decorationPrice ?? 0;
+
+        if (addOns.birthday) subtotal += birthdayPrice;
+        if (addOns.decoration) subtotal += decorationPrice;
 
         const settings = {
             taxRate: 0.1,

@@ -1,0 +1,25 @@
+{
+  "name": "ub-karaoke-app",
+  "version": "1.0.0",
+  "description": "UB Karaoke is a comprehensive platform designed for discovering and booking karaoke venues. It features a modern, **mobile-first React frontend** and a robust NestJS backend, providing a premium experience across all devices.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ulziimunkh-dev/ub-karaoke.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ulziimunkh-dev/ub-karaoke/issues"
+  },
+  "homepage": "https://github.com/ulziimunkh-dev/ub-karaoke#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.3"
+  }
+}
